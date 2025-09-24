@@ -20,7 +20,6 @@
   "license": "MIT",
   "files": [
     "configs/",
-    "cypress/",
     "playwright/",
     "index.js"
   ],
@@ -36,15 +35,11 @@
     "prettier": "^3.0.0"
   },
   "peerDependencies": {
-    "cypress": "^12.0.0 || ^13.0.0",
     "playwright": "^1.35.0"
   },
-  "peerDependenciesMeta": {
-    "cypress": {
-      "optional": true
-    },
-    "playwright": {
-      "optional": true
-    }
+  "devDependencies": {
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
+    "lefthook": "^1.13.4"
   }
 }

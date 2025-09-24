@@ -7,7 +7,7 @@ Shared configurations and utilities for React on Rails demo applications.
 - 🎨 **Linting**: RuboCop for Ruby, ESLint for JavaScript/TypeScript
 - 💅 **Formatting**: Prettier for consistent code style
 - 🪝 **Git Hooks**: Lefthook for pre-commit and pre-push checks
-- 🧪 **Testing**: Shared test utilities for Cypress and Playwright
+- 🧪 **Testing**: Shared test utilities for Playwright
 - 🚀 **Deployment**: Rake tasks for Control Plane deployment
 - 🔧 **CI/CD**: GitHub Actions workflow templates
 
@@ -17,13 +17,13 @@ Shared configurations and utilities for React on Rails demo applications.
 
 1. Add to your `Gemfile`:
 ```ruby
-gem 'react_on_rails_demo_common', github: 'shakacode/react-on-rails-demo-common'
+gem 'react_on_rails_demo_common', github: 'shakacode/react_on_rails_demo_common'
 ```
 
 2. Add to your `package.json`:
 ```json
 "devDependencies": {
-  "@shakacode/react-on-rails-demo-common": "github:shakacode/react-on-rails-demo-common"
+  "@shakacode/react-on-rails-demo-common": "github:shakacode/react_on_rails_demo_common"
 }
 ```
 
@@ -113,15 +113,6 @@ LEFTHOOK_EXCLUDE=rubocop,eslint git commit
 ```
 
 ## Testing Utilities
-
-### Cypress
-```javascript
-// In your Cypress tests
-import '@shakacode/react-on-rails-demo-common/cypress/support/commands';
-
-cy.waitForReactOnRails();
-cy.getReactProps('HelloWorld');
-```
 
 ### Playwright
 ```javascript

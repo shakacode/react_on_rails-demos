@@ -5,10 +5,7 @@ module.exports = {
   eslintConfig: require('./configs/eslint.config.js'),
   prettierConfig: require('./configs/prettier.config.js'),
 
-  // Export test helpers
-  cypress: {
-    commands: './cypress/support/commands.js',
-  },
+  // Export Playwright test helpers
   playwright: {
     helpers: require('./playwright/helpers.js'),
   },
