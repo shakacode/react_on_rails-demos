@@ -1,0 +1,63 @@
+# Lefthook configuration for React on Rails demos
+# https://github.com/evilmartians/lefthook
+
+pre-commit:
+  parallel: true
+  commands:
+    rubocop:
+      tags: backend style
+      glob: "*.rb"
+      run: bundle exec rubocop --force-exclusion {staged_files}
+    eslint:
+      tags: frontend style
+      glob: "*.{js,jsx,ts,tsx}"
+      run: npx eslint {staged_files}
+    prettier:
+      tags: frontend style
+      glob: "*.{js,jsx,ts,tsx,json,css,scss,md}"
+      run: npx prettier --write {staged_files} && git add {staged_files}
+
+pre-push:
+  parallel: true
+  commands:
+    rubocop-all:
+      tags: backend style
+      run: bundle exec rubocop
+    eslint-all:
+      tags: frontend style
+      run: npm run lint
+      skip:
+        - merge
+        - rebase
+    tests-rails:
+      tags: backend tests
+      run: bundle exec rails test
+      skip:
+        - merge
+        - rebase
+    tests-rspec:
+      tags: backend tests
+      run: bundle exec rspec
+      skip:
+        - merge
+        - rebase
+    tests-jest:
+      tags: frontend tests
+      run: npm test
+      skip:
+        - merge
+        - rebase
+    bundle-audit:
+      tags: backend security
+      run: bundle audit check --update
+      skip:
+        - merge
+        - rebase
+
+commit-msg:
+  commands:
+    commitlint:
+      run: |
+        if command -v npx &> /dev/null && npx commitlint --version &> /dev/null; then
+          npx commitlint --edit
+        fi
