@@ -1,0 +1,22 @@
+# Development files
+*.gem
+*.log
+.git/
+.gitignore
+.rubocop.yml
+.rspec
+spec/
+Gemfile
+Gemfile.lock
+Rakefile
+react_on_rails_demo_common.gemspec
+lib/
+.github/
+.vscode/
+.idea/
+node_modules/
+tmp/
+coverage/
+
+# Keep only the necessary files for npm package
+# configs/, playwright/, index.js, package.json will be included
