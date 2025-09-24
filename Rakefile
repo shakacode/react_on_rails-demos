@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require "bundler/gem_tasks"
 require "rspec/core/rake_task"
 require "json"
 
@@ -10,18 +9,19 @@ task default: :spec
 
 Dir.glob("lib/tasks/*.rake").each { |r| load r }
 
-desc "Release both the gem and npm package using the given version.
+namespace :demo_common do
+  desc "Release both the gem and npm package using the given version
 
-IMPORTANT: the gem version must be in valid rubygem format (no dashes).
-It will be automatically converted to a valid npm semver by the rake task
-for the npm package version. This only makes a difference for pre-release
-versions such as `1.0.0.beta.1` (npm version would be `1.0.0-beta.1`).
+  IMPORTANT: the gem version must be in valid rubygem format (no dashes).
+  It will be automatically converted to a valid npm semver by the rake task
+  for the npm package version. This only makes a difference for pre-release
+  versions such as `1.0.0.beta.1` (npm version would be `1.0.0-beta.1`).
 
-1st argument: The new version in rubygem format (no dashes).
-2nd argument: Perform a dry run by passing 'true' as a second argument.
+  1st argument: The new version in rubygem format (no dashes).
+  2nd argument: Perform a dry run by passing 'true' as a second argument.
 
-Example: `rake release[1.2.0]` or `rake release[1.2.0,true]` for dry run"
-task :release, %i[gem_version dry_run] do |_t, args|
+  Example: `rake demo_common:release[1.2.0]` or `rake demo_common:release[1.2.0,true]` for dry run"
+  task :release, %i[gem_version dry_run] do |_t, args|
   require_relative "lib/react_on_rails_demo_common/version"
 
   args_hash = args.to_hash
@@ -34,7 +34,17 @@ task :release, %i[gem_version dry_run] do |_t, args|
   end
 
   # Convert gem version to npm version (e.g., 1.0.0.beta.1 -> 1.0.0-beta.1)
-  npm_version = gem_version.gsub(".", "-", 3).gsub("-", ".", 2)
+  # Only convert if it's a prerelease version
+  npm_version = if gem_version.include?(".")
+                  parts = gem_version.split(".")
+                  if parts.length > 3  # prerelease version like 1.0.0.beta.1
+                    "#{parts[0]}.#{parts[1]}.#{parts[2]}-#{parts[3..-1].join('.')}"
+                  else
+                    gem_version
+                  end
+                else
+                  gem_version
+                end
 
   puts "Releasing version #{gem_version} (npm: #{npm_version})#{is_dry_run ? ' [DRY RUN]' : ''}"
 
@@ -96,15 +106,16 @@ task :release, %i[gem_version dry_run] do |_t, args|
     sh "git push origin v#{gem_version}"
   end
 
-  puts "\n✅ Successfully released version #{gem_version}!" unless is_dry_run
-  puts "\n🎉 Dry run completed successfully!" if is_dry_run
-end
+    puts "\n✅ Successfully released version #{gem_version}!" unless is_dry_run
+    puts "\n🎉 Dry run completed successfully!" if is_dry_run
+  end
 
-desc "Display current versions"
-task :version do
-  require_relative "lib/react_on_rails_demo_common/version"
-  package_json = JSON.parse(File.read("package.json"))
+  desc "Display current versions"
+  task :version do
+    require_relative "lib/react_on_rails_demo_common/version"
+    package_json = JSON.parse(File.read("package.json"))
 
-  puts "Gem version: #{ReactOnRailsDemoCommon::VERSION}"
-  puts "NPM version: #{package_json["version"]}"
+    puts "Gem version: #{ReactOnRailsDemoCommon::VERSION}"
+    puts "NPM version: #{package_json["version"]}"
+  end
 end
