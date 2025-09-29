@@ -1,13 +1,13 @@
 # frozen_string_literal: true
 
 Gem::Specification.new do |spec|
-  spec.name        = "react_on_rails_demo_common"
+  spec.name        = "demo_common"
   spec.version     = "0.1.0"
   spec.authors     = ["Justin Gordon"]
   spec.email       = ["justin@shakacode.com"]
   spec.summary     = "Common configuration for React on Rails demo applications"
   spec.description = "Shared linting, testing, deployment, and development configurations for React on Rails demos"
-  spec.homepage    = "https://github.com/shakacode/react-on-rails-demo-common"
+  spec.homepage    = "https://github.com/shakacode/react_on_rails-demos"
   spec.license     = "MIT"
 
   spec.files = Dir["{app,config,db,lib}/**/*", "MIT-LICENSE", "Rakefile", "README.md"]
