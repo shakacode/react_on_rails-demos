@@ -5,7 +5,7 @@ set -euo pipefail
 
 if [ $# -eq 0 ]; then
   echo "Usage: $0 <demo-name>"
-  echo "Example: $0 react_on_rails-demo-v15-typescript-setup"
+  echo "Example: $0 react_on_rails-demo-v16-typescript-setup"
   exit 1
 fi
 
@@ -19,19 +19,30 @@ fi
 
 echo "🚀 Creating new React on Rails demo: $DEMO_NAME"
 
-# Create Rails app with sensible defaults
+# Create Rails app with modern defaults
 echo "📦 Creating Rails application..."
 rails new "$DEMO_DIR" \
-  --skip-active-storage \
+  --database=postgresql \
+  --skip-javascript \
+  --skip-hotwire \
   --skip-action-mailbox \
-  --skip-action-mailer \
+  --skip-action-text \
+  --skip-active-storage \
   --skip-action-cable \
   --skip-sprockets \
   --skip-system-test \
-  --database=postgresql \
-  --skip-bundle
+  --skip-turbolinks
 
 cd "$DEMO_DIR"
+
+# Create database
+echo "📦 Setting up database..."
+bin/rails db:create
+
+# Add React on Rails and Shakapacker with --strict
+echo "📦 Adding Shakapacker and React on Rails..."
+bundle add shakapacker --strict
+bundle add react_on_rails --strict
 
 # Add demo_common gem
 echo "📦 Adding demo_common gem..."
@@ -41,17 +52,8 @@ cat >> Gemfile << 'EOF'
 gem "demo_common", path: "../../packages/demo_common"
 EOF
 
-# Add React on Rails
-echo "📦 Adding React on Rails..."
-cat >> Gemfile << 'EOF'
-
-# React on Rails
-gem "react_on_rails", "~> 15.0"
-gem "shakapacker", "~> 8.0"
-EOF
-
-# Bundle install
-echo "📦 Installing gems..."
+# Bundle install to get demo_common
+echo "📦 Installing demo_common..."
 bundle install
 
 # Create symlinks to shared configurations
@@ -116,5 +118,4 @@ echo "✅ Demo created successfully at $DEMO_DIR"
 echo ""
 echo "Next steps:"
 echo "  cd $DEMO_DIR"
-echo "  bin/rails db:create"
 echo "  bin/dev"

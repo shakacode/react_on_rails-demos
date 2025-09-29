@@ -40,14 +40,17 @@ cd react_on_rails-demos
 ### Running a Specific Demo
 
 ```bash
-cd demos/react_on_rails-demo-v15-[feature-name]
+cd demos/react_on_rails-demo-v16-[feature-name]
 bin/dev
 ```
 
 ### Creating a New Demo
 
 ```bash
-./scripts/new-demo.sh react_on_rails-demo-v15-your-feature
+./scripts/new-demo.sh react_on_rails-demo-v16-your-feature
+
+# Or use the scaffold script with options:
+./scripts/scaffold-demo.sh react_on_rails-demo-v16-your-feature --typescript --tailwind
 ```
 
 ### Testing
@@ -59,7 +62,7 @@ Run tests for all demos:
 
 Run tests for a specific demo:
 ```bash
-cd demos/react_on_rails-demo-v15-[feature-name]
+cd demos/react_on_rails-demo-v16-[feature-name]
 bundle exec rspec
 ```
 
@@ -85,7 +88,7 @@ pnpm run lint
 
 Example:
 ```
-feat: add TypeScript support to v15 demo
+feat: add TypeScript support to v16 demo
 
 - Configure TypeScript with React on Rails
 - Add type definitions for server rendering

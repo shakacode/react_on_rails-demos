@@ -13,8 +13,8 @@ react_on_rails-demos/
 │     ├─ config/            # Shared linting configs
 │     └─ lib/               # Ruby utilities and templates
 └─ demos/
-   ├─ react_on_rails-demo-v15-ssr-auto-registration-bundle-splitting/
-   ├─ react_on_rails-demo-v15-react-server-components/
+   ├─ react_on_rails-demo-v16-ssr-auto-registration-bundle-splitting/
+   ├─ react_on_rails-demo-v16-react-server-components/
    └─ ...                   # Additional demo applications
 ```
 
@@ -50,7 +50,10 @@ Each demo follows the naming convention: `react_on_rails-demo-v[version]-[topics
 ### Create a New Demo
 
 ```bash
-./scripts/new-demo.sh react_on_rails-demo-v15-your-feature
+./scripts/new-demo.sh react_on_rails-demo-v16-your-feature
+
+# Or use the scaffold script with options
+./scripts/scaffold-demo.sh react_on_rails-demo-v16-your-feature --typescript --tailwind
 ```
 
 ## Shared Configuration
