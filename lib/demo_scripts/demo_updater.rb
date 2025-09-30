@@ -6,7 +6,7 @@ module DemoScripts
     def initialize(
       shakapacker_version: nil,
       react_on_rails_version: nil,
-      demo_pattern: "*",
+      demo_pattern: '*',
       dry_run: false,
       skip_tests: false
     )
@@ -34,18 +34,18 @@ module DemoScripts
     def validate_versions!
       return if @shakapacker_version || @react_on_rails_version
 
-      raise Error, "Must specify at least one version to update"
+      raise Error, 'Must specify at least one version to update'
     end
 
     def print_header
-      puts "🔄 Updating demo versions"
-      puts ""
+      puts '🔄 Updating demo versions'
+      puts ''
       puts "  React on Rails: #{@react_on_rails_version}" if @react_on_rails_version
       puts "  Shakapacker: #{@shakapacker_version}" if @shakapacker_version
       puts "  Demo pattern: #{@demo_pattern}"
       puts "  Dry run: #{@dry_run}"
       puts "  Skip tests: #{@skip_tests}"
-      puts ""
+      puts ''
     end
 
     def process_demos
@@ -53,9 +53,9 @@ module DemoScripts
         next unless File.directory?(demo_path)
 
         demo_name = File.basename(demo_path)
-        next if demo_name.start_with?(".")
+        next if demo_name.start_with?('.')
 
-        unless File.exist?(File.join(demo_path, "Gemfile"))
+        unless File.exist?(File.join(demo_path, 'Gemfile'))
           puts "⏭  Skipping #{demo_name} (no Gemfile)"
           @skipped_demos << demo_name
           next
@@ -74,13 +74,13 @@ module DemoScripts
       update_readme(demo_path) unless @dry_run
       run_tests(demo_path) unless @skip_tests || @dry_run
 
-      puts "  ✓ Updated successfully"
+      puts '  ✓ Updated successfully'
       @updated_demos << demo_name
     rescue StandardError => e
       puts "  ✗ Failed: #{e.message}"
       @failed_demos << demo_name
     ensure
-      puts ""
+      puts ''
     end
 
     def update_react_on_rails(demo_path)
@@ -100,17 +100,17 @@ module DemoScripts
     end
 
     def bundle_install(demo_path)
-      puts "  Running bundle install..."
-      @runner.run!("bundle install", dir: demo_path)
+      puts '  Running bundle install...'
+      @runner.run!('bundle install', dir: demo_path)
     end
 
     def update_readme(demo_path)
-      readme_path = File.join(demo_path, "README.md")
+      readme_path = File.join(demo_path, 'README.md')
       return unless File.exist?(readme_path)
-      return unless File.read(readme_path).include?("## Gem Versions")
+      return unless File.read(readme_path).include?('## Gem Versions')
 
-      puts "  Updating README.md with new versions..."
-      current_date = Time.now.strftime("%Y-%m-%d")
+      puts '  Updating README.md with new versions...'
+      current_date = Time.now.strftime('%Y-%m-%d')
       content = File.read(readme_path)
 
       if @react_on_rails_version
@@ -133,52 +133,52 @@ module DemoScripts
     end
 
     def run_tests(demo_path)
-      spec_path = File.join(demo_path, "spec")
+      spec_path = File.join(demo_path, 'spec')
       return unless File.directory?(spec_path)
 
-      puts "  Running tests..."
-      success = @runner.run("bundle exec rspec --fail-fast", dir: demo_path)
+      puts '  Running tests...'
+      success = @runner.run('bundle exec rspec --fail-fast', dir: demo_path)
 
       if success
-        puts "  ✓ Tests passed"
+        puts '  ✓ Tests passed'
       else
-        puts "  ✗ Tests failed"
-        raise Error, "Tests failed"
+        puts '  ✗ Tests failed'
+        raise Error, 'Tests failed'
       end
     end
 
     def print_summary
-      puts "═══════════════════════════════════════"
-      puts "Summary"
-      puts "═══════════════════════════════════════"
+      puts '═══════════════════════════════════════'
+      puts 'Summary'
+      puts '═══════════════════════════════════════'
 
       puts "✓ Updated: #{@updated_demos.join(', ')}" if @updated_demos.any?
       puts "✗ Failed: #{@failed_demos.join(', ')}" if @failed_demos.any?
       puts "⏭  Skipped: #{@skipped_demos.join(', ')}" if @skipped_demos.any?
 
-      puts ""
+      puts ''
 
       if @dry_run
-        puts "This was a dry run. No changes were made."
-        puts "To apply these changes, run without --dry-run"
+        puts 'This was a dry run. No changes were made.'
+        puts 'To apply these changes, run without --dry-run'
       else
         print_next_steps
       end
 
-      raise Error, "Some demos failed to update" if @failed_demos.any?
+      raise Error, 'Some demos failed to update' if @failed_demos.any?
     end
 
     def print_next_steps
-      puts "Next steps:"
-      puts "1. Review the changes:"
-      puts "   git status"
-      puts "   git diff"
-      puts ""
-      puts "2. Test a few demos manually:"
-      puts "   cd demos/[demo-name] && bin/dev"
-      puts ""
-      puts "3. Commit the changes:"
-      puts "   git add ."
+      puts 'Next steps:'
+      puts '1. Review the changes:'
+      puts '   git status'
+      puts '   git diff'
+      puts ''
+      puts '2. Test a few demos manually:'
+      puts '   cd demos/[demo-name] && bin/dev'
+      puts ''
+      puts '3. Commit the changes:'
+      puts '   git add .'
       puts "   git commit -m 'chore: update gems across demos'"
     end
   end

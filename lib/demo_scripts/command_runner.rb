@@ -35,7 +35,7 @@ module DemoScripts
 
       if @dry_run
         puts "[DRY-RUN] #{full_command}"
-        return ""
+        return ''
       end
 
       `#{full_command}`.strip

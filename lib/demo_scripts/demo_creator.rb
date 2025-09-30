@@ -11,7 +11,7 @@ module DemoScripts
       skip_pre_flight: false
     )
       @demo_name = demo_name
-      @demo_dir = File.join("demos", demo_name)
+      @demo_dir = File.join('demos', demo_name)
       @config = Config.new(
         shakapacker_version: shakapacker_version,
         react_on_rails_version: react_on_rails_version
@@ -24,13 +24,13 @@ module DemoScripts
     def create!
       run_pre_flight_checks unless @skip_pre_flight
 
-      puts ""
+      puts ''
       if @dry_run
-        puts "🔍 DRY RUN MODE - Commands that would be executed:"
+        puts '🔍 DRY RUN MODE - Commands that would be executed:'
       else
         puts "🚀 Creating new React on Rails demo: #{@demo_name}"
       end
-      puts ""
+      puts ''
 
       create_rails_app
       setup_database
@@ -51,31 +51,31 @@ module DemoScripts
     end
 
     def create_rails_app
-      puts "📦 Creating Rails application..."
+      puts '📦 Creating Rails application...'
       @runner.run!(
         "rails new '#{@demo_dir}' " \
-        "--database=postgresql " \
-        "--skip-javascript " \
-        "--skip-hotwire " \
-        "--skip-action-mailbox " \
-        "--skip-action-text " \
-        "--skip-active-storage " \
-        "--skip-action-cable " \
-        "--skip-sprockets " \
-        "--skip-system-test " \
-        "--skip-turbolinks"
+        '--database=postgresql ' \
+        '--skip-javascript ' \
+        '--skip-hotwire ' \
+        '--skip-action-mailbox ' \
+        '--skip-action-text ' \
+        '--skip-active-storage ' \
+        '--skip-action-cable ' \
+        '--skip-sprockets ' \
+        '--skip-system-test ' \
+        '--skip-turbolinks'
       )
     end
 
     def setup_database
-      puts ""
-      puts "📦 Setting up database..."
-      @runner.run!("bin/rails db:create", dir: @demo_dir)
+      puts ''
+      puts '📦 Setting up database...'
+      @runner.run!('bin/rails db:create', dir: @demo_dir)
     end
 
     def add_gems
-      puts ""
-      puts "📦 Adding Shakapacker and React on Rails..."
+      puts ''
+      puts '📦 Adding Shakapacker and React on Rails...'
       puts "   Using Shakapacker #{@config.shakapacker_version}"
       puts "   Using React on Rails #{@config.react_on_rails_version}"
 
@@ -90,58 +90,58 @@ module DemoScripts
     end
 
     def add_demo_common
-      puts ""
-      puts "📦 Adding demo_common gem..."
+      puts ''
+      puts '📦 Adding demo_common gem...'
 
       if @dry_run
         puts "[DRY-RUN] Append demo_common gem to #{@demo_dir}/Gemfile"
       else
-        File.open(File.join(@demo_dir, "Gemfile"), "a") do |f|
-          f.puts ""
-          f.puts "# Shared demo configuration and utilities"
+        File.open(File.join(@demo_dir, 'Gemfile'), 'a') do |f|
+          f.puts ''
+          f.puts '# Shared demo configuration and utilities'
           f.puts 'gem "demo_common", path: "../../packages/demo_common"'
         end
       end
 
-      puts ""
-      puts "📦 Installing demo_common..."
-      @runner.run!("bundle install", dir: @demo_dir)
+      puts ''
+      puts '📦 Installing demo_common...'
+      @runner.run!('bundle install', dir: @demo_dir)
     end
 
     def create_symlinks
-      puts ""
-      puts "🔗 Creating configuration symlinks..."
-      @runner.run!("ln -sf ../../packages/demo_common/config/.rubocop.yml .rubocop.yml", dir: @demo_dir)
-      @runner.run!("ln -sf ../../packages/demo_common/config/.eslintrc.js .eslintrc.js", dir: @demo_dir)
+      puts ''
+      puts '🔗 Creating configuration symlinks...'
+      @runner.run!('ln -sf ../../packages/demo_common/config/.rubocop.yml .rubocop.yml', dir: @demo_dir)
+      @runner.run!('ln -sf ../../packages/demo_common/config/.eslintrc.js .eslintrc.js', dir: @demo_dir)
     end
 
     def install_shakapacker
-      puts ""
-      puts "📦 Installing Shakapacker..."
-      @runner.run!("bundle exec rails shakapacker:install", dir: @demo_dir)
+      puts ''
+      puts '📦 Installing Shakapacker...'
+      @runner.run!('bundle exec rails shakapacker:install', dir: @demo_dir)
     end
 
     def install_react_on_rails
-      puts ""
-      puts "📦 Installing React on Rails (skipping git check)..."
+      puts ''
+      puts '📦 Installing React on Rails (skipping git check)...'
       @runner.run!(
-        "bundle exec rails generate react_on_rails:install --ignore-warnings",
+        'bundle exec rails generate react_on_rails:install --ignore-warnings',
         dir: @demo_dir
       )
     end
 
     def create_readme
-      puts ""
-      puts "📝 Creating README..."
+      puts ''
+      puts '📝 Creating README...'
 
       return if @dry_run
 
       readme_content = generate_readme_content
-      File.write(File.join(@demo_dir, "README.md"), readme_content)
+      File.write(File.join(@demo_dir, 'README.md'), readme_content)
     end
 
     def generate_readme_content
-      current_date = Time.now.strftime("%Y-%m-%d")
+      current_date = Time.now.strftime('%Y-%m-%d')
 
       <<~README
         # #{@demo_name}
@@ -193,18 +193,18 @@ module DemoScripts
     end
 
     def print_completion_message
-      puts ""
+      puts ''
       if @dry_run
-        puts "✅ Dry run complete! Review commands above."
-        puts ""
-        puts "To actually create the demo, run:"
+        puts '✅ Dry run complete! Review commands above.'
+        puts ''
+        puts 'To actually create the demo, run:'
         puts "  bin/new-demo #{@demo_name}"
       else
         puts "✅ Demo created successfully at #{@demo_dir}"
-        puts ""
-        puts "Next steps:"
+        puts ''
+        puts 'Next steps:'
         puts "  cd #{@demo_dir}"
-        puts "  bin/dev"
+        puts '  bin/dev'
       end
     end
   end

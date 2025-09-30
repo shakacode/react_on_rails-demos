@@ -1,13 +1,13 @@
 # frozen_string_literal: true
 
-require "rspec/core/rake_task"
-require "json"
+require 'rspec/core/rake_task'
+require 'json'
 
 RSpec::Core::RakeTask.new(:spec)
 
 task default: :spec
 
-Dir.glob("lib/tasks/*.rake").each { |r| load r }
+Dir.glob('lib/tasks/*.rake').each { |r| load r }
 
 namespace :demo_common do
   desc "Release both the gem and npm package using the given version
@@ -22,100 +22,100 @@ namespace :demo_common do
 
   Example: `rake demo_common:release[1.2.0]` or `rake demo_common:release[1.2.0,true]` for dry run"
   task :release, %i[gem_version dry_run] do |_t, args|
-  require_relative "lib/react_on_rails_demo_common/version"
+    require_relative 'lib/react_on_rails_demo_common/version'
 
-  args_hash = args.to_hash
-  is_dry_run = args_hash[:dry_run] == "true"
-  gem_version = args_hash.fetch(:gem_version, "").strip
+    args_hash = args.to_hash
+    is_dry_run = args_hash[:dry_run] == 'true'
+    gem_version = args_hash.fetch(:gem_version, '').strip
 
-  if gem_version.empty?
-    puts "ERROR: Version is required. Usage: rake release[1.2.0]"
-    exit 1
-  end
+    if gem_version.empty?
+      puts 'ERROR: Version is required. Usage: rake release[1.2.0]'
+      exit 1
+    end
 
-  # Convert gem version to npm version (e.g., 1.0.0.beta.1 -> 1.0.0-beta.1)
-  # Only convert if it's a prerelease version
-  npm_version = if gem_version.include?(".")
-                  parts = gem_version.split(".")
-                  if parts.length > 3  # prerelease version like 1.0.0.beta.1
-                    "#{parts[0]}.#{parts[1]}.#{parts[2]}-#{parts[3..-1].join('.')}"
+    # Convert gem version to npm version (e.g., 1.0.0.beta.1 -> 1.0.0-beta.1)
+    # Only convert if it's a prerelease version
+    npm_version = if gem_version.include?('.')
+                    parts = gem_version.split('.')
+                    if parts.length > 3 # prerelease version like 1.0.0.beta.1
+                      "#{parts[0]}.#{parts[1]}.#{parts[2]}-#{parts[3..].join('.')}"
+                    else
+                      gem_version
+                    end
                   else
                     gem_version
                   end
-                else
-                  gem_version
-                end
 
-  puts "Releasing version #{gem_version} (npm: #{npm_version})#{is_dry_run ? ' [DRY RUN]' : ''}"
+    puts "Releasing version #{gem_version} (npm: #{npm_version})#{' [DRY RUN]' if is_dry_run}"
 
-  # Check for uncommitted changes
-  unless is_dry_run
-    uncommitted = `git status --porcelain`.strip
-    unless uncommitted.empty?
-      puts "ERROR: There are uncommitted changes:\n#{uncommitted}"
-      puts "Please commit or stash your changes before releasing."
-      exit 1
+    # Check for uncommitted changes
+    unless is_dry_run
+      uncommitted = `git status --porcelain`.strip
+      unless uncommitted.empty?
+        puts "ERROR: There are uncommitted changes:\n#{uncommitted}"
+        puts 'Please commit or stash your changes before releasing.'
+        exit 1
+      end
     end
-  end
 
-  # Update version in version.rb
-  version_file = "lib/react_on_rails_demo_common/version.rb"
-  version_content = File.read(version_file)
-  new_version_content = version_content.gsub(/VERSION = ".*"/, "VERSION = \"#{gem_version}\"")
-  File.write(version_file, new_version_content) unless is_dry_run
-  puts "Updated #{version_file} to version #{gem_version}"
+    # Update version in version.rb
+    version_file = 'lib/react_on_rails_demo_common/version.rb'
+    version_content = File.read(version_file)
+    new_version_content = version_content.gsub(/VERSION = ".*"/, "VERSION = \"#{gem_version}\"")
+    File.write(version_file, new_version_content) unless is_dry_run
+    puts "Updated #{version_file} to version #{gem_version}"
 
-  # Update version in package.json
-  package_json_file = "package.json"
-  package_json = JSON.parse(File.read(package_json_file))
-  package_json["version"] = npm_version
-  File.write(package_json_file, JSON.pretty_generate(package_json) + "\n") unless is_dry_run
-  puts "Updated #{package_json_file} to version #{npm_version}"
+    # Update version in package.json
+    package_json_file = 'package.json'
+    package_json = JSON.parse(File.read(package_json_file))
+    package_json['version'] = npm_version
+    File.write(package_json_file, "#{JSON.pretty_generate(package_json)}\n") unless is_dry_run
+    puts "Updated #{package_json_file} to version #{npm_version}"
 
-  # Commit version changes
-  unless is_dry_run
-    sh "git add #{version_file} #{package_json_file}"
-    sh "git commit -m 'Bump version to #{gem_version}'"
-    sh "git tag v#{gem_version}"
-  end
+    # Commit version changes
+    unless is_dry_run
+      sh "git add #{version_file} #{package_json_file}"
+      sh "git commit -m 'Bump version to #{gem_version}'"
+      sh "git tag v#{gem_version}"
+    end
 
-  # Build and release gem
-  unless is_dry_run
-    puts "\n=== Building and releasing gem ==="
-    sh "gem build react_on_rails_demo_common.gemspec"
+    # Build and release gem
+    unless is_dry_run
+      puts "\n=== Building and releasing gem ==="
+      sh 'gem build react_on_rails_demo_common.gemspec'
 
-    puts "\nReady to push gem to RubyGems.org"
-    puts "You may need to enter your RubyGems OTP"
-    sh "gem push react_on_rails_demo_common-#{gem_version}.gem"
+      puts "\nReady to push gem to RubyGems.org"
+      puts 'You may need to enter your RubyGems OTP'
+      sh "gem push react_on_rails_demo_common-#{gem_version}.gem"
 
-    # Clean up gem file
-    sh "rm react_on_rails_demo_common-#{gem_version}.gem"
-  end
+      # Clean up gem file
+      sh "rm react_on_rails_demo_common-#{gem_version}.gem"
+    end
 
-  # Publish npm package
-  unless is_dry_run
-    puts "\n=== Publishing npm package ==="
-    puts "You may need to enter your npm OTP"
-    sh "npm publish"
-  end
+    # Publish npm package
+    unless is_dry_run
+      puts "\n=== Publishing npm package ==="
+      puts 'You may need to enter your npm OTP'
+      sh 'npm publish'
+    end
 
-  # Push to GitHub
-  unless is_dry_run
-    puts "\n=== Pushing to GitHub ==="
-    sh "git push origin main"
-    sh "git push origin v#{gem_version}"
-  end
+    # Push to GitHub
+    unless is_dry_run
+      puts "\n=== Pushing to GitHub ==="
+      sh 'git push origin main'
+      sh "git push origin v#{gem_version}"
+    end
 
     puts "\n✅ Successfully released version #{gem_version}!" unless is_dry_run
     puts "\n🎉 Dry run completed successfully!" if is_dry_run
   end
 
-  desc "Display current versions"
+  desc 'Display current versions'
   task :version do
-    require_relative "lib/react_on_rails_demo_common/version"
-    package_json = JSON.parse(File.read("package.json"))
+    require_relative 'lib/react_on_rails_demo_common/version'
+    package_json = JSON.parse(File.read('package.json'))
 
     puts "Gem version: #{ReactOnRailsDemoCommon::VERSION}"
-    puts "NPM version: #{package_json["version"]}"
+    puts "NPM version: #{package_json['version']}"
   end
 end

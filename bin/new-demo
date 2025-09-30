@@ -1,9 +1,9 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-require "bundler/setup"
-require_relative "../lib/demo_scripts"
-require "optparse"
+require 'bundler/setup'
+require_relative '../lib/demo_scripts'
+require 'optparse'
 
 options = {
   shakapacker_version: nil,
@@ -12,25 +12,25 @@ options = {
 }
 
 parser = OptionParser.new do |opts|
-  opts.banner = "Usage: bin/new-demo DEMO_NAME [options]"
-  opts.separator ""
-  opts.separator "Example: bin/new-demo react_on_rails-demo-v16-typescript-setup"
-  opts.separator ""
-  opts.separator "Options:"
+  opts.banner = 'Usage: bin/new-demo DEMO_NAME [options]'
+  opts.separator ''
+  opts.separator 'Example: bin/new-demo react_on_rails-demo-v16-typescript-setup'
+  opts.separator ''
+  opts.separator 'Options:'
 
-  opts.on("--dry-run", "Show commands that would be executed without running them") do
+  opts.on('--dry-run', 'Show commands that would be executed without running them') do
     options[:dry_run] = true
   end
 
-  opts.on("--shakapacker-version VERSION", "Shakapacker version") do |v|
+  opts.on('--shakapacker-version VERSION', 'Shakapacker version') do |v|
     options[:shakapacker_version] = v
   end
 
-  opts.on("--react-on-rails-version VERSION", "React on Rails version") do |v|
+  opts.on('--react-on-rails-version VERSION', 'React on Rails version') do |v|
     options[:react_on_rails_version] = v
   end
 
-  opts.on("-h", "--help", "Show this help message") do
+  opts.on('-h', '--help', 'Show this help message') do
     puts opts
     exit
   end
