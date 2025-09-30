@@ -79,13 +79,18 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch full history for proper diff
+      - name: Fetch PR base ref
+        run: |
+          git fetch origin "${{ github.base_ref }}"
       - name: Detect changed demos
         id: changed-demos
         run: |
-          if [ -d "demos" ] && [ "$(ls -A demos)" ]; then
-            CHANGED=$(git diff --name-only origin/main...HEAD | grep '^demos/' | cut -d/ -f2 | sort -u | head -5)
-            if [ -n "$CHANGED" ]; then
-              echo "demos=$CHANGED" >> $GITHUB_OUTPUT
+          if [ -d "demos" ] && [ -n "$(ls -A demos 2>/dev/null)" ]; then
+            CHANGED=$(git diff --name-only "origin/${{ github.base_ref }}"...HEAD | grep '^demos/' | cut -d/ -f2 | sort -u | head -5)
+            if [ -n "${CHANGED}" ]; then
+              echo "demos=${CHANGED}" >> "${GITHUB_OUTPUT}"
             fi
           fi
       - name: Set up Ruby
@@ -102,16 +107,16 @@ jobs:
         if: steps.changed-demos.outputs.demos
         run: |
           for demo in ${{ steps.changed-demos.outputs.demos }}; do
-            if [ -d "demos/$demo" ]; then
-              echo "Testing $demo..."
-              cd "demos/$demo"
+            if [ -d "demos/${demo}" ]; then
+              echo "Testing ${demo}..."
+              cd "demos/${demo}"
               if [ -f "Gemfile" ]; then
                 bundle install
               fi
               if [ -f "package.json" ]; then
                 npm ci
               fi
-              if [ -f "bin/rails" ] && [ -f "spec" ]; then
+              if [ -f "bin/rails" ] && [ -d "spec" ]; then
                 bundle exec rspec
               fi
               cd ../..
