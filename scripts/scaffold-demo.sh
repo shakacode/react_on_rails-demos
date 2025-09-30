@@ -66,6 +66,13 @@ CUSTOM_REACT_ON_RAILS_VERSION=""
 DEMO_NAME="$1"
 shift
 
+# Validate demo name: alphanumeric, hyphens, underscores only; no path separators
+if [[ -z "$DEMO_NAME" ]] || [[ ! "$DEMO_NAME" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+  echo -e "${RED}Error: Invalid demo name '$DEMO_NAME'${NC}"
+  echo "Demo name must contain only letters, numbers, hyphens, and underscores"
+  exit 1
+fi
+
 while [[ $# -gt 0 ]]; do
   case $1 in
     --typescript)
@@ -371,7 +378,7 @@ echo -e "${YELLOW}📝 Creating README...${NC}"
 if [ "$DRY_RUN" = true ]; then
   echo -e "${YELLOW}[DRY-RUN]${NC} Create $DEMO_DIR/README.md with demo documentation"
 else
-  CURRENT_DATE=\$(date +%Y-%m-%d)
+  CURRENT_DATE=$(date +%Y-%m-%d)
   cat > "$DEMO_DIR/README.md" << EOF
 # $DEMO_NAME
 

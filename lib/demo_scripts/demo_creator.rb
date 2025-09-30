@@ -7,6 +7,8 @@ module DemoScripts
       demo_name:,
       shakapacker_version: nil,
       react_on_rails_version: nil,
+      rails_args: [],
+      react_on_rails_args: [],
       dry_run: false,
       skip_pre_flight: false
     )
@@ -16,6 +18,8 @@ module DemoScripts
         shakapacker_version: shakapacker_version,
         react_on_rails_version: react_on_rails_version
       )
+      @rails_args = rails_args || []
+      @react_on_rails_args = react_on_rails_args || []
       @runner = CommandRunner.new(dry_run: dry_run)
       @dry_run = dry_run
       @skip_pre_flight = skip_pre_flight
@@ -52,19 +56,20 @@ module DemoScripts
 
     def create_rails_app
       puts '📦 Creating Rails application...'
-      @runner.run!(
-        "rails new '#{@demo_dir}' " \
-        '--database=postgresql ' \
-        '--skip-javascript ' \
-        '--skip-hotwire ' \
-        '--skip-action-mailbox ' \
-        '--skip-action-text ' \
-        '--skip-active-storage ' \
-        '--skip-action-cable ' \
-        '--skip-sprockets ' \
-        '--skip-system-test ' \
+      base_args = [
+        '--database=postgresql',
+        '--skip-javascript',
+        '--skip-hotwire',
+        '--skip-action-mailbox',
+        '--skip-action-text',
+        '--skip-active-storage',
+        '--skip-action-cable',
+        '--skip-sprockets',
+        '--skip-system-test',
         '--skip-turbolinks'
-      )
+      ]
+      all_args = (base_args + @rails_args).join(' ')
+      @runner.run!("rails new '#{@demo_dir}' #{all_args}")
     end
 
     def setup_database
@@ -124,8 +129,10 @@ module DemoScripts
     def install_react_on_rails
       puts ''
       puts '📦 Installing React on Rails (skipping git check)...'
+      base_args = ['--ignore-warnings']
+      all_args = (base_args + @react_on_rails_args).join(' ')
       @runner.run!(
-        'bundle exec rails generate react_on_rails:install --ignore-warnings',
+        "bundle exec rails generate react_on_rails:install #{all_args}",
         dir: @demo_dir
       )
     end

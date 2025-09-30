@@ -2,6 +2,8 @@
 
 This document describes how to manage React on Rails and Shakapacker versions across demos, including creating demos with beta versions and updating existing demos.
 
+For related testing tools, see [cypress-playwright-on-rails](https://github.com/shakacode/cypress-playwright-on-rails/).
+
 ## Table of Contents
 
 - [Overview](#overview)
@@ -30,7 +32,7 @@ The workflow supports:
 When you create a demo without version flags, it uses versions from `.demo-versions`:
 
 ```bash
-./scripts/new-demo.sh react_on_rails-demo-v16-ssr
+bin/new-demo react_on_rails-demo-v16-ssr
 ```
 
 This will use:
@@ -39,12 +41,14 @@ This will use:
 
 The versions are locked in the demo's `Gemfile` at creation time.
 
+> **Note**: Legacy bash scripts (`scripts/new-demo.sh`) are still available but the Ruby scripts in `bin/` are recommended for better maintainability and testability.
+
 ### Creating a Demo with Custom Versions
 
 Override versions for a specific demo:
 
 ```bash
-./scripts/new-demo.sh my-demo \
+bin/new-demo my-demo \
   --shakapacker-version '~> 8.0' \
   --react-on-rails-version '~> 16.1'
 ```
@@ -55,16 +59,15 @@ Test pre-release versions:
 
 ```bash
 # Using beta version
-./scripts/scaffold-demo.sh react_on_rails-demo-v16-beta-test \
-  --react-on-rails-version '16.0.0.beta.1' \
-  --typescript
+bin/scaffold-demo react_on_rails-demo-v16-beta-test \
+  --react-on-rails-version '16.0.0.beta.1'
 
 # Using release candidate
-./scripts/new-demo.sh react_on_rails-demo-v16-rc \
+bin/new-demo react_on_rails-demo-v16-rc \
   --react-on-rails-version '16.0.0.rc.1'
 
 # Using specific commit (for development)
-./scripts/new-demo.sh react_on_rails-demo-v16-edge \
+bin/new-demo react_on_rails-demo-v16-edge \
   --react-on-rails-version '~> 16.0' \
   --dry-run
 ```
@@ -74,6 +77,8 @@ Then manually edit the demo's `Gemfile` to point to a git branch:
 ```ruby
 gem "react_on_rails", github: "shakacode/react_on_rails", branch: "master"
 ```
+
+> **Future Enhancement**: Direct git branch support in `bin/new-demo` is planned. See [issue #TBD].
 
 ## Version Precedence
 
@@ -85,9 +90,16 @@ The demo's `Gemfile` controls which version is actually used:
 
 ```ruby
 # demos/my-demo/Gemfile
+source "https://rubygems.org"
+
+# Inherit shared development dependencies
+eval_gemfile File.expand_path("../../Gemfile.development_dependencies", __dir__)
+
 gem "react_on_rails", "~> 16.0"    # This is what's actually installed
 gem "shakapacker", "~> 8.0"
 ```
+
+The `Gemfile.development_dependencies` file at the repository root contains shared development gems (RuboCop, RSpec, debugging tools, etc.) that all demos inherit. This ensures consistent development environments across all demos.
 
 ### 2. Global Defaults (Reference Only)
 
@@ -153,10 +165,8 @@ git commit -m "chore: update React on Rails to 16.1.0"
 
 ```bash
 # Create demo with beta version
-./scripts/scaffold-demo.sh react_on_rails-demo-v16-beta-features \
-  --react-on-rails-version '16.0.0.beta.1' \
-  --typescript \
-  --tailwind
+bin/scaffold-demo react_on_rails-demo-v16-beta-features \
+  --react-on-rails-version '16.0.0.beta.1'
 ```
 
 #### 2. Document Beta Status
@@ -205,7 +215,7 @@ For testing unreleased features:
 
 ```bash
 # Create demo normally
-./scripts/new-demo.sh react_on_rails-demo-v16-edge
+bin/new-demo react_on_rails-demo-v16-edge
 
 cd demos/react_on_rails-demo-v16-edge
 
@@ -247,8 +257,8 @@ EOF
 #### 2. Use the Update Script
 
 ```bash
-# Update all demos (script to be created)
-./scripts/update-all-demos.sh \
+# Update all demos
+bin/update-all-demos \
   --react-on-rails-version '~> 16.1' \
   --shakapacker-version '~> 8.1'
 ```
@@ -427,7 +437,7 @@ bundle install
 
 ```bash
 # Uses global defaults from .demo-versions
-./scripts/new-demo.sh react_on_rails-demo-v16-standard
+bin/new-demo react_on_rails-demo-v16-standard
 ```
 
 Result: Demo created with current stable versions.
@@ -436,9 +446,8 @@ Result: Demo created with current stable versions.
 
 ```bash
 # Create demo with beta version
-./scripts/scaffold-demo.sh react_on_rails-demo-v16-beta-ssr \
-  --react-on-rails-version '16.1.0.beta.1' \
-  --typescript
+bin/scaffold-demo react_on_rails-demo-v16-beta-ssr \
+  --react-on-rails-version '16.1.0.beta.1'
 
 # Document beta status in README
 cd demos/react_on_rails-demo-v16-beta-ssr
@@ -476,7 +485,7 @@ git commit -m "chore: update all demos to React on Rails 16.1"
 
 ```bash
 # Create standard demo
-./scripts/new-demo.sh react_on_rails-demo-v16-edge-testing
+bin/new-demo react_on_rails-demo-v16-edge-testing
 
 # Switch to edge version
 cd demos/react_on_rails-demo-v16-edge-testing

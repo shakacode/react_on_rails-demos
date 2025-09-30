@@ -1,0 +1,23 @@
+# frozen_string_literal: true
+
+# This file contains shared development dependencies for all demo applications.
+# Demo applications should include this file in their Gemfile using:
+#
+#   eval_gemfile File.expand_path("../../Gemfile.development_dependencies", __dir__)
+#
+
+# Testing
+gem 'rspec-rails', '~> 6.0'
+
+# Code quality
+gem 'rubocop', '~> 1.69'
+gem 'rubocop-performance', '~> 1.23'
+gem 'rubocop-rails', '~> 2.19'
+gem 'rubocop-rspec', '~> 3.2'
+
+# Debugging
+gem 'pry-byebug', '~> 3.10'
+gem 'pry-rails', '~> 0.3'
+
+# Development tools
+gem 'listen', '~> 3.8'

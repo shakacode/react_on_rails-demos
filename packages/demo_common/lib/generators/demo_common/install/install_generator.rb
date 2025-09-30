@@ -2,7 +2,7 @@
 
 require 'rails/generators/base'
 
-module ReactOnRailsDemoCommon
+module DemoCommon
   module Generators
     class InstallGenerator < Rails::Generators::Base
       source_root File.expand_path('templates', __dir__)
@@ -121,19 +121,19 @@ module ReactOnRailsDemoCommon
       private
 
       def gem_root_path
-        ReactOnRailsDemoCommon.root
+        DemoCommon.root
       end
 
       def lefthook_config_path
-        ReactOnRailsDemoCommon.config_path.join('lefthook.yml')
+        DemoCommon.config_path.join('lefthook.yml')
       end
 
       def rubocop_config_path
-        ReactOnRailsDemoCommon.config_path.join('rubocop.yml')
+        DemoCommon.config_path.join('rubocop.yml')
       end
 
       def prettier_ignore_path
-        ReactOnRailsDemoCommon.config_path.join('..', 'configs', '.prettierignore')
+        DemoCommon.config_path.join('..', 'configs', '.prettierignore')
       end
     end
   end

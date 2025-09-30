@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-require 'react_on_rails_demo_common/version'
-require 'react_on_rails_demo_common/railtie' if defined?(Rails)
+require 'demo_common/version'
+require 'demo_common/railtie' if defined?(Rails)
 
-module ReactOnRailsDemoCommon
+module DemoCommon
   class Error < StandardError; end
 
   class << self

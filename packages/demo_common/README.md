@@ -13,17 +13,17 @@ Shared configurations and utilities for React on Rails demo applications.
 
 ## Installation
 
-### In your React on Rails demo app:
+### In a demo app within this monorepo:
 
 1. Add to your `Gemfile`:
 ```ruby
-gem 'react_on_rails_demo_common', github: 'shakacode/react_on_rails_demo_common'
+gem 'demo_common', path: '../../packages/demo_common'
 ```
 
 2. Add to your `package.json`:
 ```json
 "devDependencies": {
-  "@shakacode/react-on-rails-demo-common": "github:shakacode/react_on_rails_demo_common"
+  "@shakacode/react-on-rails-demo-common": "file:../../packages/demo_common"
 }
 ```
 
@@ -31,7 +31,21 @@ gem 'react_on_rails_demo_common', github: 'shakacode/react_on_rails_demo_common'
 ```bash
 bundle install
 npm install
-rails generate react_on_rails_demo_common:install
+rails generate demo_common:install
+```
+
+### From GitHub (outside the monorepo):
+
+1. Add to your `Gemfile`:
+```ruby
+gem 'demo_common', github: 'shakacode/react_on_rails-demos', glob: 'packages/demo_common/*.gemspec'
+```
+
+2. Add to your `package.json`:
+```json
+"devDependencies": {
+  "@shakacode/react-on-rails-demo-common": "github:shakacode/react_on_rails-demos#main"
+}
 ```
 
 ## What Gets Installed

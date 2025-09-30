@@ -8,6 +8,8 @@ require 'optparse'
 options = {
   shakapacker_version: nil,
   react_on_rails_version: nil,
+  rails_args: [],
+  react_on_rails_args: [],
   dry_run: false
 }
 
@@ -30,8 +32,21 @@ parser = OptionParser.new do |opts|
     options[:react_on_rails_version] = v
   end
 
+  opts.on('--rails-args ARGS', 'Additional arguments to pass to rails new (comma-separated)') do |args|
+    options[:rails_args] = args.split(',').map(&:strip)
+  end
+
+  opts.on('--react-on-rails-args ARGS', 'Additional arguments to pass to react_on_rails:install (comma-separated)') do |args|
+    options[:react_on_rails_args] = args.split(',').map(&:strip)
+  end
+
   opts.on('-h', '--help', 'Show this help message') do
     puts opts
+    puts ''
+    puts 'Examples:'
+    puts '  bin/new-demo my-demo --rails-args="--skip-test,--api"'
+    puts '  bin/new-demo my-demo --react-on-rails-args="--redux,--node"'
+    puts '  bin/new-demo my-demo --rails-args="--skip-test" --react-on-rails-args="--redux"'
     exit
   end
 end

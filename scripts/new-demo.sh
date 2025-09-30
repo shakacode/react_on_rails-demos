@@ -80,6 +80,13 @@ if [ -z "$DEMO_NAME" ]; then
   show_usage
 fi
 
+# Validate demo name: alphanumeric, hyphens, underscores only; no path separators
+if [[ ! "$DEMO_NAME" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+  echo -e "${RED}Error: Invalid demo name '$DEMO_NAME'${NC}"
+  echo "Demo name must contain only letters, numbers, hyphens, and underscores"
+  exit 1
+fi
+
 # Use custom versions if provided, otherwise use defaults
 SHAKAPACKER_VERSION="${CUSTOM_SHAKAPACKER_VERSION:-$SHAKAPACKER_VERSION}"
 REACT_ON_RAILS_VERSION="${CUSTOM_REACT_ON_RAILS_VERSION:-$REACT_ON_RAILS_VERSION}"
@@ -192,6 +199,14 @@ run_cmd "cd '$DEMO_DIR' && bundle exec rails shakapacker:install"
 echo ""
 echo "📦 Installing React on Rails (skipping git check)..."
 run_cmd "cd '$DEMO_DIR' && bundle exec rails generate react_on_rails:install --ignore-warnings"
+
+echo ""
+echo "📦 Installing JavaScript dependencies..."
+if command -v pnpm &> /dev/null; then
+  run_cmd "cd '$DEMO_DIR' && pnpm install"
+else
+  run_cmd "cd '$DEMO_DIR' && npm install"
+fi
 
 echo ""
 echo "📝 Creating README..."

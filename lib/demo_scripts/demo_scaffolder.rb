@@ -7,6 +7,8 @@ module DemoScripts
       demo_name:,
       shakapacker_version: nil,
       react_on_rails_version: nil,
+      rails_args: [],
+      react_on_rails_args: [],
       typescript: false,
       tailwind: false,
       bootstrap: false,
@@ -20,6 +22,8 @@ module DemoScripts
         demo_name: demo_name,
         shakapacker_version: shakapacker_version,
         react_on_rails_version: react_on_rails_version,
+        rails_args: rails_args,
+        react_on_rails_args: react_on_rails_args,
         dry_run: dry_run,
         skip_pre_flight: skip_pre_flight
       )
@@ -76,10 +80,14 @@ module DemoScripts
       puts ''
       puts '📦 Installing React on Rails (skipping git check)...'
 
-      command = 'bundle exec rails generate react_on_rails:install --ignore-warnings'
-      command += ' --typescript' if @typescript
+      base_args = ['--ignore-warnings']
+      base_args << '--typescript' if @typescript
+      all_args = (base_args + @react_on_rails_args).join(' ')
 
-      @runner.run!(command, dir: @demo_dir)
+      @runner.run!(
+        "bundle exec rails generate react_on_rails:install #{all_args}",
+        dir: @demo_dir
+      )
     end
 
     def add_typescript_support
