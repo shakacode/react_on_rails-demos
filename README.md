@@ -35,6 +35,23 @@ Each demo follows the naming convention: `react_on_rails-demo-v[version]-[topics
 - PostgreSQL
 - pnpm (recommended) or npm/yarn
 
+### Initial Setup
+
+```bash
+# Install dependencies
+bundle install
+
+# Install git hooks (recommended)
+lefthook install
+```
+
+This installs pre-commit hooks that:
+- Ensure all files end with a newline
+- Run RuboCop on staged Ruby files
+- Validate commit messages
+
+See [Development Setup](./docs/CONTRIBUTING_SETUP.md) for details.
+
 ### Bootstrap All Demos
 
 ```bash
