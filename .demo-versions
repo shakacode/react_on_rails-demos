@@ -1,8 +1,32 @@
 # Default versions for React on Rails demo creation
-# Override these with command-line flags when creating demos
+# These are used when creating new demos unless overridden with command-line flags
+#
+# IMPORTANT: After creation, each demo's Gemfile controls its actual versions.
+# Changing these values does NOT update existing demos.
+#
+# To update existing demos, see docs/VERSION_MANAGEMENT.md
 
 # Shakapacker version (use ~> for compatibility range, or specific version)
 SHAKAPACKER_VERSION="~> 8.0"
 
 # React on Rails version (use ~> for compatibility range, or specific version)
 REACT_ON_RAILS_VERSION="~> 16.0"
+
+# ═══════════════════════════════════════════════════════════════════════
+# Version Management Workflows
+# ═══════════════════════════════════════════════════════════════════════
+#
+# Creating demos with stable versions:
+#   ./scripts/new-demo.sh my-demo
+#   (Uses versions above)
+#
+# Creating demos with custom versions:
+#   ./scripts/new-demo.sh my-demo --react-on-rails-version '~> 16.1'
+#
+# Creating demos with beta/RC versions:
+#   ./scripts/new-demo.sh beta-demo --react-on-rails-version '16.1.0.beta.1'
+#
+# Updating existing demos to new versions:
+#   ./scripts/update-all-demos.sh --react-on-rails-version '~> 16.1'
+#
+# For detailed workflows, see: docs/VERSION_MANAGEMENT.md

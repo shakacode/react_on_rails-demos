@@ -198,10 +198,21 @@ echo "📝 Creating README..."
 if [ "$DRY_RUN" = true ]; then
   echo "[DRY-RUN] Create $DEMO_DIR/README.md with demo documentation"
 else
+  CURRENT_DATE=$(date +%Y-%m-%d)
   cat > "$DEMO_DIR/README.md" << EOF
 # $DEMO_NAME
 
 A React on Rails demo application showcasing [describe features here].
+
+## Gem Versions
+
+This demo uses:
+- **React on Rails**: \`$REACT_ON_RAILS_VERSION\`
+- **Shakapacker**: \`$SHAKAPACKER_VERSION\`
+
+Created: $CURRENT_DATE
+
+> **Note**: To update versions, see [Version Management](../../docs/VERSION_MANAGEMENT.md)
 
 ## Features
 
@@ -232,6 +243,7 @@ bin/dev
 ## Learn More
 
 - [React on Rails Documentation](https://www.shakacode.com/react-on-rails/docs/)
+- [Version Management](../../docs/VERSION_MANAGEMENT.md)
 - [Main repository README](../../README.md)
 EOF
 fi
