@@ -50,11 +50,34 @@ Each demo follows the naming convention: `react_on_rails-demo-v[version]-[topics
 ### Create a New Demo
 
 ```bash
+# Simple demo creation
 ./scripts/new-demo.sh react_on_rails-demo-v16-your-feature
 
-# Or use the scaffold script with options
+# Scaffold with advanced options
 ./scripts/scaffold-demo.sh react_on_rails-demo-v16-your-feature --typescript --tailwind
+
+# Specify custom gem versions
+./scripts/new-demo.sh my-demo --shakapacker-version '~> 8.0' --react-on-rails-version '~> 16.0'
+
+# Preview commands without execution
+./scripts/new-demo.sh my-demo --dry-run
 ```
+
+Default versions are configured in `.demo-versions`. Override with command-line flags.
+
+## Version Configuration
+
+Demo creation scripts use default versions for Shakapacker and React on Rails, configured in `.demo-versions`:
+
+```bash
+SHAKAPACKER_VERSION="~> 8.0"
+REACT_ON_RAILS_VERSION="~> 16.0"
+```
+
+**Override versions per demo:**
+- Use `--shakapacker-version` and `--react-on-rails-version` flags
+- Supports version constraints (`~> 8.0`) or exact versions (`8.0.0`)
+- Example: `./scripts/new-demo.sh my-demo --react-on-rails-version '16.1.0'`
 
 ## Shared Configuration
 
@@ -62,7 +85,6 @@ All demos share common configuration files from `packages/demo_common/`:
 
 - **RuboCop** configuration for Ruby code style
 - **ESLint** configuration for JavaScript/TypeScript
-- **bin/dev** script for development
 - Common Ruby gems and npm packages
 
 ## Contributing

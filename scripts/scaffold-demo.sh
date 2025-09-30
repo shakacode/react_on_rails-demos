@@ -9,19 +9,39 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+# Load default versions from config file
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+VERSION_FILE="$SCRIPT_DIR/../.demo-versions"
+
+# Default versions (fallback if config file doesn't exist)
+SHAKAPACKER_VERSION="~> 8.0"
+REACT_ON_RAILS_VERSION="~> 16.0"
+
+# Load versions from config file if it exists
+if [ -f "$VERSION_FILE" ]; then
+  # shellcheck disable=SC1090
+  source "$VERSION_FILE"
+fi
+
 show_usage() {
   echo "Usage: $0 <demo-name> [options]"
   echo ""
   echo "Example: $0 react_on_rails-demo-v16-ssr-hmr"
   echo ""
   echo "Options:"
-  echo "  --typescript    Enable TypeScript support"
-  echo "  --tailwind      Add Tailwind CSS"
-  echo "  --bootstrap     Add Bootstrap"
-  echo "  --mui           Add Material-UI"
-  echo "  --skip-install  Skip npm/yarn install"
-  echo "  --skip-db       Skip database creation"
-  echo "  --dry-run       Show commands that would be executed without running them"
+  echo "  --typescript                      Enable TypeScript support"
+  echo "  --tailwind                        Add Tailwind CSS"
+  echo "  --bootstrap                       Add Bootstrap"
+  echo "  --mui                             Add Material-UI"
+  echo "  --skip-install                    Skip npm/yarn install"
+  echo "  --skip-db                         Skip database creation"
+  echo "  --dry-run                         Show commands that would be executed without running them"
+  echo "  --shakapacker-version VERSION     Shakapacker version (default: $SHAKAPACKER_VERSION)"
+  echo "  --react-on-rails-version VERSION  React on Rails version (default: $REACT_ON_RAILS_VERSION)"
+  echo ""
+  echo "Examples:"
+  echo "  $0 my-demo --typescript --tailwind"
+  echo "  $0 my-demo --shakapacker-version '~> 8.0' --react-on-rails-version '~> 16.0'"
   echo ""
   exit 1
 }
@@ -39,6 +59,8 @@ USE_MUI=false
 SKIP_INSTALL=false
 SKIP_DB=false
 DRY_RUN=false
+CUSTOM_SHAKAPACKER_VERSION=""
+CUSTOM_REACT_ON_RAILS_VERSION=""
 
 # Parse first argument as demo name
 DEMO_NAME="$1"
@@ -74,6 +96,14 @@ while [[ $# -gt 0 ]]; do
       DRY_RUN=true
       shift
       ;;
+    --shakapacker-version)
+      CUSTOM_SHAKAPACKER_VERSION="$2"
+      shift 2
+      ;;
+    --react-on-rails-version)
+      CUSTOM_REACT_ON_RAILS_VERSION="$2"
+      shift 2
+      ;;
     *)
       echo -e "${RED}Unknown option: $1${NC}"
       show_usage
@@ -85,6 +115,10 @@ if [ -z "$DEMO_NAME" ]; then
   echo -e "${RED}Error: Demo name is required${NC}"
   show_usage
 fi
+
+# Use custom versions if provided, otherwise use defaults
+SHAKAPACKER_VERSION="${CUSTOM_SHAKAPACKER_VERSION:-$SHAKAPACKER_VERSION}"
+REACT_ON_RAILS_VERSION="${CUSTOM_REACT_ON_RAILS_VERSION:-$REACT_ON_RAILS_VERSION}"
 
 DEMO_DIR="demos/$DEMO_NAME"
 
@@ -161,8 +195,10 @@ fi
 
 # Add React on Rails and Shakapacker with --strict
 echo -e "${YELLOW}📦 Adding core gems...${NC}"
-run_cmd "cd '$DEMO_DIR' && bundle add shakapacker --strict"
-run_cmd "cd '$DEMO_DIR' && bundle add react_on_rails --strict"
+echo -e "   Using Shakapacker $SHAKAPACKER_VERSION"
+echo -e "   Using React on Rails $REACT_ON_RAILS_VERSION"
+run_cmd "cd '$DEMO_DIR' && bundle add shakapacker --version '$SHAKAPACKER_VERSION' --strict"
+run_cmd "cd '$DEMO_DIR' && bundle add react_on_rails --version '$REACT_ON_RAILS_VERSION' --strict"
 
 echo ""
 # Add demo_common gem

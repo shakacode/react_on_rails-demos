@@ -3,9 +3,25 @@
 
 set -euo pipefail
 
+# Load default versions from config file
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+VERSION_FILE="$SCRIPT_DIR/../.demo-versions"
+
+# Default versions (fallback if config file doesn't exist)
+SHAKAPACKER_VERSION="~> 8.0"
+REACT_ON_RAILS_VERSION="~> 16.0"
+
+# Load versions from config file if it exists
+if [ -f "$VERSION_FILE" ]; then
+  # shellcheck disable=SC1090
+  source "$VERSION_FILE"
+fi
+
 # Parse options
 DRY_RUN=false
 DEMO_NAME=""
+CUSTOM_SHAKAPACKER_VERSION=""
+CUSTOM_REACT_ON_RAILS_VERSION=""
 
 show_usage() {
   echo "Usage: $0 <demo-name> [options]"
@@ -13,7 +29,13 @@ show_usage() {
   echo "Example: $0 react_on_rails-demo-v16-typescript-setup"
   echo ""
   echo "Options:"
-  echo "  --dry-run    Show commands that would be executed without running them"
+  echo "  --dry-run                      Show commands that would be executed without running them"
+  echo "  --shakapacker-version VERSION  Shakapacker version (default: $SHAKAPACKER_VERSION)"
+  echo "  --react-on-rails-version VERSION  React on Rails version (default: $REACT_ON_RAILS_VERSION)"
+  echo ""
+  echo "Examples:"
+  echo "  $0 my-demo --shakapacker-version '~> 8.0' --react-on-rails-version '~> 16.0'"
+  echo "  $0 my-demo --shakapacker-version '8.0.0' --react-on-rails-version '16.0.0'"
   echo ""
   exit 1
 }
@@ -28,6 +50,14 @@ while [[ $# -gt 0 ]]; do
     --dry-run)
       DRY_RUN=true
       shift
+      ;;
+    --shakapacker-version)
+      CUSTOM_SHAKAPACKER_VERSION="$2"
+      shift 2
+      ;;
+    --react-on-rails-version)
+      CUSTOM_REACT_ON_RAILS_VERSION="$2"
+      shift 2
       ;;
     -*)
       echo "Error: Unknown option: $1"
@@ -49,6 +79,10 @@ if [ -z "$DEMO_NAME" ]; then
   echo "Error: Demo name is required"
   show_usage
 fi
+
+# Use custom versions if provided, otherwise use defaults
+SHAKAPACKER_VERSION="${CUSTOM_SHAKAPACKER_VERSION:-$SHAKAPACKER_VERSION}"
+REACT_ON_RAILS_VERSION="${CUSTOM_REACT_ON_RAILS_VERSION:-$REACT_ON_RAILS_VERSION}"
 
 DEMO_DIR="demos/$DEMO_NAME"
 
@@ -121,8 +155,10 @@ run_cmd "cd '$DEMO_DIR' && bin/rails db:create"
 
 echo ""
 echo "📦 Adding Shakapacker and React on Rails..."
-run_cmd "cd '$DEMO_DIR' && bundle add shakapacker --strict"
-run_cmd "cd '$DEMO_DIR' && bundle add react_on_rails --strict"
+echo "   Using Shakapacker $SHAKAPACKER_VERSION"
+echo "   Using React on Rails $REACT_ON_RAILS_VERSION"
+run_cmd "cd '$DEMO_DIR' && bundle add shakapacker --version '$SHAKAPACKER_VERSION' --strict"
+run_cmd "cd '$DEMO_DIR' && bundle add react_on_rails --version '$REACT_ON_RAILS_VERSION' --strict"
 
 echo ""
 echo "📦 Adding demo_common gem..."
