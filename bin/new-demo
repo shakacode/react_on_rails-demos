@@ -1,0 +1,62 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "bundler/setup"
+require_relative "../lib/demo_scripts"
+require "optparse"
+
+options = {
+  shakapacker_version: nil,
+  react_on_rails_version: nil,
+  dry_run: false
+}
+
+parser = OptionParser.new do |opts|
+  opts.banner = "Usage: bin/new-demo DEMO_NAME [options]"
+  opts.separator ""
+  opts.separator "Example: bin/new-demo react_on_rails-demo-v16-typescript-setup"
+  opts.separator ""
+  opts.separator "Options:"
+
+  opts.on("--dry-run", "Show commands that would be executed without running them") do
+    options[:dry_run] = true
+  end
+
+  opts.on("--shakapacker-version VERSION", "Shakapacker version") do |v|
+    options[:shakapacker_version] = v
+  end
+
+  opts.on("--react-on-rails-version VERSION", "React on Rails version") do |v|
+    options[:react_on_rails_version] = v
+  end
+
+  opts.on("-h", "--help", "Show this help message") do
+    puts opts
+    exit
+  end
+end
+
+begin
+  parser.parse!
+
+  if ARGV.empty?
+    puts parser
+    exit 1
+  end
+
+  demo_name = ARGV[0]
+
+  creator = DemoScripts::DemoCreator.new(
+    demo_name: demo_name,
+    **options
+  )
+
+  creator.create!
+rescue DemoScripts::Error => e
+  warn "Error: #{e.message}"
+  exit 1
+rescue OptionParser::InvalidOption => e
+  warn e.message
+  puts parser
+  exit 1
+end

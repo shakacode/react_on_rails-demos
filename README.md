@@ -49,19 +49,30 @@ Each demo follows the naming convention: `react_on_rails-demo-v[version]-[topics
 
 ### Create a New Demo
 
+Scripts are available in both Ruby (recommended) and Bash:
+
 ```bash
-# Simple demo creation
+# Simple demo creation (Ruby)
+bin/new-demo react_on_rails-demo-v16-your-feature
+
+# Or use bash script
 ./scripts/new-demo.sh react_on_rails-demo-v16-your-feature
 
-# Scaffold with advanced options
+# Scaffold with advanced options (Ruby)
+bin/scaffold-demo react_on_rails-demo-v16-your-feature --typescript --tailwind
+
+# Or bash version
 ./scripts/scaffold-demo.sh react_on_rails-demo-v16-your-feature --typescript --tailwind
 
 # Specify custom gem versions
-./scripts/new-demo.sh my-demo --shakapacker-version '~> 8.0' --react-on-rails-version '~> 16.0'
+bin/new-demo my-demo --shakapacker-version '~> 8.0' --react-on-rails-version '~> 16.0'
 
 # Preview commands without execution
-./scripts/new-demo.sh my-demo --dry-run
+bin/new-demo my-demo --dry-run
 ```
+
+**Ruby scripts** (in `bin/`) are fully tested and recommended for use.
+**Bash scripts** (in `scripts/`) are kept for compatibility.
 
 Default versions are configured in `.demo-versions`. Override with command-line flags.
 
