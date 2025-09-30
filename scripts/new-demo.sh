@@ -148,11 +148,6 @@ echo ""
 echo "🔗 Creating configuration symlinks..."
 run_cmd "cd '$DEMO_DIR' && ln -sf ../../packages/demo_common/config/.rubocop.yml .rubocop.yml"
 run_cmd "cd '$DEMO_DIR' && ln -sf ../../packages/demo_common/config/.eslintrc.js .eslintrc.js"
-if [ -f "packages/demo_common/bin/dev" ] || [ "$DRY_RUN" = true ]; then
-  run_cmd "cd '$DEMO_DIR' && rm -f bin/dev"
-  run_cmd "cd '$DEMO_DIR' && ln -sf ../../../packages/demo_common/bin/dev bin/dev"
-  run_cmd "cd '$DEMO_DIR' && chmod +x bin/dev"
-fi
 
 echo ""
 echo "📦 Installing Shakapacker..."

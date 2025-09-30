@@ -32,17 +32,7 @@ if [ -d "demos" ] && [ "$(ls -A demos 2>/dev/null)" ]; then
         echo "  Linking .prettierrc..."
         ln -sf ../../packages/demo_common/config/.prettierrc "$demo/.prettierrc"
       fi
-      
-      # Link bin/dev if it exists
-      if [ -f "packages/demo_common/bin/dev" ]; then
-        echo "  Linking bin/dev..."
-        if [ -f "$demo/bin/dev" ]; then
-          rm "$demo/bin/dev"
-        fi
-        ln -sf ../../../packages/demo_common/bin/dev "$demo/bin/dev"
-        chmod +x "$demo/bin/dev"
-      fi
-      
+
       # Update Gemfile to use demo_common if not already present
       if [ -f "$demo/Gemfile" ]; then
         if ! grep -q "demo_common" "$demo/Gemfile"; then
