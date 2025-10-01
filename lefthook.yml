@@ -1,42 +1,36 @@
-# EXAMPLE USAGE:
-#
-#   Refer for explanation to following link:
-#   https://lefthook.dev/configuration/
-#
-# pre-push:
-#   jobs:
-#     - name: packages audit
-#       tags:
-#         - frontend
-#         - security
-#       run: yarn audit
-#
-#     - name: gems audit
-#       tags:
-#         - backend
-#         - security
-#       run: bundle audit
-#
-# pre-commit:
-#   parallel: true
-#   jobs:
-#     - run: yarn eslint {staged_files}
-#       glob: "*.{js,ts,jsx,tsx}"
-#
-#     - name: rubocop
-#       glob: "*.rb"
-#       exclude:
-#         - config/application.rb
-#         - config/routes.rb
-#       run: bundle exec rubocop --force-exclusion {all_files}
-#
-#     - name: govet
-#       files: git ls-files -m
-#       glob: "*.go"
-#       run: go vet {files}
-#
-#     - script: "hello.js"
-#       runner: node
-#
-#     - script: "hello.go"
-#       runner: go run
+# Lefthook configuration for React on Rails Demos monorepo
+# https://github.com/evilmartians/lefthook
+
+pre-commit:
+  parallel: true
+  commands:
+    trailing-newline:
+      glob: '*.{rb,js,ts,jsx,tsx,yml,yaml,json,md,sh}'
+      run: |
+        for file in {staged_files}; do
+          if [ -f "$file" ]; then
+            # Check if file ends with newline
+            if [ -n "$(tail -c 1 "$file")" ]; then
+              echo "❌ Missing trailing newline: $file"
+              # Add trailing newline
+              echo "" >> "$file"
+              git add "$file"
+              echo "✅ Added trailing newline to: $file"
+            fi
+          fi
+        done
+
+    rubocop:
+      glob: '*.rb'
+      run: bundle exec rubocop --force-exclusion {staged_files}
+      stage_fixed: true
+
+commit-msg:
+  commands:
+    check-message:
+      run: |
+        # Ensure commit message is not empty
+        if ! grep -q '[^[:space:]]' {1}; then
+          echo "❌ Commit message cannot be empty"
+          exit 1
+        fi

@@ -1,0 +1,82 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'bundler/setup'
+require_relative '../lib/demo_scripts'
+require 'optparse'
+
+options = {
+  shakapacker_version: nil,
+  react_on_rails_version: nil,
+  rails_args: [],
+  react_on_rails_args: [],
+  dry_run: false
+}
+
+parser = OptionParser.new do |opts|
+  opts.banner = 'Usage: bin/new-demo DEMO_NAME [options]'
+  opts.separator ''
+  opts.separator 'Description:'
+  opts.separator '  Creates a new basic React on Rails demo application with PostgreSQL,'
+  opts.separator '  Shakapacker, and React on Rails pre-configured. Uses version defaults'
+  opts.separator '  from .new-demo-versions unless overridden.'
+  opts.separator ''
+  opts.separator 'Example: bin/new-demo react_on_rails-demo-v16-typescript-setup'
+  opts.separator ''
+  opts.separator 'Options:'
+
+  opts.on('--dry-run', 'Show commands that would be executed without running them') do
+    options[:dry_run] = true
+  end
+
+  opts.on('--shakapacker-version VERSION', 'Shakapacker version') do |v|
+    options[:shakapacker_version] = v
+  end
+
+  opts.on('--react-on-rails-version VERSION', 'React on Rails version') do |v|
+    options[:react_on_rails_version] = v
+  end
+
+  opts.on('--rails-args ARGS', 'Additional arguments to pass to rails new (comma-separated)') do |args|
+    options[:rails_args] = args.split(',').map(&:strip)
+  end
+
+  opts.on('--react-on-rails-args ARGS', 'Additional arguments to pass to react_on_rails:install (comma-separated)') do |args|
+    options[:react_on_rails_args] = args.split(',').map(&:strip)
+  end
+
+  opts.on('-h', '--help', 'Show this help message') do
+    puts opts
+    puts ''
+    puts 'Examples:'
+    puts '  bin/new-demo my-demo --rails-args="--skip-test,--api"'
+    puts '  bin/new-demo my-demo --react-on-rails-args="--redux,--node"'
+    puts '  bin/new-demo my-demo --rails-args="--skip-test" --react-on-rails-args="--redux"'
+    exit
+  end
+end
+
+begin
+  parser.parse!
+
+  if ARGV.empty?
+    puts parser
+    exit 1
+  end
+
+  demo_name = ARGV[0]
+
+  creator = DemoScripts::DemoCreator.new(
+    demo_name: demo_name,
+    **options
+  )
+
+  creator.create!
+rescue DemoScripts::Error => e
+  warn "Error: #{e.message}"
+  exit 1
+rescue OptionParser::InvalidOption => e
+  warn e.message
+  puts parser
+  exit 1
+end

@@ -1,0 +1,72 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'bundler/setup'
+require_relative '../lib/demo_scripts'
+require 'optparse'
+
+options = {
+  shakapacker_version: nil,
+  react_on_rails_version: nil,
+  demo_pattern: '*',
+  dry_run: false,
+  skip_tests: false
+}
+
+parser = OptionParser.new do |opts|
+  opts.banner = 'Usage: bin/update-all-demos [options]'
+  opts.separator ''
+  opts.separator 'Description:'
+  opts.separator '  Bulk updates React on Rails and/or Shakapacker versions across all'
+  opts.separator '  existing demos in the demos/ directory. Updates Gemfiles, runs bundle'
+  opts.separator '  install, optionally runs tests, and updates demo READMEs with new versions.'
+  opts.separator ''
+  opts.separator 'Example: bin/update-all-demos --react-on-rails-version "~> 16.1"'
+  opts.separator ''
+  opts.separator 'Options:'
+
+  opts.on('--react-on-rails-version VERSION', 'Update React on Rails to this version') do |v|
+    options[:react_on_rails_version] = v
+  end
+
+  opts.on('--shakapacker-version VERSION', 'Update Shakapacker to this version') do |v|
+    options[:shakapacker_version] = v
+  end
+
+  opts.on('--dry-run', 'Show what would be updated without making changes') do
+    options[:dry_run] = true
+  end
+
+  opts.on('--skip-tests', 'Skip running tests after updates') do
+    options[:skip_tests] = true
+  end
+
+  opts.on('--demos PATTERN', 'Only update demos matching pattern (glob)') do |pattern|
+    options[:demo_pattern] = pattern
+  end
+
+  opts.on('-h', '--help', 'Show this help message') do
+    puts opts
+    puts ''
+    puts 'Examples:'
+    puts "  bin/update-all-demos --react-on-rails-version '~> 16.1'"
+    puts "  bin/update-all-demos --shakapacker-version '~> 8.1' --react-on-rails-version '~> 16.1'"
+    puts "  bin/update-all-demos --react-on-rails-version '~> 16.1' --demos '*typescript*'"
+    puts "  bin/update-all-demos --react-on-rails-version '~> 16.1' --dry-run"
+    exit
+  end
+end
+
+begin
+  parser.parse!
+
+  updater = DemoScripts::DemoUpdater.new(**options)
+  updater.update!
+rescue DemoScripts::Error => e
+  warn "Error: #{e.message}"
+  exit 1
+rescue OptionParser::InvalidOption => e
+  warn e.message
+  puts parser
+  exit 1
+end

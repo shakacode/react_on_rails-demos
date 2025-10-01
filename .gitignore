@@ -1,28 +1,55 @@
-*.gem
-*.rbc
-.bundle
-.config
-.yardoc
-Gemfile.lock
-InstalledFiles
-_yardoc
-coverage
-doc/
-lib/bundler/man
-pkg
-rdoc
-spec/reports
-test/tmp
-test/version_tmp
-tmp
-*.bundle
-*.so
-*.o
-*.a
-mkmf.log
+# Dependencies
 node_modules/
-npm-debug.log*
-yarn-error.log*
-.DS_Store
+*.log
+.pnpm-debug.log*
+
+# Build outputs
+dist/
+build/
+tmp/
+coverage/
+
+# IDE
 .idea/
 .vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Ruby
+*.gem
+.bundle/
+vendor/bundle/
+.ruby-version
+.ruby-gemset
+
+# Rails
+/demos/*/log/*
+/demos/*/tmp/*
+!/demos/*/log/.keep
+!/demos/*/tmp/.keep
+/demos/*/storage/*
+!/demos/*/storage/.keep
+/demos/*/public/assets
+/demos/*/public/packs
+/demos/*/public/packs-test
+/demos/*/yarn-error.log
+
+# Testing
+/demos/*/coverage/
+/demos/*/test/reports/
+
+# Database
+/demos/*/db/*.sqlite3
+/demos/*/db/*.sqlite3-*
+
+# Ignore master key for decrypting credentials and more
+/demos/*/config/master.key
+/demos/*/config/credentials.yml.encpr_description.md
+commit_message.txt

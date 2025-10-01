@@ -1,0 +1,56 @@
+fix: address PR review comments - module rename, security fixes, and docs updates
+
+## Changes Made
+
+### Package Renaming (Breaking Change)
+- Renamed ReactOnRailsDemoCommon module to DemoCommon for consistency
+- Renamed lib files: react_on_rails_demo_common → demo_common
+- Updated all references throughout the codebase
+- Updated packages/demo_common/README.md with correct monorepo installation examples
+
+### Security Fixes
+- Added input validation to new-demo.sh to prevent path traversal attacks
+- Added input validation to scaffold-demo.sh to prevent path traversal attacks
+- Fixed variable expansion syntax error in scaffold-demo.sh (line 381)
+- Fixed subshell issue in test-all.sh that prevented FAILED_DEMOS tracking
+
+### Script Improvements
+- Added JavaScript dependency installation after Rails generators in new-demo.sh
+- Scripts now properly install npm/pnpm dependencies after shakapacker/react_on_rails installation
+- test-all.sh now uses pushd/popd instead of subshells for proper variable propagation
+
+### Documentation Updates
+- Added Gemfile.development_dependencies for shared development dependencies across demos
+- Updated VERSION_MANAGEMENT.md to reference new Ruby programs (bin/*) instead of bash scripts
+- Added cypress-playwright-on-rails reference to VERSION_MANAGEMENT.md
+- Documented eval_gemfile pattern for demo applications
+- Added note about git branch support as a future enhancement
+
+## Migration Guide for demo_common
+
+If you're using the old module name:
+
+**Before:**
+```ruby
+require 'react_on_rails_demo_common'
+ReactOnRailsDemoCommon.root
+```
+
+**After:**
+```ruby
+require 'demo_common'
+DemoCommon.root
+```
+
+Generator invocation also changes:
+```bash
+# Before
+rails generate react_on_rails_demo_common:install
+
+# After
+rails generate demo_common:install
+```
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>

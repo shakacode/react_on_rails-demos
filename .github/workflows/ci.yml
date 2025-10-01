@@ -1,0 +1,124 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  lint-demo-common:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/demo_common
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: true
+          working-directory: packages/demo_common
+      - name: Run RuboCop
+        run: bundle exec rubocop
+
+  test-demo-common:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/demo_common
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: true
+          working-directory: packages/demo_common
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: packages/demo_common/package-lock.json
+      - name: Install npm dependencies
+        run: npm ci
+      - name: Run tests
+        run: bundle exec rake spec
+
+  lint-javascript-demo-common:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/demo_common
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: packages/demo_common/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Run ESLint
+        run: npm run lint
+        continue-on-error: true # Allow to continue if lint script doesn't exist
+      - name: Check Prettier formatting
+        run: npm run format:check
+        continue-on-error: true # Allow to continue if format script doesn't exist
+
+  # Matrix build for demos when they are added
+  test-demos:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        demo: [] # Will be populated as demos are added
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch full history for proper diff
+      - name: Fetch PR base ref
+        run: |
+          git fetch origin "${{ github.base_ref }}"
+      - name: Detect changed demos
+        id: changed-demos
+        run: |
+          if [ -d "demos" ] && [ -n "$(ls -A demos 2>/dev/null)" ]; then
+            CHANGED=$(git diff --name-only "origin/${{ github.base_ref }}"...HEAD | grep '^demos/' | cut -d/ -f2 | sort -u | head -5)
+            if [ -n "${CHANGED}" ]; then
+              echo "demos=${CHANGED}" >> "${GITHUB_OUTPUT}"
+            fi
+          fi
+      - name: Set up Ruby
+        if: steps.changed-demos.outputs.demos
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+      - name: Set up Node
+        if: steps.changed-demos.outputs.demos
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run demo tests
+        if: steps.changed-demos.outputs.demos
+        run: |
+          for demo in ${{ steps.changed-demos.outputs.demos }}; do
+            if [ -d "demos/${demo}" ]; then
+              echo "Testing ${demo}..."
+              cd "demos/${demo}"
+              if [ -f "Gemfile" ]; then
+                bundle install
+              fi
+              if [ -f "package.json" ]; then
+                npm ci
+              fi
+              if [ -f "bin/rails" ] && [ -d "spec" ]; then
+                bundle exec rspec
+              fi
+              cd ../..
+            fi
+          done

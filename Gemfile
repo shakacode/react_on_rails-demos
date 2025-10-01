@@ -1,6 +1,12 @@
 # frozen_string_literal: true
 
-source "https://rubygems.org"
+source 'https://rubygems.org'
 
-# Specify your gem's dependencies in react_on_rails_demo_common.gemspec
-gemspec
+ruby '>= 3.0'
+
+# Development dependencies
+gem 'lefthook', '~> 1.5'
+gem 'rspec', '~> 3.12'
+gem 'rubocop', '~> 1.69'
+gem 'rubocop-performance', '~> 1.23'
+gem 'rubocop-rspec', '~> 3.2'

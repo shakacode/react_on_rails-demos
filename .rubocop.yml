@@ -1,0 +1,71 @@
+# RuboCop configuration for React on Rails Demos monorepo
+
+plugins:
+  - rubocop-performance
+
+AllCops:
+  NewCops: enable
+  SuggestExtensions: false
+  TargetRubyVersion: 3.0
+  Exclude:
+    - 'node_modules/**/*'
+    - 'demos/**/node_modules/**/*'
+    - 'demos/**/tmp/**/*'
+    - 'demos/**/vendor/**/*'
+    - 'packages/shakacode_demo_common/node_modules/**/*'
+    - 'bin/**/*'
+    - 'scripts/**/*'
+
+# Allow longer blocks in specs and Rakefiles
+Metrics/BlockLength:
+  Exclude:
+    - 'spec/**/*_spec.rb'
+    - '**/*Rakefile'
+    - 'Rakefile'
+    - '**/Rakefile'
+    - 'packages/shakacode_demo_common/lib/tasks/**/*.rake'
+
+# Allow longer methods in demo creation (complex setup)
+Metrics/MethodLength:
+  Max: 20
+  Exclude:
+    - 'lib/demo_scripts/demo_creator.rb'
+    - 'lib/demo_scripts/demo_scaffolder.rb'
+
+# Allow longer classes for demo creators (lots of setup code)
+Metrics/ClassLength:
+  Max: 300
+
+# Allow more complex methods for demo scaffolding
+Metrics/AbcSize:
+  Max: 25
+
+Metrics/CyclomaticComplexity:
+  Max: 10
+
+Metrics/PerceivedComplexity:
+  Max: 12
+
+# Allow more parameters for demo scaffolder (lots of options)
+Metrics/ParameterLists:
+  Max: 13
+
+# Prefer single quotes
+Style/StringLiterals:
+  EnforcedStyle: single_quotes
+
+# Prefer compact style for empty methods
+Style/EmptyMethod:
+  EnforcedStyle: compact
+
+# Allow both styles for numeric literals
+Style/NumericLiterals:
+  Enabled: false
+
+# Documentation is good but not required for internal tools
+Style/Documentation:
+  Enabled: false
+
+# Allow development dependencies in gemspec for legacy compatibility
+Gemspec/DevelopmentDependencies:
+  Enabled: false

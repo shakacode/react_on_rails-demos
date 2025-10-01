@@ -1,135 +1,205 @@
-# React on Rails Demo Common
+# React on Rails Demos
 
-Shared configurations and utilities for React on Rails demo applications.
+A monorepo containing demo applications showcasing various features and best practices for [React on Rails](https://github.com/shakacode/react_on_rails).
 
-## Features
+## Repository Structure
 
-- 🎨 **Linting**: RuboCop for Ruby, ESLint for JavaScript/TypeScript
-- 💅 **Formatting**: Prettier for consistent code style
-- 🪝 **Git Hooks**: Lefthook for pre-commit and pre-push checks
-- 🧪 **Testing**: Shared test utilities for Playwright
-- 🚀 **Deployment**: Rake tasks for Control Plane deployment
-- 🔧 **CI/CD**: GitHub Actions workflow templates
-
-## Installation
-
-### In your React on Rails demo app:
-
-1. Add to your `Gemfile`:
-```ruby
-gem 'react_on_rails_demo_common', github: 'shakacode/react_on_rails_demo_common'
+```
+react_on_rails-demos/
+├─ packages/
+│  └─ shakacode_demo_common/          # Shared configuration and utilities
+│     ├─ Gemfile           # Shared Ruby dependencies
+│     ├─ package.json       # Shared JavaScript dependencies
+│     ├─ config/            # Shared linting configs
+│     └─ lib/               # Ruby utilities and templates
+└─ demos/
+   ├─ react_on_rails-demo-v16-ssr-auto-registration-bundle-splitting/
+   ├─ react_on_rails-demo-v16-react-server-components/
+   └─ ...                   # Additional demo applications
 ```
 
-2. Add to your `package.json`:
-```json
-"devDependencies": {
-  "@shakacode/react-on-rails-demo-common": "github:shakacode/react_on_rails_demo_common"
-}
-```
+## Demo Applications
 
-3. Run the installation generator:
+Each demo follows the naming convention: `react_on_rails-demo-v[version]-[topics]`
+
+### Available Demos
+
+_(Demos will be listed here as they are added)_
+
+## Getting Started
+
+### Prerequisites
+
+- Ruby 3.3+
+- Node.js 20+
+- PostgreSQL
+- pnpm (recommended) or npm/yarn
+
+### Initial Setup
+
 ```bash
+# Install Ruby dependencies
 bundle install
+
+# Install Node dependencies (for Prettier and other tools)
 npm install
-rails generate react_on_rails_demo_common:install
+
+# Install git hooks (recommended)
+lefthook install
 ```
 
-## What Gets Installed
+This installs pre-commit hooks that:
 
-### Configuration Files
-- `.rubocop.yml` - Ruby linting rules
-- `.eslintrc.js` - JavaScript/TypeScript linting rules
-- `.prettierrc.js` - Code formatting rules
-- `lefthook.yml` - Git hooks configuration
-- `.commitlintrc.js` - Commit message linting
+- Ensure all files end with a newline
+- Run RuboCop on staged Ruby files
+- Validate commit messages
 
-### NPM Scripts
-- `lint` - Run ESLint
-- `lint:fix` - Auto-fix ESLint issues
-- `format` - Format code with Prettier
-- `format:check` - Check formatting without changing files
+**Code Formatting:**
 
-### Rake Tasks
-- `demo_common:all` - Run all linters and tests
-- `demo_common:setup` - Set up development environment
-- `demo_common:deploy[environment]` - Deploy to Control Plane
-- `demo_common:rebuild` - Clean and rebuild everything
-
-### Git Hooks (via Lefthook)
-- **Pre-commit**: RuboCop, ESLint, Prettier
-- **Pre-push**: Full test suite, bundle audit
-- **Commit-msg**: Conventional commit format
-
-## Customization
-
-You can override any configuration by editing the generated files:
-
-### RuboCop
-```yaml
-# .rubocop.yml
-inherit_from:
-  - node_modules/@shakacode/react-on-rails-demo-common/config/rubocop.yml
-
-# Your overrides
-Style/StringLiterals:
-  EnforcedStyle: single_quotes
-```
-
-### ESLint
-```javascript
-// .eslintrc.js
-const baseConfig = require('@shakacode/react-on-rails-demo-common/configs/eslint.config.js');
-
-module.exports = {
-  ...baseConfig,
-  rules: {
-    ...baseConfig.rules,
-    // Your overrides
-    'no-console': 'off',
-  },
-};
-```
-
-## Usage
-
-### Running Checks Locally
 ```bash
-# Run everything
-bundle exec rake demo_common:all
+# Format all files with Prettier
+npm run format
 
-# Run individually
-bundle exec rubocop
-npm run lint
+# Check formatting without making changes
 npm run format:check
 ```
 
-### Skipping Git Hooks
+See [Development Setup](./docs/CONTRIBUTING_SETUP.md) for details.
+
+### Bootstrap All Demos
+
 ```bash
-# Skip pre-commit hooks
-git commit --no-verify
-
-# Skip specific hooks
-LEFTHOOK_EXCLUDE=rubocop,eslint git commit
+./scripts/bootstrap-all.sh
 ```
 
-## Testing Utilities
+### Run Tests Across All Demos
 
-### Playwright
-```javascript
-import { waitForReactOnRails, getReactProps } from '@shakacode/react-on-rails-demo-common/playwright/helpers';
-
-await waitForReactOnRails(page);
-const props = await getReactProps(page, 'HelloWorld');
+```bash
+./scripts/test-all.sh
 ```
+
+### Create a New Demo
+
+Three commands are available for managing demos:
+
+#### 1. `bin/new-demo` - Create Basic Demo
+
+Creates a new React on Rails demo with PostgreSQL, Shakapacker, and React on Rails pre-configured.
+
+```bash
+# Basic usage (uses .new-demo-versions defaults)
+bin/new-demo react_on_rails-demo-v16-your-feature
+
+# With custom versions
+bin/new-demo my-demo \
+  --shakapacker-version '~> 8.0' \
+  --react-on-rails-version '~> 16.1'
+
+# With custom Rails/generator arguments
+bin/new-demo my-demo \
+  --rails-args="--skip-test,--api" \
+  --react-on-rails-args="--redux,--node"
+
+# Preview commands without execution
+bin/new-demo my-demo --dry-run
+
+# Show help
+bin/new-demo --help
+```
+
+#### 2. `bin/scaffold-demo` - Create Advanced Demo
+
+Creates an advanced demo with scaffolding, example components, and optional integrations.
+
+```bash
+# Basic scaffolding
+bin/scaffold-demo react_on_rails-demo-v16-advanced
+
+# With TypeScript and Tailwind
+bin/scaffold-demo my-demo --typescript --tailwind
+
+# With Material-UI
+bin/scaffold-demo my-demo --mui
+
+# Skip database setup
+bin/scaffold-demo my-demo --skip-db
+
+# Show help
+bin/scaffold-demo --help
+```
+
+#### 3. `bin/update-all-demos` - Bulk Update Versions
+
+Updates React on Rails and/or Shakapacker versions across all existing demos.
+
+```bash
+# Update React on Rails across all demos
+bin/update-all-demos --react-on-rails-version '~> 16.1'
+
+# Update both gems
+bin/update-all-demos \
+  --react-on-rails-version '~> 16.1' \
+  --shakapacker-version '~> 8.1'
+
+# Preview without making changes
+bin/update-all-demos --react-on-rails-version '~> 16.1' --dry-run
+
+# Update specific demos only
+bin/update-all-demos --demos "demo-v16-*" --react-on-rails-version '~> 16.1'
+
+# Show help
+bin/update-all-demos --help
+```
+
+**Note:** Ruby scripts (in `bin/`) are fully tested and recommended. Bash scripts (in `scripts/`) are kept for compatibility.
+
+Default versions are configured in `.new-demo-versions`. Override with command-line flags.
+
+## Version Configuration
+
+Demo creation scripts use default versions for Shakapacker and React on Rails, configured in `.new-demo-versions`:
+
+```bash
+SHAKAPACKER_VERSION="~> 8.0"
+REACT_ON_RAILS_VERSION="~> 16.0"
+```
+
+**Override versions per demo:**
+
+- Use `--shakapacker-version` and `--react-on-rails-version` flags
+- Supports version constraints (`~> 8.0`) or exact versions (`8.0.0`)
+- Example: `./scripts/new-demo.sh my-demo --react-on-rails-version '16.1.0'`
+
+## Shared Configuration
+
+All demos share common configuration files from `packages/shakacode_demo_common/`:
+
+- **RuboCop** configuration for Ruby code style
+- **ESLint** configuration for JavaScript/TypeScript
+- Common Ruby gems and npm packages
 
 ## Contributing
 
-1. Fork it
-2. Create your feature branch (`git checkout -b my-new-feature`)
-3. Commit your changes (`git commit -am 'Add some feature'`)
-4. Push to the branch (`git push origin my-new-feature`)
-5. Create new Pull Request
+Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines on contributing to this repository.
+
+## Documentation
+
+- [React on Rails Documentation](https://www.shakacode.com/react-on-rails/docs/)
+- [React on Rails GitHub](https://github.com/shakacode/react_on_rails)
+- [ShakaCode Blog](https://blog.shakacode.com)
 
 ## License
 
-MIT
+Each demo may have its own license. See the individual demo directories for details.
+
+## Support
+
+For questions about React on Rails, please:
+
+- Open an issue on the [React on Rails repository](https://github.com/shakacode/react_on_rails/issues)
+- Join the [ShakaCode Slack](https://www.shakacode.com/slack-invite)
+- Contact [ShakaCode](https://www.shakacode.com) for professional support
+
+## About ShakaCode
+
+This repository is maintained by [ShakaCode](https://www.shakacode.com), the creators of React on Rails.

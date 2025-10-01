@@ -1,45 +1,13 @@
 {
-  "name": "@shakacode/react-on-rails-demo-common",
-  "version": "0.1.0",
-  "description": "Common JavaScript/TypeScript configurations for React on Rails demos",
-  "main": "index.js",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/shakacode/react-on-rails-demo-common.git"
-  },
-  "keywords": [
-    "react",
-    "rails",
-    "react-on-rails",
-    "configuration",
-    "eslint",
-    "prettier",
-    "testing"
-  ],
-  "author": "Justin Gordon <justin@shakacode.com>",
-  "license": "MIT",
-  "files": [
-    "configs/",
-    "playwright/",
-    "index.js"
-  ],
-  "dependencies": {
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0",
-    "eslint": "^8.44.0",
-    "eslint-config-prettier": "^9.0.0",
-    "eslint-plugin-import": "^2.27.5",
-    "eslint-plugin-jsx-a11y": "^6.7.1",
-    "eslint-plugin-react": "^7.32.2",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "prettier": "^3.0.0"
-  },
-  "peerDependencies": {
-    "playwright": "^1.35.0"
+  "name": "react-on-rails-demos-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Monorepo for React on Rails demo applications",
+  "scripts": {
+    "format": "prettier --write '**/*.{js,json,md,yml,yaml}'",
+    "format:check": "prettier --check '**/*.{js,json,md,yml,yaml}'"
   },
   "devDependencies": {
-    "@commitlint/cli": "^19.8.1",
-    "@commitlint/config-conventional": "^19.8.1",
-    "lefthook": "^1.13.4"
+    "prettier": "^3.0.0"
   }
 }
