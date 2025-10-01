@@ -17,7 +17,7 @@ For related testing tools, see [cypress-playwright-on-rails](https://github.com/
 
 Demos can use gem versions from two sources:
 
-1. **Global defaults** in `.demo-versions` (repository root)
+1. **Global defaults** in `.new-demo-versions` (repository root)
 2. **Demo-specific overrides** in each demo's `Gemfile`
 
 The workflow supports:
@@ -31,7 +31,7 @@ The workflow supports:
 
 ### Using Global Defaults
 
-When you create a demo without version flags, it uses versions from `.demo-versions`:
+When you create a demo without version flags, it uses versions from `.new-demo-versions`:
 
 ```bash
 bin/new-demo react_on_rails-demo-v16-ssr
@@ -39,8 +39,8 @@ bin/new-demo react_on_rails-demo-v16-ssr
 
 This will use:
 
-- `SHAKAPACKER_VERSION` from `.demo-versions`
-- `REACT_ON_RAILS_VERSION` from `.demo-versions`
+- `SHAKAPACKER_VERSION` from `.new-demo-versions`
+- `REACT_ON_RAILS_VERSION` from `.new-demo-versions`
 
 The versions are locked in the demo's `Gemfile` at creation time.
 
@@ -106,13 +106,13 @@ The `Gemfile.development_dependencies` file at the repository root contains shar
 
 ### 2. Global Defaults (Reference Only)
 
-After creation, `.demo-versions` serves as:
+After creation, `.new-demo-versions` serves as:
 
 - Default for **new** demos
 - Reference for what **should** be standard
 - Guide for bulk updates
 
-**Important**: Changing `.demo-versions` does NOT affect existing demos.
+**Important**: Changing `.new-demo-versions` does NOT affect existing demos.
 
 ## Updating Demo Versions
 
@@ -253,8 +253,8 @@ When releasing a new version and wanting to update all demos:
 #### 1. Update Global Defaults
 
 ```bash
-# Edit .demo-versions
-cat > .demo-versions << 'EOF'
+# Edit .new-demo-versions
+cat > .new-demo-versions << 'EOF'
 # Default versions for React on Rails demo creation
 SHAKAPACKER_VERSION="~> 8.1"
 REACT_ON_RAILS_VERSION="~> 16.1"
@@ -388,7 +388,7 @@ gem "shakapacker", "~> 8.0"
 
 ### For Release Management
 
-1. ✅ Update `.demo-versions` when releasing
+1. ✅ Update `.new-demo-versions` when releasing
 2. ✅ Bulk update demos to new stable versions
 3. ✅ Test all demos after bulk updates
 4. ✅ Commit demos individually or by feature group
@@ -444,7 +444,7 @@ bundle install
 ### Example 1: Standard Demo Creation
 
 ```bash
-# Uses global defaults from .demo-versions
+# Uses global defaults from .new-demo-versions
 bin/new-demo react_on_rails-demo-v16-standard
 ```
 
@@ -473,7 +473,7 @@ git commit -am "chore: upgrade to stable 16.1"
 
 ```bash
 # 1. Update global defaults
-vim .demo-versions  # Change to 16.1
+vim .new-demo-versions  # Change to 16.1
 
 # 2. Update each demo
 for demo in demos/react_on_rails-demo-*/; do
@@ -485,7 +485,7 @@ for demo in demos/react_on_rails-demo-*/; do
 done
 
 # 3. Commit changes
-git add .demo-versions demos/*/Gemfile demos/*/Gemfile.lock
+git add .new-demo-versions demos/*/Gemfile demos/*/Gemfile.lock
 git commit -m "chore: update all demos to React on Rails 16.1"
 ```
 
@@ -518,10 +518,10 @@ git commit -m "feat: create edge testing demo"
 
 ## Summary
 
-- **New demos**: Use `.demo-versions` defaults or override with flags
+- **New demos**: Use `.new-demo-versions` defaults or override with flags
 - **Existing demos**: Update `Gemfile` directly, test, commit
 - **Beta testing**: Create dedicated demos, document clearly, upgrade when stable
-- **Bulk updates**: Update `.demo-versions`, then update each demo's `Gemfile`
+- **Bulk updates**: Update `.new-demo-versions`, then update each demo's `Gemfile`
 - **Version precedence**: Demo's `Gemfile` > Global defaults
 
 This workflow ensures consistent version management while allowing flexibility for testing and development.

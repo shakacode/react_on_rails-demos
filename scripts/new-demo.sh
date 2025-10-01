@@ -5,7 +5,7 @@ set -euo pipefail
 
 # Load default versions from config file
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-VERSION_FILE="$SCRIPT_DIR/../.demo-versions"
+VERSION_FILE="$SCRIPT_DIR/../.new-demo-versions"
 
 # Default versions (fallback if config file doesn't exist)
 SHAKAPACKER_VERSION="~> 8.0"

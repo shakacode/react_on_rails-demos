@@ -9,7 +9,7 @@ module DemoScripts
     attr_reader :shakapacker_version, :react_on_rails_version
 
     def initialize(config_file: nil, shakapacker_version: nil, react_on_rails_version: nil)
-      @config_file = config_file || File.join(Dir.pwd, '.demo-versions')
+      @config_file = config_file || File.join(Dir.pwd, '.new-demo-versions')
       load_config if File.exist?(@config_file)
 
       @shakapacker_version = shakapacker_version || @shakapacker_version || DEFAULT_SHAKAPACKER_VERSION
@@ -19,7 +19,7 @@ module DemoScripts
     private
 
     def load_config
-      File.readlines(@config_file).each do |line|
+      File.readlines(@config_file, encoding: 'UTF-8').each do |line|
         next if line.strip.empty? || line.strip.start_with?('#')
 
         if line =~ /^SHAKAPACKER_VERSION\s*=\s*["'](.+)["']/

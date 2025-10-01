@@ -28,7 +28,7 @@ RSpec.describe DemoScripts::Config do
     context 'with a valid config file' do
       it 'loads versions from the config file' do
         Dir.mktmpdir do |dir|
-          config_file = File.join(dir, '.demo-versions')
+          config_file = File.join(dir, '.new-demo-versions')
           File.write(config_file, <<~CONFIG)
             SHAKAPACKER_VERSION="~> 8.1"
             REACT_ON_RAILS_VERSION="~> 16.1"
@@ -43,7 +43,7 @@ RSpec.describe DemoScripts::Config do
 
       it 'ignores comments and empty lines' do
         Dir.mktmpdir do |dir|
-          config_file = File.join(dir, '.demo-versions')
+          config_file = File.join(dir, '.new-demo-versions')
           File.write(config_file, <<~CONFIG)
             # This is a comment
             SHAKAPACKER_VERSION="~> 8.1"
@@ -61,7 +61,7 @@ RSpec.describe DemoScripts::Config do
 
       it 'custom versions override config file values' do
         Dir.mktmpdir do |dir|
-          config_file = File.join(dir, '.demo-versions')
+          config_file = File.join(dir, '.new-demo-versions')
           File.write(config_file, <<~CONFIG)
             SHAKAPACKER_VERSION="~> 8.1"
             REACT_ON_RAILS_VERSION="~> 16.1"

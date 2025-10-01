@@ -87,7 +87,7 @@ Three commands are available for managing demos:
 Creates a new React on Rails demo with PostgreSQL, Shakapacker, and React on Rails pre-configured.
 
 ```bash
-# Basic usage (uses .demo-versions defaults)
+# Basic usage (uses .new-demo-versions defaults)
 bin/new-demo react_on_rails-demo-v16-your-feature
 
 # With custom versions
@@ -153,11 +153,11 @@ bin/update-all-demos --help
 
 **Note:** Ruby scripts (in `bin/`) are fully tested and recommended. Bash scripts (in `scripts/`) are kept for compatibility.
 
-Default versions are configured in `.demo-versions`. Override with command-line flags.
+Default versions are configured in `.new-demo-versions`. Override with command-line flags.
 
 ## Version Configuration
 
-Demo creation scripts use default versions for Shakapacker and React on Rails, configured in `.demo-versions`:
+Demo creation scripts use default versions for Shakapacker and React on Rails, configured in `.new-demo-versions`:
 
 ```bash
 SHAKAPACKER_VERSION="~> 8.0"
