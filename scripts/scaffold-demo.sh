@@ -390,7 +390,7 @@ This demo uses:
 - **React on Rails**: \`$REACT_ON_RAILS_VERSION\`
 - **Shakapacker**: \`$SHAKAPACKER_VERSION\`
 
-Created: \$CURRENT_DATE
+Created: $CURRENT_DATE
 
 > **Note**: To update versions, see [Version Management](../../docs/VERSION_MANAGEMENT.md)
 
