@@ -179,7 +179,7 @@ else
   cat >> "$DEMO_DIR/Gemfile" << 'EOF'
 
 # Shared demo configuration and utilities
-gem "demo_common", path: "../../packages/demo_common"
+gem "shakacode-demo-common", path: "../../packages/demo_common"
 EOF
 fi
 

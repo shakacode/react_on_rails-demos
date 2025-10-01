@@ -18,7 +18,7 @@ Shared configurations and utilities for React on Rails demo applications.
 1. Add to your `Gemfile`:
 
 ```ruby
-gem 'demo_common', path: '../../packages/demo_common'
+gem 'shakacode-demo-common', path: '../../packages/demo_common'
 ```
 
 2. Add to your `package.json`:
@@ -42,7 +42,7 @@ rails generate demo_common:install
 1. Add to your `Gemfile`:
 
 ```ruby
-gem 'demo_common', github: 'shakacode/react_on_rails-demos', glob: 'packages/demo_common/*.gemspec'
+gem 'shakacode-demo-common', github: 'shakacode/react_on_rails-demos', glob: 'packages/demo_common/*.gemspec'
 ```
 
 2. Add to your `package.json`:

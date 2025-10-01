@@ -3,7 +3,7 @@
 require_relative 'lib/demo_common/version'
 
 Gem::Specification.new do |spec|
-  spec.name        = 'demo_common'
+  spec.name        = 'shakacode-demo-common'
   spec.version     = DemoCommon::VERSION
   spec.authors     = ['Justin Gordon']
   spec.email       = ['justin@shakacode.com']

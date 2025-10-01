@@ -39,7 +39,7 @@ if [ -d "demos" ] && [ "$(ls -A demos 2>/dev/null)" ]; then
           echo "  Adding demo_common to Gemfile..."
           echo '' >> "$demo/Gemfile"
           echo '# Shared demo configuration and utilities' >> "$demo/Gemfile"
-          echo 'gem "demo_common", path: "../../packages/demo_common"' >> "$demo/Gemfile"
+          echo 'gem "shakacode-demo-common", path: "../../packages/demo_common"' >> "$demo/Gemfile"
         fi
       fi
     fi

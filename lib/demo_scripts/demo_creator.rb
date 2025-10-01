@@ -96,15 +96,15 @@ module DemoScripts
 
     def add_demo_common
       puts ''
-      puts '📦 Adding demo_common gem...'
+      puts '📦 Adding shakacode-demo-common gem...'
 
       if @dry_run
-        puts "[DRY-RUN] Append demo_common gem to #{@demo_dir}/Gemfile"
+        puts "[DRY-RUN] Append shakacode-demo-common gem to #{@demo_dir}/Gemfile"
       else
         File.open(File.join(@demo_dir, 'Gemfile'), 'a') do |f|
           f.puts ''
           f.puts '# Shared demo configuration and utilities'
-          f.puts 'gem "demo_common", path: "../../packages/demo_common"'
+          f.puts 'gem "shakacode-demo-common", path: "../../packages/demo_common"'
         end
       end
 
