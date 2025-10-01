@@ -42,6 +42,7 @@ rake release[1.2.0,true]
 ```
 
 The rake task will:
+
 1. Check for uncommitted changes
 2. Update version in `lib/react_on_rails_demo_common/version.rb`
 3. Update version in `package.json` (converting Ruby version format to npm format)

@@ -1,0 +1,13 @@
+{
+  "name": "react-on-rails-demos-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Monorepo for React on Rails demo applications",
+  "scripts": {
+    "format": "prettier --write '**/*.{js,json,md,yml,yaml}'",
+    "format:check": "prettier --check '**/*.{js,json,md,yml,yaml}'"
+  },
+  "devDependencies": {
+    "prettier": "^3.0.0"
+  }
+}

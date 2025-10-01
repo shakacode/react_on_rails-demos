@@ -16,11 +16,13 @@ Shared configurations and utilities for React on Rails demo applications.
 ### In a demo app within this monorepo:
 
 1. Add to your `Gemfile`:
+
 ```ruby
 gem 'demo_common', path: '../../packages/demo_common'
 ```
 
 2. Add to your `package.json`:
+
 ```json
 "devDependencies": {
   "@shakacode/react-on-rails-demo-common": "file:../../packages/demo_common"
@@ -28,6 +30,7 @@ gem 'demo_common', path: '../../packages/demo_common'
 ```
 
 3. Run the installation generator:
+
 ```bash
 bundle install
 npm install
@@ -37,11 +40,13 @@ rails generate demo_common:install
 ### From GitHub (outside the monorepo):
 
 1. Add to your `Gemfile`:
+
 ```ruby
 gem 'demo_common', github: 'shakacode/react_on_rails-demos', glob: 'packages/demo_common/*.gemspec'
 ```
 
 2. Add to your `package.json`:
+
 ```json
 "devDependencies": {
   "@shakacode/react-on-rails-demo-common": "github:shakacode/react_on_rails-demos#main"
@@ -51,6 +56,7 @@ gem 'demo_common', github: 'shakacode/react_on_rails-demos', glob: 'packages/dem
 ## What Gets Installed
 
 ### Configuration Files
+
 - `.rubocop.yml` - Ruby linting rules
 - `.eslintrc.js` - JavaScript/TypeScript linting rules
 - `.prettierrc.js` - Code formatting rules
@@ -58,18 +64,21 @@ gem 'demo_common', github: 'shakacode/react_on_rails-demos', glob: 'packages/dem
 - `.commitlintrc.js` - Commit message linting
 
 ### NPM Scripts
+
 - `lint` - Run ESLint
 - `lint:fix` - Auto-fix ESLint issues
 - `format` - Format code with Prettier
 - `format:check` - Check formatting without changing files
 
 ### Rake Tasks
+
 - `demo_common:all` - Run all linters and tests
 - `demo_common:setup` - Set up development environment
 - `demo_common:deploy[environment]` - Deploy to Control Plane
 - `demo_common:rebuild` - Clean and rebuild everything
 
 ### Git Hooks (via Lefthook)
+
 - **Pre-commit**: RuboCop, ESLint, Prettier
 - **Pre-push**: Full test suite, bundle audit
 - **Commit-msg**: Conventional commit format
@@ -79,6 +88,7 @@ gem 'demo_common', github: 'shakacode/react_on_rails-demos', glob: 'packages/dem
 You can override any configuration by editing the generated files:
 
 ### RuboCop
+
 ```yaml
 # .rubocop.yml
 inherit_from:
@@ -90,6 +100,7 @@ Style/StringLiterals:
 ```
 
 ### ESLint
+
 ```javascript
 // .eslintrc.js
 const baseConfig = require('@shakacode/react-on-rails-demo-common/configs/eslint.config.js');
@@ -107,6 +118,7 @@ module.exports = {
 ## Usage
 
 ### Running Checks Locally
+
 ```bash
 # Run everything
 bundle exec rake demo_common:all
@@ -118,6 +130,7 @@ npm run format:check
 ```
 
 ### Skipping Git Hooks
+
 ```bash
 # Skip pre-commit hooks
 git commit --no-verify
@@ -129,8 +142,12 @@ LEFTHOOK_EXCLUDE=rubocop,eslint git commit
 ## Testing Utilities
 
 ### Playwright
+
 ```javascript
-import { waitForReactOnRails, getReactProps } from '@shakacode/react-on-rails-demo-common/playwright/helpers';
+import {
+  waitForReactOnRails,
+  getReactProps,
+} from '@shakacode/react-on-rails-demo-common/playwright/helpers';
 
 await waitForReactOnRails(page);
 const props = await getReactProps(page, 'HelloWorld');

@@ -56,11 +56,13 @@ bin/dev
 ### Testing
 
 Run tests for all demos:
+
 ```bash
 ./scripts/test-all.sh
 ```
 
 Run tests for a specific demo:
+
 ```bash
 cd demos/react_on_rails-demo-v16-[feature-name]
 bundle exec rspec
@@ -71,11 +73,13 @@ bundle exec rspec
 All demos share common linting configurations:
 
 ### Ruby Code
+
 ```bash
 bundle exec rubocop
 ```
 
 ### JavaScript/TypeScript Code
+
 ```bash
 pnpm run lint
 ```
@@ -87,6 +91,7 @@ pnpm run lint
 - Reference issues in commit messages where applicable
 
 Example:
+
 ```
 feat: add TypeScript support to v16 demo
 
@@ -108,6 +113,7 @@ Fixes #123
 ### PR Title Format
 
 Use descriptive titles that explain what the PR does:
+
 - `feat: add React Server Components demo`
 - `fix: correct webpack configuration in SSR demo`
 - `docs: update setup instructions for demos`

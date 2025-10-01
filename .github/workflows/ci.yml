@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
 
 jobs:
   lint-demo-common:
@@ -64,10 +64,10 @@ jobs:
         run: npm ci
       - name: Run ESLint
         run: npm run lint
-        continue-on-error: true  # Allow to continue if lint script doesn't exist
+        continue-on-error: true # Allow to continue if lint script doesn't exist
       - name: Check Prettier formatting
         run: npm run format:check
-        continue-on-error: true  # Allow to continue if format script doesn't exist
+        continue-on-error: true # Allow to continue if format script doesn't exist
 
   # Matrix build for demos when they are added
   test-demos:
@@ -75,12 +75,12 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        demo: []  # Will be populated as demos are added
+        demo: [] # Will be populated as demos are added
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Fetch full history for proper diff
+          fetch-depth: 0 # Fetch full history for proper diff
       - name: Fetch PR base ref
         run: |
           git fetch origin "${{ github.base_ref }}"

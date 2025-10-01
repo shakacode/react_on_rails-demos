@@ -16,10 +16,12 @@ For related testing tools, see [cypress-playwright-on-rails](https://github.com/
 ## Overview
 
 Demos can use gem versions from two sources:
+
 1. **Global defaults** in `.demo-versions` (repository root)
 2. **Demo-specific overrides** in each demo's `Gemfile`
 
 The workflow supports:
+
 - Consistent versioning across demos
 - Individual demo customization
 - Beta/RC version testing
@@ -36,6 +38,7 @@ bin/new-demo react_on_rails-demo-v16-ssr
 ```
 
 This will use:
+
 - `SHAKAPACKER_VERSION` from `.demo-versions`
 - `REACT_ON_RAILS_VERSION` from `.demo-versions`
 
@@ -104,6 +107,7 @@ The `Gemfile.development_dependencies` file at the repository root contains shar
 ### 2. Global Defaults (Reference Only)
 
 After creation, `.demo-versions` serves as:
+
 - Default for **new** demos
 - Reference for what **should** be standard
 - Guide for bulk updates
@@ -180,11 +184,14 @@ Add to the demo's `README.md`:
 This demo uses React on Rails `16.0.0.beta.1` for testing purposes.
 
 ## Current Versions
+
 - React on Rails: `16.0.0.beta.1`
 - Shakapacker: `~> 8.0`
 
 ## Purpose
+
 Testing beta features before stable release:
+
 - [ ] New SSR improvements
 - [ ] TypeScript enhancements
 - [ ] Performance optimizations
@@ -334,6 +341,7 @@ Each demo's README should track its gem versions:
 ## Gem Versions
 
 This demo uses:
+
 - **React on Rails**: `~> 16.0`
 - **Shakapacker**: `~> 8.0`
 - **Rails**: `~> 8.0`

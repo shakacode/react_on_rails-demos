@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+vendor/
+
+# Build outputs
+dist/
+build/
+public/packs/
+public/assets/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Generated files
+Gemfile.lock
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# Demos (each demo has its own prettier config)
+demos/*/
+
+# Temp files
+tmp/
+*.tmp

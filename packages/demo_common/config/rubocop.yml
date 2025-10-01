@@ -9,13 +9,13 @@ AllCops:
   TargetRubyVersion: 3.0
   NewCops: enable
   Exclude:
-    - "bin/**/*"
-    - "db/schema.rb"
-    - "db/migrate/*.rb"
-    - "node_modules/**/*"
-    - "vendor/**/*"
-    - "tmp/**/*"
-    - "log/**/*"
+    - 'bin/**/*'
+    - 'db/schema.rb'
+    - 'db/migrate/*.rb'
+    - 'node_modules/**/*'
+    - 'vendor/**/*'
+    - 'tmp/**/*'
+    - 'log/**/*'
 
 # Rails Omakase style preferences
 Style/StringLiterals:
@@ -46,14 +46,14 @@ Metrics/AbcSize:
 Metrics/MethodLength:
   Max: 20
   Exclude:
-    - "db/migrate/*.rb"
+    - 'db/migrate/*.rb'
 
 Metrics/BlockLength:
   Exclude:
-    - "spec/**/*"
-    - "test/**/*"
-    - "config/routes.rb"
-    - "config/environments/*"
+    - 'spec/**/*'
+    - 'test/**/*'
+    - 'config/routes.rb'
+    - 'config/environments/*'
 
 Metrics/ClassLength:
   Max: 200
@@ -72,4 +72,4 @@ Performance/RedundantMerge:
 # React on Rails specific patterns
 Rails/OutputSafety:
   Exclude:
-    - "app/helpers/react_on_rails_helper.rb"
+    - 'app/helpers/react_on_rails_helper.rb'

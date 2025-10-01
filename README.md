@@ -24,7 +24,7 @@ Each demo follows the naming convention: `react_on_rails-demo-v[version]-[topics
 
 ### Available Demos
 
-*(Demos will be listed here as they are added)*
+_(Demos will be listed here as they are added)_
 
 ## Getting Started
 
@@ -38,17 +38,31 @@ Each demo follows the naming convention: `react_on_rails-demo-v[version]-[topics
 ### Initial Setup
 
 ```bash
-# Install dependencies
+# Install Ruby dependencies
 bundle install
+
+# Install Node dependencies (for Prettier and other tools)
+npm install
 
 # Install git hooks (recommended)
 lefthook install
 ```
 
 This installs pre-commit hooks that:
+
 - Ensure all files end with a newline
 - Run RuboCop on staged Ruby files
 - Validate commit messages
+
+**Code Formatting:**
+
+```bash
+# Format all files with Prettier
+npm run format
+
+# Check formatting without making changes
+npm run format:check
+```
 
 See [Development Setup](./docs/CONTRIBUTING_SETUP.md) for details.
 
@@ -103,6 +117,7 @@ REACT_ON_RAILS_VERSION="~> 16.0"
 ```
 
 **Override versions per demo:**
+
 - Use `--shakapacker-version` and `--react-on-rails-version` flags
 - Supports version constraints (`~> 8.0`) or exact versions (`8.0.0`)
 - Example: `./scripts/new-demo.sh my-demo --react-on-rails-version '16.1.0'`
@@ -132,6 +147,7 @@ Each demo may have its own license. See the individual demo directories for deta
 ## Support
 
 For questions about React on Rails, please:
+
 - Open an issue on the [React on Rails repository](https://github.com/shakacode/react_on_rails/issues)
 - Join the [ShakaCode Slack](https://www.shakacode.com/slack-invite)
 - Contact [ShakaCode](https://www.shakacode.com) for professional support

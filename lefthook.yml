@@ -5,7 +5,7 @@ pre-commit:
   parallel: true
   commands:
     trailing-newline:
-      glob: "*.{rb,js,ts,jsx,tsx,yml,yaml,json,md,sh}"
+      glob: '*.{rb,js,ts,jsx,tsx,yml,yaml,json,md,sh}'
       run: |
         for file in {staged_files}; do
           if [ -f "$file" ]; then
@@ -21,7 +21,7 @@ pre-commit:
         done
 
     rubocop:
-      glob: "*.rb"
+      glob: '*.rb'
       run: bundle exec rubocop --force-exclusion {staged_files}
       stage_fixed: true
 

@@ -45,11 +45,13 @@ lefthook install
 #### Pre-commit
 
 **Trailing Newline Check**
+
 - Automatically ensures all staged files end with a newline
 - Applies to: `.rb`, `.js`, `.ts`, `.jsx`, `.tsx`, `.yml`, `.yaml`, `.json`, `.md`, `.sh`
 - Auto-fixes: Yes - adds newline and re-stages the file
 
 **RuboCop Linting**
+
 - Runs RuboCop on staged Ruby files
 - Auto-fixes: Safe corrections only
 - Applies to: `*.rb` files
@@ -57,6 +59,7 @@ lefthook install
 #### Commit Message
 
 **Message Validation**
+
 - Ensures commit message is not empty
 - Prevents accidental empty commits
 
