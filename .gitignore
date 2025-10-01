@@ -51,4 +51,5 @@ vendor/bundle/
 
 # Ignore master key for decrypting credentials and more
 /demos/*/config/master.key
-/demos/*/config/credentials.yml.enc
+/demos/*/config/credentials.yml.encpr_description.md
+commit_message.txt

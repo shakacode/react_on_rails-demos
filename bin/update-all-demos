@@ -16,7 +16,12 @@ options = {
 parser = OptionParser.new do |opts|
   opts.banner = 'Usage: bin/update-all-demos [options]'
   opts.separator ''
-  opts.separator 'Update React on Rails and/or Shakapacker versions across all demos.'
+  opts.separator 'Description:'
+  opts.separator '  Bulk updates React on Rails and/or Shakapacker versions across all'
+  opts.separator '  existing demos in the demos/ directory. Updates Gemfiles, runs bundle'
+  opts.separator '  install, optionally runs tests, and updates demo READMEs with new versions.'
+  opts.separator ''
+  opts.separator 'Example: bin/update-all-demos --react-on-rails-version "~> 16.1"'
   opts.separator ''
   opts.separator 'Options:'
 

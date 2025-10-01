@@ -46,12 +46,21 @@ bin/dev
 
 ### Creating a New Demo
 
-```bash
-./scripts/new-demo.sh react_on_rails-demo-v16-your-feature
+Use the Ruby scripts for creating demos (fully tested and recommended):
 
-# Or use the scaffold script with options:
-./scripts/scaffold-demo.sh react_on_rails-demo-v16-your-feature --typescript --tailwind
+```bash
+# Create a basic demo
+bin/new-demo react_on_rails-demo-v16-your-feature
+
+# Create an advanced demo with scaffolding and integrations
+bin/scaffold-demo react_on_rails-demo-v16-your-feature
+
+# Show available options
+bin/new-demo --help
+bin/scaffold-demo --help
 ```
+
+See the [README](./README.md#create-a-new-demo) for detailed usage examples.
 
 ### Testing
 

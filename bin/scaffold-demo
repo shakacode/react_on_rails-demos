@@ -22,6 +22,11 @@ options = {
 parser = OptionParser.new do |opts|
   opts.banner = 'Usage: bin/scaffold-demo DEMO_NAME [options]'
   opts.separator ''
+  opts.separator 'Description:'
+  opts.separator '  Creates an advanced React on Rails demo with additional scaffolding,'
+  opts.separator '  example components, and optional integrations (TypeScript, Tailwind,'
+  opts.separator '  Bootstrap, Material-UI). Includes HelloWorld component and route setup.'
+  opts.separator ''
   opts.separator 'Example: bin/scaffold-demo react_on_rails-demo-v16-ssr-hmr'
   opts.separator ''
   opts.separator 'Options:'

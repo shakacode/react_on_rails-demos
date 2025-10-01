@@ -80,30 +80,78 @@ See [Development Setup](./docs/CONTRIBUTING_SETUP.md) for details.
 
 ### Create a New Demo
 
-Scripts are available in both Ruby (recommended) and Bash:
+Three commands are available for managing demos:
+
+#### 1. `bin/new-demo` - Create Basic Demo
+
+Creates a new React on Rails demo with PostgreSQL, Shakapacker, and React on Rails pre-configured.
 
 ```bash
-# Simple demo creation (Ruby)
+# Basic usage (uses .demo-versions defaults)
 bin/new-demo react_on_rails-demo-v16-your-feature
 
-# Or use bash script
-./scripts/new-demo.sh react_on_rails-demo-v16-your-feature
+# With custom versions
+bin/new-demo my-demo \
+  --shakapacker-version '~> 8.0' \
+  --react-on-rails-version '~> 16.1'
 
-# Scaffold with advanced options (Ruby)
-bin/scaffold-demo react_on_rails-demo-v16-your-feature --typescript --tailwind
-
-# Or bash version
-./scripts/scaffold-demo.sh react_on_rails-demo-v16-your-feature --typescript --tailwind
-
-# Specify custom gem versions
-bin/new-demo my-demo --shakapacker-version '~> 8.0' --react-on-rails-version '~> 16.0'
+# With custom Rails/generator arguments
+bin/new-demo my-demo \
+  --rails-args="--skip-test,--api" \
+  --react-on-rails-args="--redux,--node"
 
 # Preview commands without execution
 bin/new-demo my-demo --dry-run
+
+# Show help
+bin/new-demo --help
 ```
 
-**Ruby scripts** (in `bin/`) are fully tested and recommended for use.
-**Bash scripts** (in `scripts/`) are kept for compatibility.
+#### 2. `bin/scaffold-demo` - Create Advanced Demo
+
+Creates an advanced demo with scaffolding, example components, and optional integrations.
+
+```bash
+# Basic scaffolding
+bin/scaffold-demo react_on_rails-demo-v16-advanced
+
+# With TypeScript and Tailwind
+bin/scaffold-demo my-demo --typescript --tailwind
+
+# With Material-UI
+bin/scaffold-demo my-demo --mui
+
+# Skip database setup
+bin/scaffold-demo my-demo --skip-db
+
+# Show help
+bin/scaffold-demo --help
+```
+
+#### 3. `bin/update-all-demos` - Bulk Update Versions
+
+Updates React on Rails and/or Shakapacker versions across all existing demos.
+
+```bash
+# Update React on Rails across all demos
+bin/update-all-demos --react-on-rails-version '~> 16.1'
+
+# Update both gems
+bin/update-all-demos \
+  --react-on-rails-version '~> 16.1' \
+  --shakapacker-version '~> 8.1'
+
+# Preview without making changes
+bin/update-all-demos --react-on-rails-version '~> 16.1' --dry-run
+
+# Update specific demos only
+bin/update-all-demos --demos "demo-v16-*" --react-on-rails-version '~> 16.1'
+
+# Show help
+bin/update-all-demos --help
+```
+
+**Note:** Ruby scripts (in `bin/`) are fully tested and recommended. Bash scripts (in `scripts/`) are kept for compatibility.
 
 Default versions are configured in `.demo-versions`. Override with command-line flags.
 

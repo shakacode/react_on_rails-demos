@@ -16,6 +16,11 @@ options = {
 parser = OptionParser.new do |opts|
   opts.banner = 'Usage: bin/new-demo DEMO_NAME [options]'
   opts.separator ''
+  opts.separator 'Description:'
+  opts.separator '  Creates a new basic React on Rails demo application with PostgreSQL,'
+  opts.separator '  Shakapacker, and React on Rails pre-configured. Uses version defaults'
+  opts.separator '  from .demo-versions unless overridden.'
+  opts.separator ''
   opts.separator 'Example: bin/new-demo react_on_rails-demo-v16-typescript-setup'
   opts.separator ''
   opts.separator 'Options:'

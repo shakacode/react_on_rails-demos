@@ -127,12 +127,18 @@ bundle exec rubocop lib/demo_scripts/
 ### Adding a New Demo
 
 ```bash
-# Use the Ruby script
+# Create a basic demo
 bin/new-demo react_on_rails-demo-v16-my-feature
 
-# Or with options
-bin/scaffold-demo react_on_rails-demo-v16-my-feature --typescript --tailwind
+# Create an advanced demo with scaffolding
+bin/scaffold-demo react_on_rails-demo-v16-my-feature
+
+# See all available options
+bin/new-demo --help
+bin/scaffold-demo --help
 ```
+
+For detailed examples and all available commands, see the [main README](../README.md#create-a-new-demo).
 
 ## Troubleshooting
 
