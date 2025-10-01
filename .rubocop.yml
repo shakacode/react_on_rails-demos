@@ -49,7 +49,7 @@ Metrics/PerceivedComplexity:
 
 # Allow more parameters for demo scaffolder (lots of options)
 Metrics/ParameterLists:
-  Max: 12
+  Max: 13
 
 # Prefer single quotes
 Style/StringLiterals:
