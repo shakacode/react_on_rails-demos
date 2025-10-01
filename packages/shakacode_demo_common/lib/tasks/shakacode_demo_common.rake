@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-namespace :demo_common do
+namespace :shakacode_demo_common do
   desc 'Run all linters and tests'
   task all: :environment do
     puts 'Running RuboCop...'

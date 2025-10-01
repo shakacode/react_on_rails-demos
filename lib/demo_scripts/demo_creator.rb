@@ -96,28 +96,28 @@ module DemoScripts
 
     def add_demo_common
       puts ''
-      puts '📦 Adding shakacode-demo-common gem...'
+      puts '📦 Adding shakacode_demo_common gem...'
 
       if @dry_run
-        puts "[DRY-RUN] Append shakacode-demo-common gem to #{@demo_dir}/Gemfile"
+        puts "[DRY-RUN] Append shakacode_demo_common gem to #{@demo_dir}/Gemfile"
       else
         File.open(File.join(@demo_dir, 'Gemfile'), 'a') do |f|
           f.puts ''
           f.puts '# Shared demo configuration and utilities'
-          f.puts 'gem "shakacode-demo-common", path: "../../packages/demo_common"'
+          f.puts 'gem "shakacode_demo_common", path: "../../packages/shakacode_demo_common"'
         end
       end
 
       puts ''
-      puts '📦 Installing demo_common...'
+      puts '📦 Installing shakacode_demo_common...'
       @runner.run!('bundle install', dir: @demo_dir)
     end
 
     def create_symlinks
       puts ''
       puts '🔗 Creating configuration symlinks...'
-      @runner.run!('ln -sf ../../packages/demo_common/config/.rubocop.yml .rubocop.yml', dir: @demo_dir)
-      @runner.run!('ln -sf ../../packages/demo_common/config/.eslintrc.js .eslintrc.js', dir: @demo_dir)
+      @runner.run!('ln -sf ../../packages/shakacode_demo_common/config/.rubocop.yml .rubocop.yml', dir: @demo_dir)
+      @runner.run!('ln -sf ../../packages/shakacode_demo_common/config/.eslintrc.js .eslintrc.js', dir: @demo_dir)
     end
 
     def install_shakapacker

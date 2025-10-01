@@ -5,11 +5,11 @@ set -euo pipefail
 
 echo "🚀 Bootstrapping all React on Rails demos..."
 
-# Install demo_common dependencies first
-echo "📦 Installing demo_common dependencies..."
-if [ -d "packages/demo_common" ]; then
+# Install shakacode_demo_common dependencies first
+echo "📦 Installing shakacode_demo_common dependencies..."
+if [ -d "packages/shakacode_demo_common" ]; then
   (
-    cd packages/demo_common
+    cd packages/shakacode_demo_common
     if [ -f "Gemfile" ]; then
       echo "  Installing Ruby dependencies..."
       bundle install

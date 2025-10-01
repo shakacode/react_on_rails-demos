@@ -2,14 +2,14 @@
 
 require 'rails/railtie'
 
-module DemoCommon
+module ShakacodeDemoCommon
   class Railtie < Rails::Railtie
     rake_tasks do
-      load 'tasks/demo_common.rake'
+      load 'tasks/shakacode_demo_common.rake'
     end
 
     generators do
-      require 'generators/demo_common/install/install_generator'
+      require 'generators/shakacode_demo_common/install/install_generator'
     end
   end
 end

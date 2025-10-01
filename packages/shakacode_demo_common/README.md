@@ -18,14 +18,14 @@ Shared configurations and utilities for React on Rails demo applications.
 1. Add to your `Gemfile`:
 
 ```ruby
-gem 'shakacode-demo-common', path: '../../packages/demo_common'
+gem 'shakacode_demo_common', path: '../../packages/shakacode_demo_common'
 ```
 
 2. Add to your `package.json`:
 
 ```json
 "devDependencies": {
-  "@shakacode/react-on-rails-demo-common": "file:../../packages/demo_common"
+  "@shakacode/react-on-rails-demo-common": "file:../../packages/shakacode_demo_common"
 }
 ```
 
@@ -34,7 +34,7 @@ gem 'shakacode-demo-common', path: '../../packages/demo_common'
 ```bash
 bundle install
 npm install
-rails generate demo_common:install
+rails generate shakacode_demo_common:install
 ```
 
 ### From GitHub (outside the monorepo):
@@ -42,7 +42,7 @@ rails generate demo_common:install
 1. Add to your `Gemfile`:
 
 ```ruby
-gem 'shakacode-demo-common', github: 'shakacode/react_on_rails-demos', glob: 'packages/demo_common/*.gemspec'
+gem 'shakacode_demo_common', github: 'shakacode/react_on_rails-demos', glob: 'packages/shakacode_demo_common/*.gemspec'
 ```
 
 2. Add to your `package.json`:
@@ -72,10 +72,10 @@ gem 'shakacode-demo-common', github: 'shakacode/react_on_rails-demos', glob: 'pa
 
 ### Rake Tasks
 
-- `demo_common:all` - Run all linters and tests
-- `demo_common:setup` - Set up development environment
-- `demo_common:deploy[environment]` - Deploy to Control Plane
-- `demo_common:rebuild` - Clean and rebuild everything
+- `shakacode_demo_common:all` - Run all linters and tests
+- `shakacode_demo_common:setup` - Set up development environment
+- `shakacode_demo_common:deploy[environment]` - Deploy to Control Plane
+- `shakacode_demo_common:rebuild` - Clean and rebuild everything
 
 ### Git Hooks (via Lefthook)
 
@@ -121,7 +121,7 @@ module.exports = {
 
 ```bash
 # Run everything
-bundle exec rake demo_common:all
+bundle exec rake shakacode_demo_common:all
 
 # Run individually
 bundle exec rubocop

@@ -7,22 +7,22 @@ echo "🧪 Running tests for all React on Rails demos..."
 
 FAILED_DEMOS=""
 
-# Test demo_common first
-if [ -d "packages/demo_common" ]; then
+# Test shakacode_demo_common first
+if [ -d "packages/shakacode_demo_common" ]; then
   echo ""
-  echo "=== Testing packages/demo_common ==="
-  pushd packages/demo_common > /dev/null
+  echo "=== Testing packages/shakacode_demo_common ==="
+  pushd packages/shakacode_demo_common > /dev/null
 
   # Run Ruby tests
   if [ -f "Gemfile" ] && [ -d "spec" ]; then
     echo "  Running RSpec tests..."
-    bundle exec rspec || FAILED_DEMOS="$FAILED_DEMOS demo_common"
+    bundle exec rspec || FAILED_DEMOS="$FAILED_DEMOS shakacode_demo_common"
   fi
 
   # Run RuboCop
   if [ -f "Gemfile" ]; then
     echo "  Running RuboCop..."
-    bundle exec rubocop || FAILED_DEMOS="$FAILED_DEMOS demo_common-rubocop"
+    bundle exec rubocop || FAILED_DEMOS="$FAILED_DEMOS shakacode_demo_common-rubocop"
   fi
 
   # Run JavaScript tests

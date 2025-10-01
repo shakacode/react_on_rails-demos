@@ -143,7 +143,7 @@ Each demo should:
 
 ## Shared Configuration
 
-When modifying shared configuration in `packages/demo_common/`:
+When modifying shared configuration in `packages/shakacode_demo_common/`:
 
 1. Test changes across multiple demos
 2. Update documentation if configuration options change

@@ -9,7 +9,7 @@ task default: :spec
 
 Dir.glob('lib/tasks/*.rake').each { |r| load r }
 
-namespace :demo_common do
+namespace :shakacode_demo_common do
   desc "Release both the gem and npm package using the given version
 
   IMPORTANT: the gem version must be in valid rubygem format (no dashes).
@@ -20,9 +20,9 @@ namespace :demo_common do
   1st argument: The new version in rubygem format (no dashes).
   2nd argument: Perform a dry run by passing 'true' as a second argument.
 
-  Example: `rake demo_common:release[1.2.0]` or `rake demo_common:release[1.2.0,true]` for dry run"
+  Example: `rake shakacode_demo_common:release[1.2.0]` or `rake shakacode_demo_common:release[1.2.0,true]` for dry run"
   task :release, %i[gem_version dry_run] do |_t, args|
-    require_relative 'lib/react_on_rails_demo_common/version'
+    require_relative 'lib/shakacode_demo_common/version'
 
     args_hash = args.to_hash
     is_dry_run = args_hash[:dry_run] == 'true'
@@ -59,7 +59,7 @@ namespace :demo_common do
     end
 
     # Update version in version.rb
-    version_file = 'lib/react_on_rails_demo_common/version.rb'
+    version_file = 'lib/shakacode_demo_common/version.rb'
     version_content = File.read(version_file)
     new_version_content = version_content.gsub(/VERSION = ".*"/, "VERSION = \"#{gem_version}\"")
     File.write(version_file, new_version_content) unless is_dry_run
@@ -82,14 +82,14 @@ namespace :demo_common do
     # Build and release gem
     unless is_dry_run
       puts "\n=== Building and releasing gem ==="
-      sh 'gem build react_on_rails_demo_common.gemspec'
+      sh 'gem build shakacode_demo_common.gemspec'
 
       puts "\nReady to push gem to RubyGems.org"
       puts 'You may need to enter your RubyGems OTP'
-      sh "gem push react_on_rails_demo_common-#{gem_version}.gem"
+      sh "gem push shakacode_demo_common-#{gem_version}.gem"
 
       # Clean up gem file
-      sh "rm react_on_rails_demo_common-#{gem_version}.gem"
+      sh "rm shakacode_demo_common-#{gem_version}.gem"
     end
 
     # Publish npm package
@@ -112,10 +112,10 @@ namespace :demo_common do
 
   desc 'Display current versions'
   task :version do
-    require_relative 'lib/react_on_rails_demo_common/version'
+    require_relative 'lib/shakacode_demo_common/version'
     package_json = JSON.parse(File.read('package.json'))
 
-    puts "Gem version: #{ReactOnRailsDemoCommon::VERSION}"
+    puts "Gem version: #{ShakacodeDemoCommon::VERSION}"
     puts "NPM version: #{package_json['version']}"
   end
 end

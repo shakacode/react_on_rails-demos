@@ -7,7 +7,7 @@ A monorepo containing demo applications showcasing various features and best pra
 ```
 react_on_rails-demos/
 ├─ packages/
-│  └─ demo_common/          # Shared configuration and utilities
+│  └─ shakacode_demo_common/          # Shared configuration and utilities
 │     ├─ Gemfile           # Shared Ruby dependencies
 │     ├─ package.json       # Shared JavaScript dependencies
 │     ├─ config/            # Shared linting configs
@@ -172,7 +172,7 @@ REACT_ON_RAILS_VERSION="~> 16.0"
 
 ## Shared Configuration
 
-All demos share common configuration files from `packages/demo_common/`:
+All demos share common configuration files from `packages/shakacode_demo_common/`:
 
 - **RuboCop** configuration for Ruby code style
 - **ESLint** configuration for JavaScript/TypeScript

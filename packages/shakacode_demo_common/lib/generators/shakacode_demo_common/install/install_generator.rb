@@ -2,7 +2,7 @@
 
 require 'rails/generators/base'
 
-module DemoCommon
+module ShakacodeDemoCommon
   module Generators
     class InstallGenerator < Rails::Generators::Base
       source_root File.expand_path('templates', __dir__)
@@ -121,19 +121,19 @@ module DemoCommon
       private
 
       def gem_root_path
-        DemoCommon.root
+        ShakacodeDemoCommon.root
       end
 
       def lefthook_config_path
-        DemoCommon.config_path.join('lefthook.yml')
+        ShakacodeDemoCommon.config_path.join('lefthook.yml')
       end
 
       def rubocop_config_path
-        DemoCommon.config_path.join('rubocop.yml')
+        ShakacodeDemoCommon.config_path.join('rubocop.yml')
       end
 
       def prettier_ignore_path
-        DemoCommon.config_path.join('..', 'configs', '.prettierignore')
+        ShakacodeDemoCommon.config_path.join('..', 'configs', '.prettierignore')
       end
     end
   end

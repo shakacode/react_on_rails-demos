@@ -208,31 +208,31 @@ run_cmd "cd '$DEMO_DIR' && bundle add shakapacker --version '$SHAKAPACKER_VERSIO
 run_cmd "cd '$DEMO_DIR' && bundle add react_on_rails --version '$REACT_ON_RAILS_VERSION' --strict"
 
 echo ""
-# Add demo_common gem
-echo -e "${YELLOW}📦 Adding demo_common gem...${NC}"
+# Add shakacode_demo_common gem
+echo -e "${YELLOW}📦 Adding shakacode_demo_common gem...${NC}"
 if [ "$DRY_RUN" = true ]; then
   echo -e "${YELLOW}[DRY-RUN]${NC} cat >> $DEMO_DIR/Gemfile << 'EOF'
 
 # Shared demo configuration and utilities
-gem \"demo_common\", path: \"../../packages/demo_common\"
+gem \"shakacode_demo_common\", path: \"../../packages/shakacode_demo_common\"
 EOF"
 else
   cat >> "$DEMO_DIR/Gemfile" << 'EOF'
 
 # Shared demo configuration and utilities
-gem "shakacode-demo-common", path: "../../packages/demo_common"
+gem "shakacode_demo_common", path: "../../packages/shakacode_demo_common"
 EOF
 fi
 
 echo ""
-# Bundle install to get demo_common
+# Bundle install to get shakacode_demo_common
 run_cmd "cd '$DEMO_DIR' && bundle install"
 
 echo ""
 # Create symlinks to shared configurations
 echo -e "${YELLOW}🔗 Creating configuration symlinks...${NC}"
-run_cmd "cd '$DEMO_DIR' && ln -sf ../../packages/demo_common/config/.rubocop.yml .rubocop.yml"
-run_cmd "cd '$DEMO_DIR' && ln -sf ../../packages/demo_common/config/.eslintrc.js .eslintrc.js"
+run_cmd "cd '$DEMO_DIR' && ln -sf ../../packages/shakacode_demo_common/config/.rubocop.yml .rubocop.yml"
+run_cmd "cd '$DEMO_DIR' && ln -sf ../../packages/shakacode_demo_common/config/.eslintrc.js .eslintrc.js"
 
 echo ""
 # Initialize Shakapacker

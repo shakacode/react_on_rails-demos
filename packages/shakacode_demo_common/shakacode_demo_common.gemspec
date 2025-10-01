@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require_relative 'lib/demo_common/version'
+require_relative 'lib/shakacode_demo_common/version'
 
 Gem::Specification.new do |spec|
-  spec.name        = 'shakacode-demo-common'
-  spec.version     = DemoCommon::VERSION
+  spec.name        = 'shakacode_demo_common'
+  spec.version     = ShakacodeDemoCommon::VERSION
   spec.authors     = ['Justin Gordon']
   spec.email       = ['justin@shakacode.com']
   spec.summary     = 'Common configuration for React on Rails demo applications'

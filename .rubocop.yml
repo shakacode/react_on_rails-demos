@@ -2,7 +2,6 @@
 
 plugins:
   - rubocop-performance
-  - rubocop-rspec
 
 AllCops:
   NewCops: enable
@@ -13,7 +12,7 @@ AllCops:
     - 'demos/**/node_modules/**/*'
     - 'demos/**/tmp/**/*'
     - 'demos/**/vendor/**/*'
-    - 'packages/demo_common/node_modules/**/*'
+    - 'packages/shakacode_demo_common/node_modules/**/*'
     - 'bin/**/*'
     - 'scripts/**/*'
 
@@ -24,7 +23,7 @@ Metrics/BlockLength:
     - '**/*Rakefile'
     - 'Rakefile'
     - '**/Rakefile'
-    - 'packages/demo_common/lib/tasks/**/*.rake'
+    - 'packages/shakacode_demo_common/lib/tasks/**/*.rake'
 
 # Allow longer methods in demo creation (complex setup)
 Metrics/MethodLength:
@@ -65,20 +64,6 @@ Style/NumericLiterals:
 
 # Documentation is good but not required for internal tools
 Style/Documentation:
-  Enabled: false
-
-# RSpec specific
-RSpec/ExampleLength:
-  Max: 15
-
-RSpec/MultipleExpectations:
-  Max: 3
-
-RSpec/NestedGroups:
-  Max: 5
-
-# Allow stubbing subject for pre-flight checks tests
-RSpec/SubjectStub:
   Enabled: false
 
 # Allow development dependencies in gemspec for legacy compatibility

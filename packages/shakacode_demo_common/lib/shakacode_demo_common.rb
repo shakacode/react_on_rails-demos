@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-require 'demo_common/version'
-require 'demo_common/railtie' if defined?(Rails)
+require 'shakacode_demo_common/version'
+require 'shakacode_demo_common/railtie' if defined?(Rails)
 
-module DemoCommon
+module ShakacodeDemoCommon
   class Error < StandardError; end
 
   class << self
