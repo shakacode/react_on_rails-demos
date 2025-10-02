@@ -1,0 +1,145 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'fileutils'
+require 'optparse'
+require 'open3'
+
+class DemoBootstrapper
+  def initialize(dry_run: false, verbose: false)
+    @dry_run = dry_run
+    @verbose = verbose
+    @root_dir = File.expand_path('..', __dir__)
+    @shakacode_demo_common_path = File.join(@root_dir, 'packages', 'shakacode_demo_common')
+    @demos_dir = File.join(@root_dir, 'demos')
+  end
+
+  def bootstrap!
+    puts "🚀 Bootstrapping all React on Rails demos..."
+
+    bootstrap_shakacode_demo_common
+    bootstrap_demos
+
+    puts ""
+    puts "✅ Bootstrap complete!"
+  end
+
+  private
+
+  def bootstrap_shakacode_demo_common
+    return unless File.directory?(@shakacode_demo_common_path)
+
+    puts "📦 Installing shakacode_demo_common dependencies..."
+
+    Dir.chdir(@shakacode_demo_common_path) do
+      install_ruby_dependencies if File.exist?('Gemfile')
+      install_javascript_dependencies if File.exist?('package.json')
+    end
+  end
+
+  def bootstrap_demos
+    demos = Dir.glob(File.join(@demos_dir, '*')).select { |path| File.directory?(path) }
+
+    if demos.empty?
+      puts "ℹ️  No demos found in demos/ directory"
+      return
+    end
+
+    demos.each do |demo_path|
+      bootstrap_demo(demo_path)
+    end
+  end
+
+  def bootstrap_demo(demo_path)
+    demo_name = File.basename(demo_path)
+    puts ""
+    puts "📦 Bootstrapping #{demo_name}..."
+
+    Dir.chdir(demo_path) do
+      install_ruby_dependencies if File.exist?('Gemfile')
+      install_javascript_dependencies if File.exist?('package.json')
+      setup_database if File.exist?('bin/rails')
+    end
+  end
+
+  def install_ruby_dependencies
+    puts "  Installing Ruby dependencies..."
+    run_command('bundle install')
+  end
+
+  def install_javascript_dependencies
+    puts "  Installing JavaScript dependencies..."
+
+    # Prefer pnpm if available
+    if command_exists?('pnpm')
+      run_command('pnpm install')
+    else
+      run_command('npm install')
+    end
+  end
+
+  def setup_database
+    puts "  Setting up database..."
+    run_command('bin/rails db:prepare', allow_failure: true)
+  end
+
+  def run_command(command, allow_failure: false)
+    if @dry_run
+      puts "  [DRY-RUN] #{command}"
+      return
+    end
+
+    output, status = Open3.capture2e(command)
+
+    if @verbose || !status.success?
+      puts output
+    end
+
+    unless status.success? || allow_failure
+      raise "Command failed: #{command}"
+    end
+  end
+
+  def command_exists?(command)
+    system("which #{command} > /dev/null 2>&1")
+  end
+end
+
+# Main execution
+options = {
+  dry_run: false,
+  verbose: false
+}
+
+parser = OptionParser.new do |opts|
+  opts.banner = 'Usage: bin/bootstrap-all [options]'
+  opts.separator ''
+  opts.separator 'Description:'
+  opts.separator '  Bootstrap all demo applications by installing dependencies'
+  opts.separator '  and setting up databases.'
+  opts.separator ''
+  opts.separator 'Options:'
+
+  opts.on('--dry-run', 'Show what would be done without making changes') do
+    options[:dry_run] = true
+  end
+
+  opts.on('-v', '--verbose', 'Show detailed output from commands') do
+    options[:verbose] = true
+  end
+
+  opts.on('-h', '--help', 'Show this help message') do
+    puts opts
+    exit
+  end
+end
+
+begin
+  parser.parse!
+
+  bootstrapper = DemoBootstrapper.new(**options)
+  bootstrapper.bootstrap!
+rescue => e
+  warn "Error: #{e.message}"
+  exit 1
+end

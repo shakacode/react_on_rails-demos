@@ -1,0 +1,142 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'fileutils'
+require 'pathname'
+require 'optparse'
+
+class SharedConfigApplier
+  CONFIG_FILES = {
+    '.rubocop.yml' => 'config/rubocop.yml',
+    '.eslintrc.js' => 'config/.eslintrc.js',
+    '.prettierrc' => 'config/.prettierrc'
+  }.freeze
+
+  def initialize(dry_run: false)
+    @dry_run = dry_run
+    @root_dir = File.expand_path('..', __dir__)
+    @shakacode_demo_common_path = File.join(@root_dir, 'packages', 'shakacode_demo_common')
+    @demos_dir = File.join(@root_dir, 'demos')
+  end
+
+  def apply!
+    validate_directories!
+
+    demos = Dir.glob(File.join(@demos_dir, '*')).select { |path| File.directory?(path) }
+
+    if demos.empty?
+      puts "ℹ️  No demos found in demos/ directory"
+      return
+    end
+
+    puts "🔧 Applying shared configurations to all demos..."
+
+    demos.each do |demo_path|
+      apply_to_demo(demo_path)
+    end
+
+    puts "✅ Shared configurations applied successfully!"
+  end
+
+  private
+
+  def validate_directories!
+    unless File.directory?(@shakacode_demo_common_path)
+      raise "Error: packages/shakacode_demo_common directory not found"
+    end
+  end
+
+  def apply_to_demo(demo_path)
+    demo_name = File.basename(demo_path)
+    puts "📦 Updating #{demo_name}..."
+
+    create_config_symlinks(demo_path)
+    update_gemfile(demo_path)
+  end
+
+  def create_config_symlinks(demo_path)
+    CONFIG_FILES.each do |target_name, source_path|
+      source_file = File.join(@shakacode_demo_common_path, source_path)
+      next unless File.exist?(source_file)
+
+      target_file = File.join(demo_path, target_name)
+      relative_source = calculate_relative_path(target_file, source_file)
+
+      puts "  Linking #{target_name}..."
+
+      if @dry_run
+        puts "  [DRY-RUN] ln -sf #{relative_source} #{target_file}"
+      else
+        FileUtils.rm_f(target_file) if File.exist?(target_file)
+        FileUtils.ln_s(relative_source, target_file)
+      end
+    end
+  end
+
+  def update_gemfile(demo_path)
+    gemfile_path = File.join(demo_path, 'Gemfile')
+    return unless File.exist?(gemfile_path)
+
+    gemfile_content = File.read(gemfile_path)
+
+    if gemfile_content.include?('shakacode_demo_common')
+      puts "  shakacode_demo_common already in Gemfile"
+      return
+    end
+
+    puts "  Adding shakacode_demo_common to Gemfile..."
+
+    addition = <<~RUBY
+
+      # Shared demo configuration and utilities
+      gem "shakacode_demo_common", path: "../../packages/shakacode_demo_common"
+    RUBY
+
+    if @dry_run
+      puts "  [DRY-RUN] Would append to #{gemfile_path}:"
+      puts addition.lines.map { |l| "    #{l}" }.join
+    else
+      File.open(gemfile_path, 'a') do |f|
+        f.puts addition
+      end
+    end
+  end
+
+  def calculate_relative_path(from, to)
+    from_path = Pathname.new(File.dirname(from))
+    to_path = Pathname.new(to)
+    to_path.relative_path_from(from_path).to_s
+  end
+end
+
+# Main execution
+options = { dry_run: false }
+
+parser = OptionParser.new do |opts|
+  opts.banner = 'Usage: bin/apply-shared [options]'
+  opts.separator ''
+  opts.separator 'Description:'
+  opts.separator '  Apply shared configurations to all demos by creating symlinks'
+  opts.separator '  to shared config files and adding the shakacode_demo_common gem.'
+  opts.separator ''
+  opts.separator 'Options:'
+
+  opts.on('--dry-run', 'Show what would be done without making changes') do
+    options[:dry_run] = true
+  end
+
+  opts.on('-h', '--help', 'Show this help message') do
+    puts opts
+    exit
+  end
+end
+
+begin
+  parser.parse!
+
+  applier = SharedConfigApplier.new(**options)
+  applier.apply!
+rescue => e
+  warn "Error: #{e.message}"
+  exit 1
+end

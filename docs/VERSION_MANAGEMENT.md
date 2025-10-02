@@ -44,7 +44,6 @@ This will use:
 
 The versions are locked in the demo's `Gemfile` at creation time.
 
-> **Note**: Legacy bash scripts (`scripts/new-demo.sh`) are still available but the Ruby scripts in `bin/` are recommended for better maintainability and testability.
 
 ### Creating a Demo with Custom Versions
 

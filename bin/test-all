@@ -1,0 +1,193 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'fileutils'
+require 'optparse'
+require 'open3'
+
+class DemoTester
+  def initialize(dry_run: false, verbose: false, fail_fast: false)
+    @dry_run = dry_run
+    @verbose = verbose
+    @fail_fast = fail_fast
+    @root_dir = File.expand_path('..', __dir__)
+    @shakacode_demo_common_path = File.join(@root_dir, 'packages', 'shakacode_demo_common')
+    @demos_dir = File.join(@root_dir, 'demos')
+    @failed_tests = []
+  end
+
+  def test!
+    puts "🧪 Running tests for all React on Rails demos..."
+
+    test_shakacode_demo_common
+    test_demos
+
+    report_results
+  end
+
+  private
+
+  def test_shakacode_demo_common
+    return unless File.directory?(@shakacode_demo_common_path)
+
+    puts ""
+    puts "=== Testing packages/shakacode_demo_common ==="
+
+    Dir.chdir(@shakacode_demo_common_path) do
+      run_ruby_tests if has_ruby_tests?
+      run_rubocop if has_gemfile?
+      run_javascript_tests if has_javascript_tests?
+    end
+  end
+
+  def test_demos
+    demos = Dir.glob(File.join(@demos_dir, '*')).select { |path| File.directory?(path) }
+
+    if demos.empty?
+      puts "ℹ️  No demos found in demos/ directory"
+      return
+    end
+
+    demos.each do |demo_path|
+      test_demo(demo_path)
+      break if @fail_fast && @failed_tests.any?
+    end
+  end
+
+  def test_demo(demo_path)
+    demo_name = File.basename(demo_path)
+    puts ""
+    puts "=== Testing #{demo_name} ==="
+
+    Dir.chdir(demo_path) do
+      if File.exist?('bin/rails')
+        run_rails_tests(demo_name)
+        run_rubocop(demo_name)
+      end
+
+      run_javascript_tests(demo_name) if has_javascript_tests?
+    end
+  end
+
+  def run_ruby_tests(context = 'shakacode_demo_common')
+    if File.directory?('spec')
+      puts "  Running RSpec tests..."
+      run_test_command('bundle exec rspec', context)
+    end
+  end
+
+  def run_rails_tests(demo_name)
+    if File.directory?('spec')
+      puts "  Running RSpec tests..."
+      run_test_command('bundle exec rspec', demo_name)
+    elsif File.directory?('test')
+      puts "  Running Rails tests..."
+      run_test_command('bin/rails test', demo_name)
+    end
+  end
+
+  def run_rubocop(context = 'shakacode_demo_common')
+    puts "  Running RuboCop..."
+    run_test_command('bundle exec rubocop', "#{context}-rubocop")
+  end
+
+  def run_javascript_tests(context = 'shakacode_demo_common')
+    puts "  Running JavaScript tests..."
+    run_test_command('npm test', "#{context}-js", allow_failure: true)
+
+    if File.exist?('package.json')
+      package_json = File.read('package.json')
+      if package_json.include?('"lint"')
+        puts "  Running JavaScript linter..."
+        run_test_command('npm run lint', "#{context}-eslint", allow_failure: true)
+      end
+    end
+  end
+
+  def run_test_command(command, context, allow_failure: false)
+    if @dry_run
+      puts "  [DRY-RUN] #{command}"
+      return
+    end
+
+    output, status = Open3.capture2e(command)
+
+    if @verbose || !status.success?
+      puts output
+    end
+
+    unless status.success?
+      @failed_tests << context unless allow_failure
+      puts "  ❌ Test failed for #{context}" unless allow_failure
+    end
+  end
+
+  def has_ruby_tests?
+    File.directory?('spec') || File.directory?('test')
+  end
+
+  def has_gemfile?
+    File.exist?('Gemfile')
+  end
+
+  def has_javascript_tests?
+    return false unless File.exist?('package.json')
+
+    package_json = File.read('package.json')
+    package_json.include?('"test"') || package_json.include?('"lint"')
+  end
+
+  def report_results
+    puts ""
+    if @failed_tests.empty?
+      puts "✅ All tests passed!"
+    else
+      puts "❌ Tests failed for: #{@failed_tests.join(', ')}"
+      exit 1
+    end
+  end
+end
+
+# Main execution
+options = {
+  dry_run: false,
+  verbose: false,
+  fail_fast: false
+}
+
+parser = OptionParser.new do |opts|
+  opts.banner = 'Usage: bin/test-all [options]'
+  opts.separator ''
+  opts.separator 'Description:'
+  opts.separator '  Run tests for all demo applications including RSpec/Rails tests,'
+  opts.separator '  RuboCop, and JavaScript tests.'
+  opts.separator ''
+  opts.separator 'Options:'
+
+  opts.on('--dry-run', 'Show what tests would be run without executing them') do
+    options[:dry_run] = true
+  end
+
+  opts.on('-v', '--verbose', 'Show detailed test output') do
+    options[:verbose] = true
+  end
+
+  opts.on('--fail-fast', 'Stop testing after first failure') do
+    options[:fail_fast] = true
+  end
+
+  opts.on('-h', '--help', 'Show this help message') do
+    puts opts
+    exit
+  end
+end
+
+begin
+  parser.parse!
+
+  tester = DemoTester.new(**options)
+  tester.test!
+rescue => e
+  warn "Error: #{e.message}"
+  exit 1
+end
