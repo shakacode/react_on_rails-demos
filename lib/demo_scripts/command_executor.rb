@@ -4,6 +4,11 @@ require 'open3'
 
 module DemoScripts
   # Shared module for command execution with dry-run support
+  #
+  # Output behavior:
+  # - In verbose mode: All command output goes to stdout
+  # - On command failure (non-verbose): Error output goes to stderr for debugging
+  # - On command success (non-verbose): No output is shown
   module CommandExecutor
     # rubocop:disable Naming/PredicateMethod
     # run_command is intentionally not a predicate method despite allow_failure parameter
@@ -19,7 +24,11 @@ module DemoScripts
         raise Error, "Failed to execute command '#{command}': #{e.message}"
       end
 
-      puts output if @verbose || !status.success?
+      # Show output in verbose mode (stdout)
+      puts output if @verbose
+
+      # Show output on failure (stderr) for debugging, unless in verbose mode (already shown)
+      warn output if !status.success? && !@verbose
 
       raise Error, "Command failed: #{command}" unless status.success? || allow_failure
 

@@ -56,10 +56,26 @@ RSpec.describe DemoScripts::CommandExecutor do
         expect { executor.run_command('false', allow_failure: true) }.not_to raise_error
       end
 
-      it 'shows output in verbose mode' do
+      it 'shows output in verbose mode to stdout' do
         executor.verbose = true
         expect(Open3).to receive(:capture2e).with('echo test').and_return(['test output', double(success?: true)])
         expect { executor.run_command('echo test') }.to output(/test output/).to_stdout
+      end
+
+      it 'shows error output to stderr when command fails and not verbose' do
+        expect(Open3).to receive(:capture2e).with('false').and_return(['error output', double(success?: false)])
+        expect do
+          executor.run_command('false', allow_failure: true)
+        end.to output(/error output/).to_stderr
+      end
+
+      it 'shows output only to stdout when verbose and command fails' do
+        executor.verbose = true
+        expect(Open3).to receive(:capture2e).with('false').and_return(['error output', double(success?: false)])
+        # In verbose mode, error output should go to stdout, not stderr
+        expect do
+          executor.run_command('false', allow_failure: true)
+        end.to output(/error output/).to_stdout.and output('').to_stderr
       end
     end
   end
