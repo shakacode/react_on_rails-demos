@@ -55,8 +55,8 @@ module DemoScripts
       if @dry_run
         puts "  [DRY-RUN] ln -sf #{relative_source} #{target}"
       else
-        FileUtils.rm_f(target)
-        FileUtils.ln_s(relative_source, target)
+        # Use force: true for atomic symlink creation to avoid race conditions
+        FileUtils.ln_s(relative_source, target, force: true)
       end
     end
 
