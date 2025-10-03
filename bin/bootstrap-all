@@ -1,0 +1,94 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'bundler/setup'
+require_relative '../lib/demo_scripts'
+require 'optparse'
+
+module DemoScripts
+  # Bootstraps all demo applications
+  class Bootstrapper < DemoManager
+    def bootstrap!
+      puts '🚀 Bootstrapping all React on Rails demos...'
+
+      bootstrap_shakacode_demo_common
+      bootstrap_demos
+
+      puts "\n✅ Bootstrap complete!"
+    end
+
+    private
+
+    def bootstrap_shakacode_demo_common
+      return unless shakacode_demo_common_exists?
+
+      puts '📦 Installing shakacode_demo_common dependencies...'
+      Dir.chdir(@shakacode_demo_common_path) do
+        install_dependencies
+      end
+    end
+
+    def bootstrap_demos
+      each_demo do |demo_path|
+        bootstrap_demo(demo_path)
+      end
+    end
+
+    def bootstrap_demo(demo_path)
+      puts "\n📦 Bootstrapping #{demo_name(demo_path)}..."
+      Dir.chdir(demo_path) do
+        install_dependencies
+        setup_database if rails?
+      end
+    end
+
+    def install_dependencies
+      install_ruby_dependencies if gemfile?
+      install_javascript_dependencies if package_json?
+    end
+
+    def install_ruby_dependencies
+      puts '  Installing Ruby dependencies...'
+      run_command('bundle install')
+    end
+
+    def install_javascript_dependencies
+      puts '  Installing JavaScript dependencies...'
+      cmd = command_exists?('pnpm') ? 'pnpm install' : 'npm install'
+      run_command(cmd)
+    end
+
+    def setup_database
+      puts '  Setting up database...'
+      run_command('bin/rails db:prepare', allow_failure: true)
+    end
+  end
+end
+
+# Main execution
+options = { dry_run: false, verbose: false }
+
+parser = OptionParser.new do |opts|
+  opts.banner = 'Usage: bin/bootstrap-all [options]'
+  opts.separator ''
+  opts.separator 'Bootstrap all demo applications'
+  opts.separator ''
+
+  opts.on('--dry-run', 'Show what would be done') { options[:dry_run] = true }
+  opts.on('-v', '--verbose', 'Show detailed output') { options[:verbose] = true }
+  opts.on('-h', '--help', 'Show this help') do
+    puts opts
+    exit
+  end
+end
+
+begin
+  parser.parse!
+  DemoScripts::Bootstrapper.new(**options).bootstrap!
+rescue DemoScripts::Error => e
+  warn "Error: #{e.message}"
+  exit 1
+rescue StandardError => e
+  warn "Unexpected error: #{e.message}"
+  exit 1
+end

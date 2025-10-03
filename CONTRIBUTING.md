@@ -32,7 +32,7 @@ git clone https://github.com/shakacode/react_on_rails-demos.git
 cd react_on_rails-demos
 
 # Bootstrap all demos
-./scripts/bootstrap-all.sh
+bin/bootstrap-all
 ```
 
 ## Working with Demos
@@ -67,7 +67,7 @@ See the [README](./README.md#create-a-new-demo) for detailed usage examples.
 Run tests for all demos:
 
 ```bash
-./scripts/test-all.sh
+bin/test-all
 ```
 
 Run tests for a specific demo:

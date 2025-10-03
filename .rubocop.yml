@@ -13,10 +13,8 @@ AllCops:
     - 'demos/**/tmp/**/*'
     - 'demos/**/vendor/**/*'
     - 'packages/shakacode_demo_common/node_modules/**/*'
-    - 'bin/**/*'
-    - 'scripts/**/*'
 
-# Allow longer blocks in specs and Rakefiles
+# Allow longer blocks in specs, Rakefiles, and bin scripts
 Metrics/BlockLength:
   Exclude:
     - 'spec/**/*_spec.rb'
@@ -24,6 +22,7 @@ Metrics/BlockLength:
     - 'Rakefile'
     - '**/Rakefile'
     - 'packages/shakacode_demo_common/lib/tasks/**/*.rake'
+    - 'bin/*'
 
 # Allow longer methods in demo creation (complex setup)
 Metrics/MethodLength:
@@ -32,9 +31,11 @@ Metrics/MethodLength:
     - 'lib/demo_scripts/demo_creator.rb'
     - 'lib/demo_scripts/demo_scaffolder.rb'
 
-# Allow longer classes for demo creators (lots of setup code)
+# Allow longer classes for demo creators and bin scripts (lots of setup code)
 Metrics/ClassLength:
   Max: 300
+  Exclude:
+    - 'bin/*'
 
 # Allow more complex methods for demo scaffolding
 Metrics/AbcSize:

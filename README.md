@@ -69,13 +69,13 @@ See [Development Setup](./docs/CONTRIBUTING_SETUP.md) for details.
 ### Bootstrap All Demos
 
 ```bash
-./scripts/bootstrap-all.sh
+bin/bootstrap-all
 ```
 
 ### Run Tests Across All Demos
 
 ```bash
-./scripts/test-all.sh
+bin/test-all
 ```
 
 ### Create a New Demo
@@ -151,7 +151,20 @@ bin/update-all-demos --demos "demo-v16-*" --react-on-rails-version '~> 16.1'
 bin/update-all-demos --help
 ```
 
-**Note:** Ruby scripts (in `bin/`) are fully tested and recommended. Bash scripts (in `scripts/`) are kept for compatibility.
+#### 4. `bin/apply-shared` - Apply Shared Configurations
+
+Creates symlinks to shared configuration files and adds the shakacode_demo_common gem to all demos.
+
+```bash
+# Apply shared configs to all demos
+bin/apply-shared
+
+# Dry run mode to see what would be done
+bin/apply-shared --dry-run
+
+# Show help
+bin/apply-shared --help
+```
 
 Default versions are configured in `.new-demo-versions`. Override with command-line flags.
 
@@ -168,7 +181,7 @@ REACT_ON_RAILS_VERSION="~> 16.0"
 
 - Use `--shakapacker-version` and `--react-on-rails-version` flags
 - Supports version constraints (`~> 8.0`) or exact versions (`8.0.0`)
-- Example: `./scripts/new-demo.sh my-demo --react-on-rails-version '16.1.0'`
+- Example: `bin/new-demo my-demo --react-on-rails-version '16.1.0'`
 
 ## Shared Configuration
 

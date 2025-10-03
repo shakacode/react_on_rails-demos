@@ -2,6 +2,9 @@
 
 require_relative 'demo_scripts/version'
 require_relative 'demo_scripts/config'
+require_relative 'demo_scripts/command_executor'
+require_relative 'demo_scripts/package_json_cache'
+require_relative 'demo_scripts/demo_manager'
 require_relative 'demo_scripts/pre_flight_checks'
 require_relative 'demo_scripts/command_runner'
 require_relative 'demo_scripts/demo_creator'

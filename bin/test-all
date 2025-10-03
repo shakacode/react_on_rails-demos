@@ -1,0 +1,147 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'bundler/setup'
+require_relative '../lib/demo_scripts'
+require 'optparse'
+
+module DemoScripts
+  # Runs tests for all demo applications
+  class Tester < DemoManager
+    include PackageJsonCache
+
+    def initialize(fail_fast: false, **options)
+      super(**options)
+      @fail_fast = fail_fast
+      @failed_tests = []
+    end
+
+    def test!
+      puts '🧪 Running tests for all React on Rails demos...'
+
+      test_shakacode_demo_common
+      test_demos
+
+      report_results
+    end
+
+    private
+
+    def test_shakacode_demo_common
+      return unless shakacode_demo_common_exists?
+
+      puts "\n=== Testing packages/shakacode_demo_common ==="
+      Dir.chdir(@shakacode_demo_common_path) do
+        run_ruby_tests if ruby_tests?
+        run_rubocop if gemfile?
+        run_javascript_tests if package_json?
+      end
+    end
+
+    def test_demos
+      each_demo do |demo_path|
+        test_demo(demo_path)
+        break if @fail_fast && @failed_tests.any?
+      end
+    end
+
+    def test_demo(demo_path)
+      name = demo_name(demo_path)
+      puts "\n=== Testing #{name} ==="
+
+      Dir.chdir(demo_path) do
+        if rails?
+          run_rails_tests(name)
+          run_rubocop(name)
+        end
+        run_javascript_tests(name) if package_json?
+      end
+    end
+
+    def run_ruby_tests(context = 'shakacode_demo_common')
+      return unless File.directory?('spec')
+
+      puts '  Running RSpec tests...'
+      run_test_command('bundle exec rspec', context)
+    end
+
+    def run_rails_tests(name)
+      if File.directory?('spec')
+        puts '  Running RSpec tests...'
+        run_test_command('bundle exec rspec', name)
+      elsif File.directory?('test')
+        puts '  Running Rails tests...'
+        run_test_command('bin/rails test', name)
+      end
+    end
+
+    def run_rubocop(context = 'shakacode_demo_common')
+      puts '  Running RuboCop...'
+      run_test_command('bundle exec rubocop', "#{context}-rubocop")
+    end
+
+    def run_javascript_tests(context = 'shakacode_demo_common')
+      if npm_script?('test')
+        puts '  Running JavaScript tests...'
+        run_test_command('npm test', "#{context}-js", allow_failure: true)
+      end
+
+      return unless npm_script?('lint')
+
+      puts '  Running JavaScript linter...'
+      run_test_command('npm run lint', "#{context}-eslint", allow_failure: true)
+    end
+
+    def run_test_command(command, context, allow_failure: false)
+      if @dry_run
+        puts "  [DRY-RUN] #{command}"
+        return
+      end
+
+      success = run_command(command, allow_failure: true)
+      return if success
+
+      @failed_tests << context unless allow_failure
+      puts "  ❌ Test failed for #{context}" unless allow_failure
+    end
+
+    def report_results
+      puts ''
+      if @failed_tests.empty?
+        puts '✅ All tests passed!'
+      else
+        puts "❌ Tests failed for: #{@failed_tests.join(', ')}"
+        exit 1
+      end
+    end
+  end
+end
+
+# Main execution
+options = { dry_run: false, verbose: false, fail_fast: false }
+
+parser = OptionParser.new do |opts|
+  opts.banner = 'Usage: bin/test-all [options]'
+  opts.separator ''
+  opts.separator 'Run tests for all demo applications'
+  opts.separator ''
+
+  opts.on('--dry-run', 'Show what tests would be run') { options[:dry_run] = true }
+  opts.on('-v', '--verbose', 'Show detailed test output') { options[:verbose] = true }
+  opts.on('--fail-fast', 'Stop after first failure') { options[:fail_fast] = true }
+  opts.on('-h', '--help', 'Show this help') do
+    puts opts
+    exit
+  end
+end
+
+begin
+  parser.parse!
+  DemoScripts::Tester.new(**options).test!
+rescue DemoScripts::Error => e
+  warn "Error: #{e.message}"
+  exit 1
+rescue StandardError => e
+  warn "Unexpected error: #{e.message}"
+  exit 1
+end
