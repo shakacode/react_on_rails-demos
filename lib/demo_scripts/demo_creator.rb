@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'shellwords'
+require 'securerandom'
 
 module DemoScripts
   # Creates a new React on Rails demo
@@ -41,6 +42,7 @@ module DemoScripts
       create_rails_app
       setup_database
       add_gems
+      build_github_npm_packages if using_github_sources?
       add_demo_common
       create_symlinks
       install_shakapacker
@@ -196,6 +198,58 @@ module DemoScripts
       puts '🔗 Creating configuration symlinks...'
       @runner.run!('ln -sf ../../packages/shakacode_demo_common/config/.rubocop.yml .rubocop.yml', dir: @demo_dir)
       @runner.run!('ln -sf ../../packages/shakacode_demo_common/config/.eslintrc.js .eslintrc.js', dir: @demo_dir)
+    end
+
+    def using_github_sources?
+      @config.shakapacker_version.start_with?('github:') ||
+        @config.react_on_rails_version.start_with?('github:')
+    end
+
+    def build_github_npm_packages
+      puts ''
+      puts '🔨 Building npm packages from GitHub sources...'
+
+      if @config.shakapacker_version.start_with?('github:')
+        build_github_npm_package('shakapacker',
+                                 @config.shakapacker_version)
+      end
+      return unless @config.react_on_rails_version.start_with?('github:')
+
+      build_github_npm_package('react_on_rails',
+                               @config.react_on_rails_version)
+    end
+
+    def build_github_npm_package(gem_name, version_spec)
+      github_spec = version_spec.sub('github:', '').strip
+      repo, branch = parse_github_spec(github_spec)
+
+      puts "   Building #{gem_name} from #{repo}#{"@#{branch}" if branch}..."
+
+      # Clone and build in temp directory
+      temp_dir = "/tmp/#{gem_name}-#{SecureRandom.hex(4)}"
+      clone_cmd = ['git', 'clone', '--depth', '1']
+      clone_cmd.push('--branch', branch) if branch
+      clone_cmd.push("https://github.com/#{repo}.git", temp_dir)
+
+      @runner.run!(Shellwords.join(clone_cmd), dir: Dir.pwd)
+
+      # Build the npm package
+      @runner.run!('npm install --legacy-peer-deps', dir: temp_dir)
+      @runner.run!('npm run build', dir: temp_dir)
+
+      # Copy built package to node_modules
+      package_src = File.join(temp_dir, 'package')
+      package_dest = File.join(@demo_dir, 'node_modules', gem_name, 'package')
+
+      if File.directory?(package_src)
+        @runner.run!("rm -rf '#{package_dest}' && cp -r '#{package_src}' '#{package_dest}'", dir: Dir.pwd)
+        puts "   ✓ Built and installed #{gem_name} npm package"
+      else
+        puts "   ⚠ Warning: No package directory found in #{gem_name}, skipping npm build"
+      end
+
+      # Cleanup
+      @runner.run!("rm -rf '#{temp_dir}'", dir: Dir.pwd)
     end
 
     def install_shakapacker
