@@ -209,6 +209,14 @@ module DemoScripts
       puts ''
       puts '🔨 Building npm packages from GitHub sources...'
 
+      # Update package.json to use GitHub sources
+      update_package_json_for_github_sources
+
+      # Reinstall npm packages
+      puts '   Running npm install...'
+      @runner.run!('npm install --legacy-peer-deps', dir: @demo_dir)
+
+      # Build packages that need compilation
       if @config.shakapacker_version.start_with?('github:')
         build_github_npm_package('shakapacker',
                                  @config.shakapacker_version)
@@ -217,6 +225,34 @@ module DemoScripts
 
       build_github_npm_package('react_on_rails',
                                @config.react_on_rails_version)
+    end
+
+    def update_package_json_for_github_sources
+      return if @dry_run
+
+      package_json_path = File.join(@demo_dir, 'package.json')
+      package_json = JSON.parse(File.read(package_json_path))
+
+      update_package_dependency(package_json, 'shakapacker', @config.shakapacker_version)
+      update_package_dependency(package_json, 'react_on_rails', @config.react_on_rails_version)
+
+      File.write(package_json_path, JSON.pretty_generate(package_json))
+    end
+
+    def update_package_dependency(package_json, package_name, version_spec)
+      return unless version_spec.start_with?('github:')
+
+      github_url = convert_to_npm_github_url(version_spec)
+      package_json['dependencies'][package_name] = github_url
+      puts "   Updating package.json: #{package_name} -> #{github_url}"
+    end
+
+    def convert_to_npm_github_url(version_spec)
+      github_spec = version_spec.sub('github:', '').strip
+      repo, branch = parse_github_spec(github_spec)
+      github_url = "github:#{repo}"
+      github_url += "##{branch}" if branch
+      github_url
     end
 
     def build_github_npm_package(gem_name, version_spec)
