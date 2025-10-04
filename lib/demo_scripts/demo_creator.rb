@@ -78,7 +78,7 @@ module DemoScripts
     def setup_database
       puts ''
       puts '📦 Setting up database...'
-      @runner.run!('bundle exec rails db:create', dir: @demo_dir)
+      @runner.run!('bin/rails db:create', dir: @demo_dir)
     end
 
     def add_gems
@@ -126,7 +126,7 @@ module DemoScripts
     def install_shakapacker
       puts ''
       puts '📦 Installing Shakapacker...'
-      @runner.run!('bundle exec rails shakapacker:install', dir: @demo_dir)
+      @runner.run!('bin/rails shakapacker:install', dir: @demo_dir)
     end
 
     def install_react_on_rails
@@ -135,7 +135,7 @@ module DemoScripts
       base_args = ['--ignore-warnings']
       all_args = (base_args + @react_on_rails_args).join(' ')
       @runner.run!(
-        "bundle exec rails generate react_on_rails:install #{all_args}",
+        "bin/rails generate react_on_rails:install #{all_args}",
         dir: @demo_dir
       )
     end
