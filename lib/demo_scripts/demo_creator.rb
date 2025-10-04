@@ -56,6 +56,7 @@ module DemoScripts
 
     def create_rails_app
       puts '📦 Creating Rails application...'
+      puts "   Using Rails #{@config.rails_version}"
       base_args = [
         '--database=postgresql',
         '--skip-javascript',
@@ -72,7 +73,7 @@ module DemoScripts
         '--skip-solid'
       ]
       all_args = (base_args + @rails_args).join(' ')
-      @runner.run!("bundle exec rails new '#{@demo_dir}' #{all_args}")
+      @runner.run!("rails _#{@config.rails_version}_ new '#{@demo_dir}' #{all_args}")
     end
 
     def setup_database

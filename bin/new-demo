@@ -41,7 +41,8 @@ parser = OptionParser.new do |opts|
     options[:rails_args] = args.split(',').map(&:strip)
   end
 
-  opts.on('--react-on-rails-args ARGS', 'Additional arguments to pass to react_on_rails:install (comma-separated)') do |args|
+  opts.on('--react-on-rails-args ARGS',
+          'Additional arguments to pass to react_on_rails:install (comma-separated)') do |args|
     options[:react_on_rails_args] = args.split(',').map(&:strip)
   end
 
