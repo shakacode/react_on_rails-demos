@@ -88,14 +88,8 @@ module DemoScripts
       puts "   Using Shakapacker #{@config.shakapacker_version}"
       puts "   Using React on Rails #{@config.react_on_rails_version}"
 
-      @runner.run!(
-        "bundle add shakapacker --version '#{@config.shakapacker_version}' --strict",
-        dir: @demo_dir
-      )
-      @runner.run!(
-        "bundle add react_on_rails --version '#{@config.react_on_rails_version}' --strict",
-        dir: @demo_dir
-      )
+      add_gem_with_source('shakapacker', @config.shakapacker_version)
+      add_gem_with_source('react_on_rails', @config.react_on_rails_version)
     end
 
     def add_demo_common
@@ -115,6 +109,31 @@ module DemoScripts
       puts ''
       puts '📦 Installing shakacode_demo_common...'
       @runner.run!('bundle install', dir: @demo_dir)
+    end
+
+    def add_gem_with_source(gem_name, version_spec)
+      if version_spec.start_with?('github:')
+        # Parse github:org/repo@branch format
+        github_spec = version_spec.sub('github:', '')
+        if github_spec.include?('@')
+          repo, branch = github_spec.split('@', 2)
+          @runner.run!(
+            "bundle add #{gem_name} --github '#{repo}' --branch '#{branch}'",
+            dir: @demo_dir
+          )
+        else
+          @runner.run!(
+            "bundle add #{gem_name} --github '#{github_spec}'",
+            dir: @demo_dir
+          )
+        end
+      else
+        # Standard version
+        @runner.run!(
+          "bundle add #{gem_name} --version '#{version_spec}' --strict",
+          dir: @demo_dir
+        )
+      end
     end
 
     def create_symlinks
