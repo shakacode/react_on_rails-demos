@@ -66,7 +66,10 @@ module DemoScripts
         '--skip-action-cable',
         '--skip-sprockets',
         '--skip-system-test',
-        '--skip-turbolinks'
+        '--skip-turbolinks',
+        '--skip-docker',
+        '--skip-kamal',
+        '--skip-solid'
       ]
       all_args = (base_args + @rails_args).join(' ')
       @runner.run!("rails new '#{@demo_dir}' #{all_args}")
