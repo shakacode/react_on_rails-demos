@@ -339,4 +339,137 @@ RSpec.describe DemoScripts::DemoCreator do
       end
     end
   end
+
+  describe 'GitHub npm package building' do
+    subject(:creator) do
+      described_class.new(
+        demo_name: demo_name,
+        shakapacker_version: 'github:shakacode/shakapacker@fix-node-env-default',
+        react_on_rails_version: '~> 16.0',
+        dry_run: true,
+        skip_pre_flight: true
+      )
+    end
+
+    let(:runner) { creator.instance_variable_get(:@runner) }
+
+    describe '#using_github_sources?' do
+      it 'returns true when shakapacker uses github source' do
+        expect(creator.send(:using_github_sources?)).to be true
+      end
+
+      it 'returns true when react_on_rails uses github source' do
+        creator = described_class.new(
+          demo_name: demo_name,
+          shakapacker_version: '~> 8.0',
+          react_on_rails_version: 'github:shakacode/react_on_rails@main',
+          dry_run: true,
+          skip_pre_flight: true
+        )
+
+        expect(creator.send(:using_github_sources?)).to be true
+      end
+
+      it 'returns true when both use github sources' do
+        creator = described_class.new(
+          demo_name: demo_name,
+          shakapacker_version: 'github:shakacode/shakapacker@main',
+          react_on_rails_version: 'github:shakacode/react_on_rails@main',
+          dry_run: true,
+          skip_pre_flight: true
+        )
+
+        expect(creator.send(:using_github_sources?)).to be true
+      end
+
+      it 'returns false when neither uses github sources' do
+        creator = described_class.new(
+          demo_name: demo_name,
+          shakapacker_version: '~> 8.0',
+          react_on_rails_version: '~> 16.0',
+          dry_run: true,
+          skip_pre_flight: true
+        )
+
+        expect(creator.send(:using_github_sources?)).to be false
+      end
+    end
+
+    describe '#build_github_npm_package' do
+      it 'clones repository with branch' do
+        allow(File).to receive(:directory?).and_return(false)
+
+        expect(runner).to receive(:run!).with(
+          %r{git clone --depth 1 --branch fix-node-env-default https://github.com/shakacode/shakapacker.git },
+          dir: Dir.pwd
+        )
+        expect(runner).to receive(:run!).with('npm install --legacy-peer-deps', dir: anything)
+        expect(runner).to receive(:run!).with('npm run build', dir: anything)
+        expect(runner).to receive(:run!).with(%r{rm -rf '/tmp/shakapacker-}, dir: Dir.pwd)
+
+        creator.send(:build_github_npm_package, 'shakapacker', 'github:shakacode/shakapacker@fix-node-env-default')
+      end
+
+      it 'clones repository without branch (default branch)' do
+        allow(File).to receive(:directory?).and_return(false)
+
+        expect(runner).to receive(:run!).with(
+          %r{git clone --depth 1 https://github.com/shakacode/shakapacker.git /tmp/shakapacker-},
+          dir: Dir.pwd
+        )
+        expect(runner).to receive(:run!).with('npm install --legacy-peer-deps', dir: anything)
+        expect(runner).to receive(:run!).with('npm run build', dir: anything)
+        expect(runner).to receive(:run!).with(%r{rm -rf '/tmp/shakapacker-}, dir: Dir.pwd)
+
+        creator.send(:build_github_npm_package, 'shakapacker', 'github:shakacode/shakapacker')
+      end
+
+      it 'runs npm install and build' do
+        allow(runner).to receive(:run!).with(/git clone/, dir: Dir.pwd)
+        allow(runner).to receive(:run!).with(/rm -rf/, dir: anything)
+        allow(File).to receive(:directory?).and_return(false)
+
+        expect(runner).to receive(:run!).with(
+          'npm install --legacy-peer-deps',
+          dir: %r{/tmp/shakapacker-}
+        )
+        expect(runner).to receive(:run!).with(
+          'npm run build',
+          dir: %r{/tmp/shakapacker-}
+        )
+
+        creator.send(:build_github_npm_package, 'shakapacker', 'github:shakacode/shakapacker@main')
+      end
+
+      it 'copies built package to node_modules when package directory exists' do
+        allow(runner).to receive(:run!).with(/git clone/, dir: Dir.pwd)
+        allow(runner).to receive(:run!).with('npm install --legacy-peer-deps', dir: anything)
+        allow(runner).to receive(:run!).with('npm run build', dir: anything)
+        allow(runner).to receive(:run!).with(%r{rm -rf '/tmp/shakapacker-}, dir: Dir.pwd)
+        allow(File).to receive(:directory?).and_return(true)
+
+        expect(runner).to receive(:run!).with(
+          %r{rm -rf 'demos/test-demo/node_modules/shakapacker/package' && cp -r '/tmp/shakapacker-.*/package'},
+          dir: Dir.pwd
+        )
+
+        creator.send(:build_github_npm_package, 'shakapacker', 'github:shakacode/shakapacker@main')
+      end
+
+      it 'cleans up temp directory' do
+        allow(runner).to receive(:run!).with(/git clone/, dir: Dir.pwd)
+        allow(runner).to receive(:run!).with('npm install --legacy-peer-deps', dir: anything)
+        allow(runner).to receive(:run!).with('npm run build', dir: anything)
+        allow(runner).to receive(:run!).with(/rm -rf.*node_modules/, dir: Dir.pwd)
+        allow(File).to receive(:directory?).and_return(true)
+
+        expect(runner).to receive(:run!).with(
+          %r{rm -rf '/tmp/shakapacker-.*'},
+          dir: Dir.pwd
+        )
+
+        creator.send(:build_github_npm_package, 'shakapacker', 'github:shakacode/shakapacker@main')
+      end
+    end
+  end
 end
