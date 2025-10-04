@@ -21,7 +21,8 @@ RSpec.describe DemoScripts::PreFlightChecks do
     context 'when all checks pass' do
       before do
         # Assume we're in a git repo and no uncommitted changes
-        allow(checks).to receive(:system).and_call_original
+        allow(checks).to receive(:system).with(/git rev-parse/).and_return(true)
+        allow(checks).to receive(:system).with(/git diff-index/).and_return(true)
       end
 
       it 'does not raise an error' do
@@ -66,6 +67,69 @@ RSpec.describe DemoScripts::PreFlightChecks do
           DemoScripts::PreFlightCheckError,
           /uncommitted changes/
         )
+      end
+    end
+
+    context 'when GitHub branch does not exist' do
+      subject(:checks) do
+        described_class.new(
+          demo_dir: demo_dir,
+          shakapacker_version: 'github:shakacode/shakapacker@nonexistent-branch',
+          verbose: false
+        )
+      end
+
+      before do
+        allow(checks).to receive(:system).with(/git rev-parse/).and_return(true)
+        allow(checks).to receive(:system).with(/git diff-index/).and_return(true)
+        allow(checks).to receive(:`).with(/git ls-remote/).and_return('')
+      end
+
+      it 'raises PreFlightCheckError' do
+        expect { checks.run! }.to raise_error(
+          DemoScripts::PreFlightCheckError,
+          /branch.*does not exist/i
+        )
+      end
+    end
+
+    context 'when GitHub branch exists' do
+      subject(:checks) do
+        described_class.new(
+          demo_dir: demo_dir,
+          shakapacker_version: 'github:shakacode/shakapacker@main',
+          verbose: false
+        )
+      end
+
+      before do
+        allow(checks).to receive(:system).with(/git rev-parse/).and_return(true)
+        allow(checks).to receive(:system).with(/git diff-index/).and_return(true)
+        allow(checks).to receive(:`).with(/git ls-remote/).and_return('abc123 refs/heads/main')
+      end
+
+      it 'does not raise an error' do
+        expect { checks.run! }.not_to raise_error
+      end
+    end
+
+    context 'when using GitHub without branch (default branch)' do
+      subject(:checks) do
+        described_class.new(
+          demo_dir: demo_dir,
+          shakapacker_version: 'github:shakacode/shakapacker',
+          verbose: false
+        )
+      end
+
+      before do
+        allow(checks).to receive(:system).with(/git rev-parse/).and_return(true)
+        allow(checks).to receive(:system).with(/git diff-index/).and_return(true)
+      end
+
+      it 'does not check branch existence (uses default)' do
+        expect(checks).not_to receive(:`).with(/git ls-remote/)
+        expect { checks.run! }.not_to raise_error
       end
     end
   end

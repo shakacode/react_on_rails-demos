@@ -56,7 +56,11 @@ module DemoScripts
     private
 
     def run_pre_flight_checks
-      PreFlightChecks.new(demo_dir: @demo_dir).run!
+      PreFlightChecks.new(
+        demo_dir: @demo_dir,
+        shakapacker_version: @config.shakapacker_version,
+        react_on_rails_version: @config.react_on_rails_version
+      ).run!
     end
 
     def create_rails_app
