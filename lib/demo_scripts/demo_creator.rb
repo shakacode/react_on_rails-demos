@@ -75,7 +75,8 @@ module DemoScripts
         '--skip-turbolinks',
         '--skip-docker',
         '--skip-kamal',
-        '--skip-solid'
+        '--skip-solid',
+        '--skip-git'
       ]
       all_args = (base_args + @rails_args).join(' ')
       @runner.run!("rails _#{@config.rails_version}_ new '#{@demo_dir}' #{all_args}")
