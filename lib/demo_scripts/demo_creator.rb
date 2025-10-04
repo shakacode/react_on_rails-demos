@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'shellwords'
+
 module DemoScripts
   # Creates a new React on Rails demo
   class DemoCreator
@@ -112,28 +114,81 @@ module DemoScripts
     end
 
     def add_gem_with_source(gem_name, version_spec)
+      raise Error, 'Invalid version spec: cannot be nil' if version_spec.nil?
+
       if version_spec.start_with?('github:')
-        # Parse github:org/repo@branch format
-        github_spec = version_spec.sub('github:', '')
-        if github_spec.include?('@')
-          repo, branch = github_spec.split('@', 2)
-          @runner.run!(
-            "bundle add #{gem_name} --github '#{repo}' --branch '#{branch}'",
-            dir: @demo_dir
-          )
-        else
-          @runner.run!(
-            "bundle add #{gem_name} --github '#{github_spec}'",
-            dir: @demo_dir
-          )
-        end
+        add_gem_from_github(gem_name, version_spec)
       else
-        # Standard version
-        @runner.run!(
-          "bundle add #{gem_name} --version '#{version_spec}' --strict",
-          dir: @demo_dir
-        )
+        add_gem_from_version(gem_name, version_spec)
       end
+    end
+
+    def add_gem_from_github(gem_name, version_spec)
+      # Parse and validate github:org/repo@branch format
+      github_spec = version_spec.sub('github:', '').strip
+
+      raise Error, "Invalid GitHub spec: empty after 'github:'" if github_spec.empty?
+
+      repo, branch = parse_github_spec(github_spec)
+      validate_github_repo(repo)
+      validate_github_branch(branch) if branch
+
+      cmd = build_github_bundle_command(gem_name, repo, branch)
+      @runner.run!(cmd, dir: @demo_dir)
+    end
+
+    def parse_github_spec(github_spec)
+      if github_spec.include?('@')
+        parts = github_spec.split('@', 2)
+        raise Error, 'Invalid GitHub spec: empty repository' if parts[0].empty?
+        raise Error, 'Invalid GitHub spec: empty branch' if parts[1].empty?
+
+        parts
+      else
+        [github_spec, nil]
+      end
+    end
+
+    def validate_github_repo(repo)
+      raise Error, 'Invalid GitHub repo: cannot be empty' if repo.nil? || repo.empty?
+
+      parts = repo.split('/')
+      raise Error, "Invalid GitHub repo format: expected 'org/repo', got '#{repo}'" unless parts.length == 2
+      raise Error, 'Invalid GitHub repo: empty organization' if parts[0].empty?
+      raise Error, 'Invalid GitHub repo: empty repository name' if parts[1].empty?
+
+      # Validate characters (GitHub allows alphanumeric, hyphens, underscores, periods)
+      valid_pattern = %r{\A[\w.-]+/[\w.-]+\z}
+      return if repo.match?(valid_pattern)
+
+      raise Error, "Invalid GitHub repo: '#{repo}' contains invalid characters"
+    end
+
+    def validate_github_branch(branch)
+      raise Error, 'Invalid GitHub branch: cannot be empty' if branch.nil? || branch.empty?
+
+      # Git branch names cannot contain certain characters
+      invalid_chars = ['..', '~', '^', ':', '?', '*', '[', '\\', ' ']
+      invalid_chars.each do |char|
+        raise Error, "Invalid GitHub branch: '#{branch}' contains invalid character '#{char}'" if branch.include?(char)
+      end
+    end
+
+    def build_github_bundle_command(gem_name, repo, branch)
+      cmd = ['bundle', 'add', gem_name, '--github', repo]
+      cmd.push('--branch', branch) if branch
+      Shellwords.join(cmd)
+    end
+
+    def add_gem_from_version(gem_name, version_spec)
+      raise Error, 'Invalid version spec: cannot be empty' if version_spec.nil? || version_spec.strip.empty?
+
+      # Don't use Shellwords for the entire command as it over-escapes version specs like '~> 1.0'
+      # The runner will handle proper escaping when executing
+      @runner.run!(
+        "bundle add #{gem_name} --version '#{version_spec}' --strict",
+        dir: @demo_dir
+      )
     end
 
     def create_symlinks
