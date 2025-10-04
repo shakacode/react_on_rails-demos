@@ -5,15 +5,17 @@ module DemoScripts
   class Config
     DEFAULT_SHAKAPACKER_VERSION = '~> 8.0'
     DEFAULT_REACT_ON_RAILS_VERSION = '~> 16.0'
+    DEFAULT_RAILS_VERSION = '8.0.3'
 
-    attr_reader :shakapacker_version, :react_on_rails_version
+    attr_reader :shakapacker_version, :react_on_rails_version, :rails_version
 
-    def initialize(config_file: nil, shakapacker_version: nil, react_on_rails_version: nil)
+    def initialize(config_file: nil, shakapacker_version: nil, react_on_rails_version: nil, rails_version: nil)
       @config_file = config_file || File.join(Dir.pwd, '.new-demo-versions')
       load_config if File.exist?(@config_file)
 
       @shakapacker_version = shakapacker_version || @shakapacker_version || DEFAULT_SHAKAPACKER_VERSION
       @react_on_rails_version = react_on_rails_version || @react_on_rails_version || DEFAULT_REACT_ON_RAILS_VERSION
+      @rails_version = rails_version || @rails_version || DEFAULT_RAILS_VERSION
     end
 
     private
@@ -22,10 +24,13 @@ module DemoScripts
       File.readlines(@config_file, encoding: 'UTF-8').each do |line|
         next if line.strip.empty? || line.strip.start_with?('#')
 
-        if line =~ /^SHAKAPACKER_VERSION\s*=\s*["'](.+)["']/
+        case line
+        when /^SHAKAPACKER_VERSION\s*=\s*["'](.+)["']/
           @shakapacker_version = ::Regexp.last_match(1)
-        elsif line =~ /^REACT_ON_RAILS_VERSION\s*=\s*["'](.+)["']/
+        when /^REACT_ON_RAILS_VERSION\s*=\s*["'](.+)["']/
           @react_on_rails_version = ::Regexp.last_match(1)
+        when /^RAILS_VERSION\s*=\s*["'](.+)["']/
+          @rails_version = ::Regexp.last_match(1)
         end
       end
     end

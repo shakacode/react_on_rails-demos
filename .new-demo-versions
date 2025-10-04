@@ -6,6 +6,9 @@
 #
 # To update existing demos, see docs/VERSION_MANAGEMENT.md
 
+# Rails version (specific version required for `rails new` command)
+RAILS_VERSION="8.0.3"
+
 # Shakapacker version (use ~> for compatibility range, or specific version)
 SHAKAPACKER_VERSION="~> 8.0"
 
