@@ -77,6 +77,9 @@ module DemoScripts
 
     def setup_database
       puts ''
+      puts '📦 Installing gems in new Rails app...'
+      @runner.run!('bundle install', dir: @demo_dir)
+      puts ''
       puts '📦 Setting up database...'
       @runner.run!('bin/rails db:create', dir: @demo_dir)
     end
