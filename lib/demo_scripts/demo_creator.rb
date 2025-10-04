@@ -42,11 +42,11 @@ module DemoScripts
       create_rails_app
       setup_database
       add_gems
-      build_github_npm_packages if using_github_sources?
       add_demo_common
       create_symlinks
       install_shakapacker
       install_react_on_rails
+      build_github_npm_packages if using_github_sources?
       create_readme
 
       print_completion_message
