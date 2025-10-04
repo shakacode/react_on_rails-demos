@@ -20,7 +20,11 @@ module DemoScripts
 
       puts "▶ #{full_command}" if @verbose
 
-      system(full_command)
+      if dir
+        Dir.chdir(dir) { system(command) }
+      else
+        system(command)
+      end
     end
 
     def run!(command, dir: nil)
@@ -38,7 +42,11 @@ module DemoScripts
         return ''
       end
 
-      `#{full_command}`.strip
+      if dir
+        Dir.chdir(dir) { `#{command}`.strip }
+      else
+        `#{command}`.strip
+      end
     end
   end
 end
