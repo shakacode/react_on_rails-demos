@@ -4,6 +4,9 @@ source 'https://rubygems.org'
 
 ruby '>= 3.0'
 
+# Rails for creating new demos
+gem 'rails', '~> 8.0'
+
 # Development dependencies
 gem 'lefthook', '~> 1.5'
 gem 'rspec', '~> 3.12'

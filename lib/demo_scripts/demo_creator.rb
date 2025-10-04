@@ -66,10 +66,13 @@ module DemoScripts
         '--skip-action-cable',
         '--skip-sprockets',
         '--skip-system-test',
-        '--skip-turbolinks'
+        '--skip-turbolinks',
+        '--skip-docker',
+        '--skip-kamal',
+        '--skip-solid'
       ]
       all_args = (base_args + @rails_args).join(' ')
-      @runner.run!("rails new '#{@demo_dir}' #{all_args}")
+      @runner.run!("bundle exec rails new '#{@demo_dir}' #{all_args}")
     end
 
     def setup_database
@@ -123,7 +126,7 @@ module DemoScripts
     def install_shakapacker
       puts ''
       puts '📦 Installing Shakapacker...'
-      @runner.run!('bundle exec rails shakapacker:install', dir: @demo_dir)
+      @runner.run!('bin/rails shakapacker:install', dir: @demo_dir)
     end
 
     def install_react_on_rails
@@ -132,7 +135,7 @@ module DemoScripts
       base_args = ['--ignore-warnings']
       all_args = (base_args + @react_on_rails_args).join(' ')
       @runner.run!(
-        "bundle exec rails generate react_on_rails:install #{all_args}",
+        "bin/rails generate react_on_rails:install #{all_args}",
         dir: @demo_dir
       )
     end
