@@ -72,7 +72,7 @@ module DemoScripts
         '--skip-solid'
       ]
       all_args = (base_args + @rails_args).join(' ')
-      @runner.run!("rails new '#{@demo_dir}' #{all_args}")
+      @runner.run!("bundle exec rails new '#{@demo_dir}' #{all_args}")
     end
 
     def setup_database
