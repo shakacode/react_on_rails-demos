@@ -21,7 +21,11 @@ module DemoScripts
       puts "▶ #{full_command}" if @verbose
 
       if dir
-        Dir.chdir(dir) { system(command) }
+        # Use Bundler.with_unbundled_env to ensure bundle commands in subdirectories
+        # use their own Gemfile instead of inheriting the parent's bundle environment
+        Bundler.with_unbundled_env do
+          Dir.chdir(dir) { system(command) }
+        end
       else
         system(command)
       end
@@ -43,7 +47,11 @@ module DemoScripts
       end
 
       if dir
-        Dir.chdir(dir) { `#{command}`.strip }
+        # Use Bundler.with_unbundled_env to ensure bundle commands in subdirectories
+        # use their own Gemfile instead of inheriting the parent's bundle environment
+        Bundler.with_unbundled_env do
+          Dir.chdir(dir) { `#{command}`.strip }
+        end
       else
         `#{command}`.strip
       end
