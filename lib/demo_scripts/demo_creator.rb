@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
 require 'shellwords'
-require 'securerandom'
+require 'tmpdir'
+require 'json'
 
 module DemoScripts
   # Creates a new React on Rails demo
@@ -183,14 +184,11 @@ module DemoScripts
     end
 
     def add_gem_from_version(gem_name, version_spec)
+      raise Error, 'Invalid gem name: cannot be empty' if gem_name.nil? || gem_name.strip.empty?
       raise Error, 'Invalid version spec: cannot be empty' if version_spec.nil? || version_spec.strip.empty?
 
-      # Don't use Shellwords for the entire command as it over-escapes version specs like '~> 1.0'
-      # The runner will handle proper escaping when executing
-      @runner.run!(
-        "bundle add #{gem_name} --version '#{version_spec}' --strict",
-        dir: @demo_dir
-      )
+      cmd = ['bundle', 'add', gem_name, '--version', version_spec, '--strict']
+      @runner.run!(Shellwords.join(cmd), dir: @demo_dir)
     end
 
     def create_symlinks
@@ -231,7 +229,10 @@ module DemoScripts
       return if @dry_run
 
       package_json_path = File.join(@demo_dir, 'package.json')
+      raise Error, "package.json not found at #{package_json_path}" unless File.exist?(package_json_path)
+
       package_json = JSON.parse(File.read(package_json_path))
+      raise Error, 'package.json missing dependencies key' unless package_json.key?('dependencies')
 
       update_package_dependency(package_json, 'shakapacker', @config.shakapacker_version)
       update_package_dependency(package_json, 'react_on_rails', @config.react_on_rails_version)
@@ -256,17 +257,23 @@ module DemoScripts
     end
 
     def build_github_npm_package(gem_name, version_spec)
+      raise Error, 'Invalid gem name: cannot be empty' if gem_name.nil? || gem_name.strip.empty?
+
       github_spec = version_spec.sub('github:', '').strip
       repo, branch = parse_github_spec(github_spec)
 
       puts "   Building #{gem_name} from #{repo}#{"@#{branch}" if branch}..."
 
-      # Clone and build in temp directory
-      temp_dir = "/tmp/#{gem_name}-#{SecureRandom.hex(4)}"
+      Dir.mktmpdir("#{gem_name}-") do |temp_dir|
+        clone_and_build_package(temp_dir, repo, branch, gem_name)
+      end
+    end
+
+    def clone_and_build_package(temp_dir, repo, branch, gem_name)
+      # Clone repository
       clone_cmd = ['git', 'clone', '--depth', '1']
       clone_cmd.push('--branch', branch) if branch
       clone_cmd.push("https://github.com/#{repo}.git", temp_dir)
-
       @runner.run!(Shellwords.join(clone_cmd), dir: Dir.pwd)
 
       # Build the npm package
@@ -274,18 +281,25 @@ module DemoScripts
       @runner.run!('npm run build', dir: temp_dir)
 
       # Copy built package to node_modules
+      copy_built_package(temp_dir, gem_name)
+    end
+
+    def copy_built_package(temp_dir, gem_name)
       package_src = File.join(temp_dir, 'package')
       package_dest = File.join(@demo_dir, 'node_modules', gem_name, 'package')
 
-      if File.directory?(package_src)
-        @runner.run!("rm -rf '#{package_dest}' && cp -r '#{package_src}' '#{package_dest}'", dir: Dir.pwd)
-        puts "   ✓ Built and installed #{gem_name} npm package"
-      else
+      unless File.directory?(package_src)
         puts "   ⚠ Warning: No package directory found in #{gem_name}, skipping npm build"
+        return
       end
 
-      # Cleanup
-      @runner.run!("rm -rf '#{temp_dir}'", dir: Dir.pwd)
+      # Use safe shell commands with proper escaping
+      rm_cmd = ['rm', '-rf', package_dest]
+      cp_cmd = ['cp', '-r', package_src, package_dest]
+
+      @runner.run!(Shellwords.join(rm_cmd), dir: Dir.pwd)
+      @runner.run!(Shellwords.join(cp_cmd), dir: Dir.pwd)
+      puts "   ✓ Built and installed #{gem_name} npm package"
     end
 
     def install_shakapacker
