@@ -309,13 +309,13 @@ module DemoScripts
     def install_shakapacker
       puts ''
       puts '📦 Installing Shakapacker...'
-      @runner.run!('bin/rails shakapacker:install', dir: @demo_dir)
+      @runner.run!('bin/rails shakapacker:install --force', dir: @demo_dir)
     end
 
     def install_react_on_rails
       puts ''
       puts '📦 Installing React on Rails (skipping git check)...'
-      base_args = ['--ignore-warnings']
+      base_args = ['--ignore-warnings', '--force']
       all_args = (base_args + @react_on_rails_args).join(' ')
       @runner.run!(
         "bin/rails generate react_on_rails:install #{all_args}",
@@ -326,7 +326,7 @@ module DemoScripts
     def install_demo_common_generator
       puts ''
       puts '📦 Installing demo common tools (Playwright, linting, git hooks)...'
-      @runner.run!('bin/rails generate shakacode_demo_common:install', dir: @demo_dir)
+      @runner.run!('bin/rails generate shakacode_demo_common:install --force', dir: @demo_dir)
     end
 
     def create_readme
