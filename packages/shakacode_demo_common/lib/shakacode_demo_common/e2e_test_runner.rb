@@ -51,7 +51,8 @@ module ShakacodeDemoCommon
     end
 
     def cleanup_between_modes
-      sleep 2 # Give server time to shut down and release ports
+      puts 'Waiting 2 seconds for server to release port...'
+      sleep 2
     end
 
     def print_test_header(mode_name)
@@ -79,26 +80,39 @@ module ShakacodeDemoCommon
 
   # Manages server lifecycle for e2e testing
   class ServerManager
-    DEFAULT_URL = 'http://localhost:3000'
+    DEFAULT_PORT = 3000
     MAX_STARTUP_ATTEMPTS = 60
     STARTUP_CHECK_INTERVAL = 1 # second
+    INITIAL_STARTUP_DELAY = 2 # seconds - give server time to initialize before checking
 
     attr_reader :mode
 
-    def initialize(mode)
+    def initialize(mode, port: DEFAULT_PORT)
       @mode = mode
+      @port = port
       @server_pid = nil
+      @server_pgid = nil
       @ready = false
     end
 
     def start
       puts "Starting server: #{@mode[:command]}..."
-      @server_pid = spawn(@mode[:env], @mode[:command], out: File::NULL, err: File::NULL)
+      # Start server in its own process group so we can kill the entire group
+      @server_pid = spawn(@mode[:env], @mode[:command], out: File::NULL, err: File::NULL, pgroup: true)
+      # Get the process group ID for later termination
+      @server_pgid = Process.getpgid(@server_pid)
+    rescue StandardError => e
+      # If we can't get pgid, we'll fall back to killing just the PID
+      puts "Warning: Failed to get process group ID: #{e.message}"
+      @server_pgid = nil
     end
 
     # rubocop:disable Naming/PredicateMethod
     def wait_until_ready
       puts 'Waiting for server to be ready...'
+
+      # Give server time to initialize before checking
+      sleep INITIAL_STARTUP_DELAY
 
       MAX_STARTUP_ATTEMPTS.times do
         if server_responding?
@@ -130,28 +144,51 @@ module ShakacodeDemoCommon
     private
 
     def server_responding?
-      response = Net::HTTP.get_response(URI(DEFAULT_URL))
+      url = "http://localhost:#{@port}"
+      response = Net::HTTP.get_response(URI(url))
       response.code.to_i < 500
     rescue Errno::ECONNREFUSED, Errno::EADDRNOTAVAIL, SocketError
       false
     end
 
     def terminate_server_process
-      # Kill the entire process group (negative PID)
-      # This ensures bin/dev's child processes (Rails, webpack, etc.) are also terminated
-      Process.kill('TERM', -@server_pid)
+      send_term_signal
       sleep 1
-
-      # Force kill any remaining processes
-      begin
-        Process.kill('KILL', -@server_pid)
-      rescue StandardError
-        nil
-      end
-
+      send_kill_signal
       Process.wait(@server_pid)
     rescue Errno::ESRCH, Errno::ECHILD
       # Process already terminated
+      nil
+    end
+
+    def send_term_signal
+      # Kill the entire process group if we have a valid pgid
+      # This ensures bin/dev's child processes (Rails, webpack, etc.) are also terminated
+      if @server_pgid
+        Process.kill('TERM', -@server_pgid)
+      else
+        # Fall back to killing just the main process
+        safe_kill_process('TERM', @server_pid)
+      end
+    rescue Errno::ESRCH, Errno::EPERM
+      # Process group doesn't exist or permission denied, try single process
+      safe_kill_process('TERM', @server_pid)
+    end
+
+    def send_kill_signal
+      # Force kill any remaining processes
+      if @server_pgid
+        Process.kill('KILL', -@server_pgid)
+      else
+        safe_kill_process('KILL', @server_pid)
+      end
+    rescue Errno::ESRCH, Errno::EPERM
+      safe_kill_process('KILL', @server_pid)
+    end
+
+    def safe_kill_process(signal, pid)
+      Process.kill(signal, pid)
+    rescue StandardError
       nil
     end
   end

@@ -109,14 +109,17 @@ RSpec.describe ShakacodeDemoCommon::ServerManager do
   describe '#start' do
     it 'spawns a server process' do
       allow(server).to receive(:puts)
+      allow(Process).to receive(:getpgid).with(12345).and_return(12345)
       expect(server).to receive(:spawn).with(
         mode[:env],
         mode[:command],
         out: File::NULL,
-        err: File::NULL
+        err: File::NULL,
+        pgroup: true
       ).and_return(12345)
 
       server.start
+      expect(server.instance_variable_get(:@server_pgid)).to eq(12345)
     end
   end
 
@@ -174,9 +177,10 @@ RSpec.describe ShakacodeDemoCommon::ServerManager do
   end
 
   describe '#stop' do
-    context 'when server is running' do
+    context 'when server is running with process group' do
       before do
         server.instance_variable_set(:@server_pid, 12345)
+        server.instance_variable_set(:@server_pgid, 12345)
         allow(server).to receive(:puts)
         allow(server).to receive(:sleep)
         allow(Process).to receive(:kill)
@@ -201,6 +205,27 @@ RSpec.describe ShakacodeDemoCommon::ServerManager do
       it 'handles already terminated process' do
         allow(Process).to receive(:kill).and_raise(Errno::ESRCH)
         expect { server.stop }.not_to raise_error
+      end
+    end
+
+    context 'when server is running without process group' do
+      before do
+        server.instance_variable_set(:@server_pid, 12345)
+        server.instance_variable_set(:@server_pgid, nil)
+        allow(server).to receive(:puts)
+        allow(server).to receive(:sleep)
+        allow(Process).to receive(:kill)
+        allow(Process).to receive(:wait)
+      end
+
+      it 'sends TERM signal to single process' do
+        expect(Process).to receive(:kill).with('TERM', 12345).and_raise(StandardError)
+        server.stop
+      end
+
+      it 'sends KILL signal to single process' do
+        expect(Process).to receive(:kill).with('KILL', 12345).and_raise(StandardError)
+        server.stop
       end
     end
 
