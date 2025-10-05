@@ -17,6 +17,7 @@ Gem::Specification.new do |spec|
 
   spec.required_ruby_version = '>= 3.0'
 
+  spec.add_dependency 'cypress-playwright-on-rails', '~> 0.14'
   spec.add_dependency 'rails', '>= 7.0'
   spec.add_dependency 'rubocop', '~> 1.50'
   spec.add_dependency 'rubocop-performance', '~> 1.17'
