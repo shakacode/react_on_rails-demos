@@ -517,28 +517,9 @@ module DemoScripts
     end
 
     def run_automated_tests
-      puts ''
-      puts '🧪 Running automated tests...'
-      puts ''
-
-      # Start the dev server in the background
-      puts '📡 Starting development server...'
-      @runner.run!('bin/dev', dir: @demo_dir, run_in_background: true)
-
-      # Wait for server to be ready
-      puts '⏳ Waiting for server to start...'
-      sleep 10
-
-      # Run Playwright tests
-      puts '🎭 Running Playwright E2E tests...'
-      @runner.run!('npx playwright test', dir: @demo_dir)
-
-      puts ''
-      puts '✅ All automated tests passed!'
-    rescue CommandError => e
-      puts ''
-      puts '⚠️  Automated tests failed (this is normal for new demos that need customization)'
-      puts "   Error: #{e.message}"
+      # Automated testing is complex - requires background process management
+      # For now, we'll skip this and let users run tests manually
+      # Future: implement proper background server and test execution
     end
 
     def print_completion_message
