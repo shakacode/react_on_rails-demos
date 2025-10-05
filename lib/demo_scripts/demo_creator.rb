@@ -327,7 +327,7 @@ module DemoScripts
       # Remove files that will conflict with React on Rails generator
       cleanup_conflicting_files
 
-      base_args = ['--ignore-warnings', '--force']
+      base_args = ['--ignore-warnings', '-f']
       all_args = (base_args + @react_on_rails_args).join(' ')
 
       @runner.run!(
