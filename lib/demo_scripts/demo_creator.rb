@@ -65,8 +65,9 @@ module DemoScripts
       install_shakapacker
       install_react_on_rails
       install_demo_common_generator
+      install_playwright_browsers unless @skip_playwright || using_github_sources?
       build_github_npm_packages if using_github_sources?
-      install_playwright_browsers unless @skip_playwright
+      install_playwright_browsers if !@skip_playwright && using_github_sources?
       create_readme
       cleanup_unnecessary_files
       create_metadata_file
