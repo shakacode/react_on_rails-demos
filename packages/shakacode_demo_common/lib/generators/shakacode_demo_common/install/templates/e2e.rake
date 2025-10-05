@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# rubocop:disable Metrics/BlockLength
 namespace :e2e do
   desc 'Run Playwright tests against all dev modes (bin/dev, bin/dev static, bin/dev prod)'
   task :test_all_modes do
@@ -59,7 +60,6 @@ namespace :e2e do
         success = system(test_env, 'npx playwright test')
 
         results[mode[:name]] = { success: success }
-
       rescue StandardError => e
         puts "ERROR: #{e.message}"
         results[mode[:name]] = { success: false, error: e.message }
@@ -105,3 +105,4 @@ namespace :e2e do
     exec 'npx playwright show-report'
   end
 end
+# rubocop:enable Metrics/BlockLength

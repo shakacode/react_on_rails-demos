@@ -108,15 +108,9 @@ module ShakacodeDemoCommon
         IGNORE
       end
 
-      def add_playwright_gem
-        say 'Adding cypress-playwright-on-rails gem'
-        gem 'cypress-playwright-on-rails', group: %i[development test]
-        run 'bundle install'
-      end
-
       def install_playwright
-        say 'Installing Playwright'
-        run 'bin/rails generate cypress_playwright_on_rails:install --playwright'
+        say 'Installing Playwright npm package'
+        run 'npm install --save-dev @playwright/test'
       end
 
       def copy_playwright_config
