@@ -327,21 +327,13 @@ module DemoScripts
       # Remove files that will conflict with React on Rails generator
       cleanup_conflicting_files
 
-      base_args = ['--ignore-warnings']
+      base_args = ['--ignore-warnings', '--force']
       all_args = (base_args + @react_on_rails_args).join(' ')
 
-      # Set THOR_MERGE=always to force overwrite without prompting
-      if @dry_run
-        @runner.run!(
-          "bin/rails generate react_on_rails:install #{all_args}",
-          dir: @demo_dir
-        )
-      else
-        @runner.run!(
-          "THOR_MERGE=always bin/rails generate react_on_rails:install #{all_args}",
-          dir: @demo_dir
-        )
-      end
+      @runner.run!(
+        "bin/rails generate react_on_rails:install #{all_args}",
+        dir: @demo_dir
+      )
     end
 
     def cleanup_conflicting_files
