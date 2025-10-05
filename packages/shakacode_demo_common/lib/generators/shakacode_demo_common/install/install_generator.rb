@@ -53,7 +53,7 @@ module ShakacodeDemoCommon
       end
 
       def add_npm_scripts
-        say 'Adding npm scripts'
+        say 'Adding npm scripts and Playwright dependency'
         package_json_path = Rails.root.join('package.json')
 
         return unless File.exist?(package_json_path)
@@ -68,6 +68,10 @@ module ShakacodeDemoCommon
                                          'format:check' => "prettier --check '**/*.{js,jsx,ts,tsx,json,css,scss,md}'",
                                          'prepare' => 'lefthook install'
                                        })
+
+        # Add Playwright to dependencies
+        package_json['dependencies'] ||= {}
+        package_json['dependencies']['@playwright/test'] = '^1.55.1'
 
         File.write(package_json_path, JSON.pretty_generate(package_json))
       end
@@ -106,11 +110,6 @@ module ShakacodeDemoCommon
           .vscode/
           .idea/
         IGNORE
-      end
-
-      def install_playwright
-        say 'Installing Playwright npm package'
-        run 'npm install --save-dev @playwright/test'
       end
 
       def copy_playwright_config
