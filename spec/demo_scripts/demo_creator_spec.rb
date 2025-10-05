@@ -483,4 +483,42 @@ RSpec.describe DemoScripts::DemoCreator do
       end
     end
   end
+
+  describe '#cleanup_unnecessary_files' do
+    subject(:creator) do
+      described_class.new(
+        demo_name: demo_name,
+        dry_run: false,
+        skip_pre_flight: true
+      )
+    end
+
+    it 'removes .github directory if it exists' do
+      github_dir = File.join(demo_dir, '.github')
+      allow(File).to receive(:directory?).with(github_dir).and_return(true)
+      expect(FileUtils).to receive(:rm_rf).with(github_dir)
+
+      creator.send(:cleanup_unnecessary_files)
+    end
+
+    it 'does not error if .github directory does not exist' do
+      github_dir = File.join(demo_dir, '.github')
+      allow(File).to receive(:directory?).with(github_dir).and_return(false)
+      expect(FileUtils).not_to receive(:rm_rf)
+
+      expect { creator.send(:cleanup_unnecessary_files) }.not_to raise_error
+    end
+
+    it 'does not remove files in dry-run mode' do
+      dry_run_creator = described_class.new(
+        demo_name: demo_name,
+        dry_run: true,
+        skip_pre_flight: true
+      )
+
+      expect(FileUtils).not_to receive(:rm_rf)
+
+      dry_run_creator.send(:cleanup_unnecessary_files)
+    end
+  end
 end
