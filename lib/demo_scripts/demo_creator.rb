@@ -6,6 +6,7 @@ require 'json'
 
 module DemoScripts
   # Creates a new React on Rails demo
+  # rubocop:disable Metrics/ClassLength
   class DemoCreator
     def initialize(
       demo_name:,
@@ -49,6 +50,7 @@ module DemoScripts
       install_react_on_rails
       build_github_npm_packages if using_github_sources?
       create_readme
+      cleanup_unnecessary_files
 
       print_completion_message
     end
@@ -80,7 +82,9 @@ module DemoScripts
         '--skip-docker',
         '--skip-kamal',
         '--skip-solid',
-        '--skip-git'
+        '--skip-git',
+        '--skip-ci',
+        '--skip-keeps'
       ]
       all_args = (base_args + @rails_args).join(' ')
       @runner.run!("rails _#{@config.rails_version}_ new '#{@demo_dir}' #{all_args}")
@@ -334,6 +338,20 @@ module DemoScripts
       File.write(File.join(@demo_dir, 'README.md'), readme_content)
     end
 
+    def cleanup_unnecessary_files
+      puts ''
+      puts '🧹 Cleaning up unnecessary files...'
+
+      return if @dry_run
+
+      # Remove .github directory if it exists (should be prevented by --skip-ci, but just in case)
+      github_dir = File.join(@demo_dir, '.github')
+      return unless File.directory?(github_dir)
+
+      FileUtils.rm_rf(github_dir)
+      puts '   Removed .github directory'
+    end
+
     def generate_readme_content
       current_date = Time.now.strftime('%Y-%m-%d')
 
@@ -402,4 +420,5 @@ module DemoScripts
       end
     end
   end
+  # rubocop:enable Metrics/ClassLength
 end
