@@ -53,7 +53,7 @@ module ShakacodeDemoCommon
       end
 
       def add_npm_scripts
-        say 'Adding npm scripts and Playwright dependency'
+        say 'Adding npm scripts'
         package_json_path = Rails.root.join('package.json')
 
         return unless File.exist?(package_json_path)
@@ -68,10 +68,6 @@ module ShakacodeDemoCommon
                                          'format:check' => "prettier --check '**/*.{js,jsx,ts,tsx,json,css,scss,md}'",
                                          'prepare' => 'lefthook install'
                                        })
-
-        # Add Playwright to dependencies
-        package_json['dependencies'] ||= {}
-        package_json['dependencies']['@playwright/test'] = '^1.55.1'
 
         File.write(package_json_path, JSON.pretty_generate(package_json))
       end
@@ -120,18 +116,17 @@ module ShakacodeDemoCommon
 
       def install_cypress_on_rails_with_playwright
         say 'Installing cypress-on-rails with Playwright framework'
-        run 'bin/rails generate cypress_on_rails:install --framework playwright'
-      end
-
-      def copy_playwright_config
-        say 'Creating Playwright configuration'
-        copy_file 'playwright.config.ts', 'playwright.config.ts'
+        run 'bin/rails generate cypress_on_rails:install --framework playwright --install_folder e2e'
       end
 
       def create_playwright_test
         say 'Creating Playwright test for hello_world React component'
-        empty_directory 'e2e'
         copy_file 'hello_world.spec.ts', 'e2e/hello_world.spec.ts'
+      end
+
+      def create_playwright_config_override
+        say 'Creating custom Playwright configuration'
+        copy_file 'playwright.config.ts', 'playwright.config.ts'
       end
 
       def create_e2e_rake_task
