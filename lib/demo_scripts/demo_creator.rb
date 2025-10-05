@@ -337,8 +337,8 @@ module DemoScripts
     def cleanup_conflicting_files
       return if @dry_run
 
+      # Only remove Procfile.* files - React on Rails will overwrite shakapacker.yml with --force
       conflicting_files = [
-        'config/shakapacker.yml',
         'Procfile.dev',
         'Procfile.dev-static-assets',
         'Procfile.dev-prod-assets'
