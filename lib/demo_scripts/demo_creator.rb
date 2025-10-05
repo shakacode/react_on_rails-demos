@@ -321,7 +321,7 @@ module DemoScripts
     def install_react_on_rails
       puts ''
       puts '📦 Installing React on Rails (skipping git check)...'
-      base_args = ['--ignore-warnings', '--force']
+      base_args = ['--ignore-warnings', '--force', '--skip']
       all_args = (base_args + @react_on_rails_args).join(' ')
       @runner.run!(
         "bin/rails generate react_on_rails:install #{all_args}",
