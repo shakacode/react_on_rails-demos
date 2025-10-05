@@ -396,6 +396,17 @@ RSpec.describe DemoScripts::DemoCreator do
     end
 
     describe '#build_github_npm_package' do
+      # Override creator for these tests to use dry_run: false
+      subject(:creator) do
+        described_class.new(
+          demo_name: demo_name,
+          shakapacker_version: 'github:shakacode/shakapacker@fix-node-env-default',
+          react_on_rails_version: '~> 16.0',
+          dry_run: false,
+          skip_pre_flight: true
+        )
+      end
+
       it 'clones repository with branch' do
         allow(File).to receive(:directory?).and_return(false)
         allow(Dir).to receive(:mktmpdir).and_yield('/tmp/shakapacker-test')

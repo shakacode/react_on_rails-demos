@@ -7,6 +7,8 @@ require 'json'
 module DemoScripts
   # Creates a new React on Rails demo
   class DemoCreator
+    include GitHubSpecParser
+
     def initialize(
       demo_name:,
       shakapacker_version: nil,
@@ -145,43 +147,6 @@ module DemoScripts
       @runner.run!(cmd, dir: @demo_dir)
     end
 
-    def parse_github_spec(github_spec)
-      if github_spec.include?('@')
-        parts = github_spec.split('@', 2)
-        raise Error, 'Invalid GitHub spec: empty repository' if parts[0].empty?
-        raise Error, 'Invalid GitHub spec: empty branch' if parts[1].empty?
-
-        parts
-      else
-        [github_spec, nil]
-      end
-    end
-
-    def validate_github_repo(repo)
-      raise Error, 'Invalid GitHub repo: cannot be empty' if repo.nil? || repo.empty?
-
-      parts = repo.split('/')
-      raise Error, "Invalid GitHub repo format: expected 'org/repo', got '#{repo}'" unless parts.length == 2
-      raise Error, 'Invalid GitHub repo: empty organization' if parts[0].empty?
-      raise Error, 'Invalid GitHub repo: empty repository name' if parts[1].empty?
-
-      # Validate characters (GitHub allows alphanumeric, hyphens, underscores, periods)
-      valid_pattern = %r{\A[\w.-]+/[\w.-]+\z}
-      return if repo.match?(valid_pattern)
-
-      raise Error, "Invalid GitHub repo: '#{repo}' contains invalid characters"
-    end
-
-    def validate_github_branch(branch)
-      raise Error, 'Invalid GitHub branch: cannot be empty' if branch.nil? || branch.empty?
-
-      # Git branch names cannot contain certain characters
-      invalid_chars = ['..', '~', '^', ':', '?', '*', '[', '\\', ' ']
-      invalid_chars.each do |char|
-        raise Error, "Invalid GitHub branch: '#{branch}' contains invalid character '#{char}'" if branch.include?(char)
-      end
-    end
-
     def build_github_bundle_command(gem_name, repo, branch)
       cmd = ['bundle', 'add', gem_name, '--github', repo]
       cmd.push('--branch', branch) if branch
@@ -264,6 +229,8 @@ module DemoScripts
     def build_github_npm_package(gem_name, version_spec)
       raise Error, 'Invalid gem name: cannot be empty' if gem_name.nil? || gem_name.strip.empty?
 
+      return if @dry_run
+
       github_spec = version_spec.sub('github:', '').strip
       repo, branch = parse_github_spec(github_spec)
 
@@ -272,6 +239,23 @@ module DemoScripts
       Dir.mktmpdir("#{gem_name}-") do |temp_dir|
         clone_and_build_package(temp_dir, repo, branch, gem_name)
       end
+    rescue CommandError, IOError, SystemCallError => e
+      error_message = <<~ERROR
+        Failed to build npm package for #{gem_name}
+
+        Error: #{e.message}
+
+        This can happen if:
+        - The repository doesn't have a valid npm package structure
+        - Build dependencies are missing
+        - Network connectivity issues occurred during clone
+
+        You may need to manually build the package or use a published version.
+      ERROR
+
+      new_error = Error.new(error_message)
+      new_error.set_backtrace(e.backtrace)
+      raise new_error
     end
 
     def clone_and_build_package(temp_dir, repo, branch, gem_name)
