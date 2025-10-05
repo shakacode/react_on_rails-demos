@@ -1,8 +1,12 @@
 # frozen_string_literal: true
 
+require 'open3'
+
 module DemoScripts
   # Pre-flight checks before creating/updating demos
   class PreFlightChecks
+    include GitHubSpecParser
+
     def initialize(demo_dir:, shakapacker_version: nil, react_on_rails_version: nil, verbose: true)
       @demo_dir = demo_dir
       @shakapacker_version = shakapacker_version
@@ -60,21 +64,29 @@ module DemoScripts
       check_github_branch_exists(@react_on_rails_version) if @react_on_rails_version
     end
 
+    # rubocop:disable Metrics/MethodLength
     def check_github_branch_exists(version_spec)
       return unless version_spec.start_with?('github:')
 
       github_spec = version_spec.sub('github:', '').strip
       repo, branch = parse_github_spec(github_spec)
 
+      # Validate repo and branch to prevent command injection
+      validate_github_repo(repo)
+      validate_github_branch(branch) if branch
+
       return unless branch # If no branch specified, will use default branch
 
       puts "  Checking if branch '#{branch}' exists in #{repo}..." if @verbose
 
-      # Use git ls-remote to check if branch exists
-      cmd = "git ls-remote --heads https://github.com/#{repo}.git refs/heads/#{branch} 2>&1"
-      output = `#{cmd}`
+      # Use Open3.capture2 for safe command execution
+      stdout, status = Open3.capture2(
+        'git', 'ls-remote', '--heads',
+        "https://github.com/#{repo}.git",
+        "refs/heads/#{branch}"
+      )
 
-      if output.strip.empty?
+      if stdout.strip.empty? || !status.success?
         error_message = <<~ERROR
           GitHub branch not found: #{repo}@#{branch}
 
@@ -91,14 +103,6 @@ module DemoScripts
 
       puts "  ✓ Branch '#{branch}' exists in #{repo}" if @verbose
     end
-
-    def parse_github_spec(github_spec)
-      if github_spec.include?('@')
-        parts = github_spec.split('@', 2)
-        [parts[0], parts[1]]
-      else
-        [github_spec, nil]
-      end
-    end
+    # rubocop:enable Metrics/MethodLength
   end
 end

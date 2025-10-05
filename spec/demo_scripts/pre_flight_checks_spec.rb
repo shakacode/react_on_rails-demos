@@ -82,7 +82,11 @@ RSpec.describe DemoScripts::PreFlightChecks do
       before do
         allow(checks).to receive(:system).with(/git rev-parse/).and_return(true)
         allow(checks).to receive(:system).with(/git diff-index/).and_return(true)
-        allow(checks).to receive(:`).with(/git ls-remote/).and_return('')
+        allow(Open3).to receive(:capture2).with(
+          'git', 'ls-remote', '--heads',
+          'https://github.com/shakacode/shakapacker.git',
+          'refs/heads/nonexistent-branch'
+        ).and_return(['', instance_double(Process::Status, success?: false)])
       end
 
       it 'raises PreFlightCheckError' do
@@ -105,7 +109,11 @@ RSpec.describe DemoScripts::PreFlightChecks do
       before do
         allow(checks).to receive(:system).with(/git rev-parse/).and_return(true)
         allow(checks).to receive(:system).with(/git diff-index/).and_return(true)
-        allow(checks).to receive(:`).with(/git ls-remote/).and_return('abc123 refs/heads/main')
+        allow(Open3).to receive(:capture2).with(
+          'git', 'ls-remote', '--heads',
+          'https://github.com/shakacode/shakapacker.git',
+          'refs/heads/main'
+        ).and_return(['abc123 refs/heads/main', instance_double(Process::Status, success?: true)])
       end
 
       it 'does not raise an error' do
@@ -128,7 +136,7 @@ RSpec.describe DemoScripts::PreFlightChecks do
       end
 
       it 'does not check branch existence (uses default)' do
-        expect(checks).not_to receive(:`).with(/git ls-remote/)
+        expect(Open3).not_to receive(:capture2)
         expect { checks.run! }.not_to raise_error
       end
     end
