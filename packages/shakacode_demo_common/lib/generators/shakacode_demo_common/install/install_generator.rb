@@ -92,7 +92,7 @@ module ShakacodeDemoCommon
 
       def add_to_gitignore
         say 'Updating .gitignore'
-        append_to_file '.gitignore', <<~IGNORE
+        gitignore_content = <<~IGNORE
 
           # Lefthook
           .lefthook/
@@ -110,6 +110,12 @@ module ShakacodeDemoCommon
           .vscode/
           .idea/
         IGNORE
+
+        if File.exist?('.gitignore')
+          append_to_file '.gitignore', gitignore_content
+        else
+          create_file '.gitignore', gitignore_content
+        end
       end
 
       def copy_playwright_config
