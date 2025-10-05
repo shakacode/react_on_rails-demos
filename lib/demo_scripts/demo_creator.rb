@@ -19,10 +19,13 @@ module DemoScripts
       dry_run: false,
       skip_pre_flight: false,
       shakapacker_prerelease: false,
-      react_on_rails_prerelease: false
+      react_on_rails_prerelease: false,
+      scratch: false
     )
       @demo_name = demo_name
-      @demo_dir = File.join('demos', demo_name)
+      @scratch = scratch
+      demos_base_dir = scratch ? 'demos-scratch' : 'demos'
+      @demo_dir = File.join(demos_base_dir, demo_name)
       @config = Config.new(
         shakapacker_version: shakapacker_version,
         react_on_rails_version: react_on_rails_version,

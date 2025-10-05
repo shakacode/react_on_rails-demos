@@ -41,6 +41,9 @@ vendor/bundle/
 /demos/*/public/packs-test
 /demos/*/yarn-error.log
 
+# Scratch demos (experimental/temporary demos)
+/demos-scratch/
+
 # Testing
 /demos/*/coverage/
 /demos/*/test/reports/

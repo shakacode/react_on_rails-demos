@@ -18,6 +18,27 @@ RSpec.describe DemoScripts::DemoCreator do
 
       expect(creator).to be_a(described_class)
     end
+
+    it 'uses demos directory by default' do
+      creator = described_class.new(
+        demo_name: demo_name,
+        dry_run: true,
+        skip_pre_flight: true
+      )
+
+      expect(creator.instance_variable_get(:@demo_dir)).to eq("demos/#{demo_name}")
+    end
+
+    it 'uses demos-scratch directory when scratch flag is true' do
+      creator = described_class.new(
+        demo_name: demo_name,
+        scratch: true,
+        dry_run: true,
+        skip_pre_flight: true
+      )
+
+      expect(creator.instance_variable_get(:@demo_dir)).to eq("demos-scratch/#{demo_name}")
+    end
   end
 
   describe '#create!' do
