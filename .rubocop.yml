@@ -1,12 +1,12 @@
 # RuboCop configuration for React on Rails Demos monorepo
 
-plugins:
+require:
   - rubocop-performance
 
 AllCops:
   NewCops: enable
   SuggestExtensions: false
-  TargetRubyVersion: 3.0
+  TargetRubyVersion: 3.1
   Exclude:
     - 'node_modules/**/*'
     - 'demos/**/node_modules/**/*'
@@ -40,8 +40,6 @@ Metrics/ClassLength:
 # Allow more complex methods for demo scaffolding
 Metrics/AbcSize:
   Max: 25
-  Exclude:
-    - 'lib/demo_scripts/demo_creator.rb'
 
 Metrics/CyclomaticComplexity:
   Max: 10

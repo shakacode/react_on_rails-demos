@@ -24,6 +24,7 @@ module DemoScripts
       skip_playwright: false,
       typescript: false
     )
+      validate_demo_name!(demo_name)
       @demo_name = demo_name
       @scratch = scratch
       @skip_playwright = skip_playwright
@@ -49,14 +50,7 @@ module DemoScripts
     def create!
       run_pre_flight_checks unless @skip_pre_flight
 
-      puts ''
-      if @dry_run
-        puts '🔍 DRY RUN MODE - Commands that would be executed:'
-      else
-        puts "🚀 Creating new React on Rails demo: #{@demo_name}"
-      end
-      puts ''
-
+      print_start_message
       @creation_start_time = Time.now
 
       create_rails_app
@@ -67,19 +61,7 @@ module DemoScripts
       install_shakapacker
       install_react_on_rails
       install_demo_common_generator
-
-      # Install Playwright browsers early for non-GitHub sources
-      # (dependencies are already installed via demo_common generator)
-      install_playwright_browsers unless @skip_playwright || using_github_sources?
-
-      # Build GitHub packages and reinstall dependencies
-      # This updates package.json and runs npm install again
-      build_github_npm_packages if using_github_sources?
-
-      # Install Playwright browsers after GitHub package building
-      # (npm dependencies are now ready after rebuild)
-      install_playwright_browsers if !@skip_playwright && using_github_sources?
-
+      handle_playwright_installation
       create_readme
       cleanup_unnecessary_files
       create_metadata_file
@@ -89,6 +71,39 @@ module DemoScripts
     end
 
     private
+
+    def print_start_message
+      puts ''
+      if @dry_run
+        puts '🔍 DRY RUN MODE - Commands that would be executed:'
+      else
+        puts "🚀 Creating new React on Rails demo: #{@demo_name}"
+      end
+      puts ''
+    end
+
+    def handle_playwright_installation
+      # Install Playwright browsers at the right time:
+      # - For npm packages: install after demo_common generator (dependencies already ready)
+      # - For GitHub sources: install after building packages (dependencies ready after rebuild)
+      return if @skip_playwright
+
+      install_playwright_browsers unless using_github_sources?
+      build_github_npm_packages if using_github_sources?
+      install_playwright_browsers if using_github_sources?
+    end
+
+    def validate_demo_name!(name)
+      raise ArgumentError, 'Demo name cannot be empty' if name.nil? || name.strip.empty?
+
+      raise ArgumentError, 'Demo name cannot contain slashes' if name.include?('/')
+
+      raise ArgumentError, 'Demo name cannot start with . or _' if name.start_with?('.', '_')
+
+      return if name.match?(/^[a-zA-Z0-9_-]+$/)
+
+      raise ArgumentError, 'Demo name can only contain alphanumeric characters, hyphens, and underscores'
+    end
 
     def run_pre_flight_checks
       PreFlightChecks.new(
@@ -349,8 +364,6 @@ module DemoScripts
     end
 
     def cleanup_conflicting_files
-      return if @dry_run
-
       # Only remove Procfile.* files - React on Rails will overwrite shakapacker.yml with --force
       conflicting_files = [
         'Procfile.dev',
@@ -360,7 +373,11 @@ module DemoScripts
 
       conflicting_files.each do |file|
         file_path = File.join(@demo_dir, file)
-        if File.exist?(file_path)
+        next unless File.exist?(file_path)
+
+        if @dry_run
+          puts "   [DRY RUN] Would remove conflicting file: #{file}"
+        else
           File.delete(file_path)
           puts "   Removed conflicting file: #{file}"
         end
@@ -481,8 +498,8 @@ module DemoScripts
         'options' => {
           'rails_args' => @rails_args,
           'react_on_rails_args' => @react_on_rails_args,
-          'shakapacker_prerelease' => @config.shakapacker_version&.start_with?('github:') || false,
-          'react_on_rails_prerelease' => @config.react_on_rails_version&.start_with?('github:') || false
+          'shakapacker_prerelease' => @config.shakapacker_version&.start_with?('github:'),
+          'react_on_rails_prerelease' => @config.react_on_rails_version&.start_with?('github:')
         }.compact,
         'command' => reconstruct_command,
         'ruby_version' => RUBY_VERSION,
@@ -530,44 +547,64 @@ module DemoScripts
       puts ''
       puts '=' * 80
       puts ''
-      if @dry_run
-        puts '✅ DRY RUN COMPLETE!'
-        puts ''
-        puts 'Review the commands above to see what would be executed.'
-        puts ''
-        puts 'To actually create the demo, run:'
-        puts "  bin/new-demo #{@demo_name}"
-      else
-        puts '🎉 DEMO CREATED SUCCESSFULLY!'
-        puts ''
-        puts "   Location: #{@demo_dir}"
-        puts "   Created:  #{@creation_start_time.strftime('%Y-%m-%d %H:%M:%S')}"
-        puts ''
-        puts '📋 Available Commands:'
-        puts ''
-        puts '   Start development server:'
-        puts "   $ cd #{@demo_dir} && bin/dev"
-        puts ''
-        puts '   Run E2E tests:'
-        puts "   $ cd #{@demo_dir} && npx playwright test"
-        puts ''
-        puts '   Run linting:'
-        puts "   $ cd #{@demo_dir} && bundle exec rubocop"
-        puts ''
-        puts '📚 Development Modes:'
-        puts '   • bin/dev                    - HMR (Hot Module Replacement)'
-        puts '   • bin/dev static             - Static assets mode'
-        puts '   • bin/dev prod               - Production-like mode'
-        puts ''
-        puts '🔗 Useful URLs (when server is running):'
-        puts '   • App:         http://localhost:3000'
-        puts '   • Hello World: http://localhost:3000/hello_world'
-        puts ''
-        puts "📝 Metadata: #{@demo_dir}/.demo-metadata.yml"
-        puts ''
-      end
+      @dry_run ? print_dry_run_completion : print_success_completion
       puts '=' * 80
       puts ''
+    end
+
+    def print_dry_run_completion
+      puts '✅ DRY RUN COMPLETE!'
+      puts ''
+      puts 'Review the commands above to see what would be executed.'
+      puts ''
+      puts 'To actually create the demo, run:'
+      puts "  bin/new-demo #{@demo_name}"
+    end
+
+    def print_success_completion
+      puts '🎉 DEMO CREATED SUCCESSFULLY!'
+      puts ''
+      print_demo_info
+      puts ''
+      print_available_commands
+      puts ''
+      print_development_modes
+      puts ''
+      print_useful_urls
+      puts ''
+      puts "📝 Metadata: #{@demo_dir}/.demo-metadata.yml"
+      puts ''
+    end
+
+    def print_demo_info
+      puts "   Location: #{@demo_dir}"
+      puts "   Created:  #{@creation_start_time.strftime('%Y-%m-%d %H:%M:%S')}"
+    end
+
+    def print_available_commands
+      puts '📋 Available Commands:'
+      puts ''
+      puts '   Start development server:'
+      puts "   $ cd #{@demo_dir} && bin/dev"
+      puts ''
+      puts '   Run E2E tests:'
+      puts "   $ cd #{@demo_dir} && npx playwright test"
+      puts ''
+      puts '   Run linting:'
+      puts "   $ cd #{@demo_dir} && bundle exec rubocop"
+    end
+
+    def print_development_modes
+      puts '📚 Development Modes:'
+      puts '   • bin/dev                    - HMR (Hot Module Replacement)'
+      puts '   • bin/dev static             - Static assets mode'
+      puts '   • bin/dev prod               - Production-like mode'
+    end
+
+    def print_useful_urls
+      puts '🔗 Useful URLs (when server is running):'
+      puts '   • App:         http://localhost:3000'
+      puts '   • Hello World: http://localhost:3000/hello_world'
     end
   end
   # rubocop:enable Metrics/ClassLength

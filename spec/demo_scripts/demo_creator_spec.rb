@@ -19,6 +19,63 @@ RSpec.describe DemoScripts::DemoCreator do
       expect(creator).to be_a(described_class)
     end
 
+    context 'demo_name validation' do
+      it 'raises error for empty demo name' do
+        expect do
+          described_class.new(demo_name: '', dry_run: true, skip_pre_flight: true)
+        end.to raise_error(ArgumentError, 'Demo name cannot be empty')
+      end
+
+      it 'raises error for nil demo name' do
+        expect do
+          described_class.new(demo_name: nil, dry_run: true, skip_pre_flight: true)
+        end.to raise_error(ArgumentError, 'Demo name cannot be empty')
+      end
+
+      it 'raises error for demo name with slashes' do
+        expect do
+          described_class.new(demo_name: 'demo/test', dry_run: true, skip_pre_flight: true)
+        end.to raise_error(ArgumentError, 'Demo name cannot contain slashes')
+      end
+
+      it 'raises error for demo name starting with dot' do
+        expect do
+          described_class.new(demo_name: '.hidden', dry_run: true, skip_pre_flight: true)
+        end.to raise_error(ArgumentError, 'Demo name cannot start with . or _')
+      end
+
+      it 'raises error for demo name starting with underscore' do
+        expect do
+          described_class.new(demo_name: '_private', dry_run: true, skip_pre_flight: true)
+        end.to raise_error(ArgumentError, 'Demo name cannot start with . or _')
+      end
+
+      it 'raises error for demo name with special characters' do
+        expect do
+          described_class.new(demo_name: 'demo@test', dry_run: true, skip_pre_flight: true)
+        end.to raise_error(ArgumentError,
+                           'Demo name can only contain alphanumeric characters, hyphens, and underscores')
+      end
+
+      it 'accepts valid demo names with hyphens' do
+        expect do
+          described_class.new(demo_name: 'test-demo', dry_run: true, skip_pre_flight: true)
+        end.not_to raise_error
+      end
+
+      it 'accepts valid demo names with underscores' do
+        expect do
+          described_class.new(demo_name: 'test_demo', dry_run: true, skip_pre_flight: true)
+        end.not_to raise_error
+      end
+
+      it 'accepts valid demo names with numbers' do
+        expect do
+          described_class.new(demo_name: 'test123', dry_run: true, skip_pre_flight: true)
+        end.not_to raise_error
+      end
+    end
+
     it 'uses demos directory by default' do
       creator = described_class.new(
         demo_name: demo_name,

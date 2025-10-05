@@ -116,7 +116,15 @@ module ShakacodeDemoCommon
 
       def install_cypress_on_rails_with_playwright
         say 'Installing cypress-on-rails with Playwright framework'
-        run 'bin/rails generate cypress_on_rails:install --framework playwright --install_folder e2e'
+        success = run 'bin/rails generate cypress_on_rails:install --framework playwright --install_folder e2e'
+
+        unless success
+          say 'Failed to install cypress-on-rails generator', :red
+          command = 'bin/rails generate cypress_on_rails:install --framework playwright --install_folder e2e'
+          say "You may need to run: #{command}", :yellow
+        end
+
+        success
       end
 
       def create_playwright_test
