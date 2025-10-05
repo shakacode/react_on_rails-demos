@@ -148,4 +148,136 @@ RSpec.describe DemoScripts::Config do
       end
     end
   end
+
+  describe '#parse_gem_versions' do
+    let(:config) { described_class.new(config_file: '/nonexistent') }
+
+    it 'parses gem versions from stdout' do
+      stdout = 'shakapacker (9.0.0.beta.1, 8.0.2, 8.0.1)'
+      versions = config.send(:parse_gem_versions, stdout)
+
+      expect(versions).to eq(['9.0.0.beta.1', '8.0.2', '8.0.1'])
+    end
+
+    it 'returns empty array when no versions found' do
+      stdout = 'shakapacker'
+      versions = config.send(:parse_gem_versions, stdout)
+
+      expect(versions).to eq([])
+    end
+
+    it 'handles empty stdout' do
+      versions = config.send(:parse_gem_versions, '')
+      expect(versions).to eq([])
+    end
+  end
+
+  describe '#find_latest_prerelease' do
+    let(:config) { described_class.new(config_file: '/nonexistent') }
+
+    it 'finds valid beta version' do
+      versions = ['9.0.0.beta.1', '8.0.2', '8.0.1']
+      result = config.send(:find_latest_prerelease, versions)
+
+      expect(result).to eq('9.0.0.beta.1')
+    end
+
+    it 'finds valid rc version' do
+      versions = ['9.0.0.rc.2', '9.0.0.beta.1', '8.0.2']
+      result = config.send(:find_latest_prerelease, versions)
+
+      expect(result).to eq('9.0.0.rc.2')
+    end
+
+    it 'accepts versions with dot separator (e.g., 9.0.0.beta.1)' do
+      versions = ['9.0.0.beta.1', '8.0.2']
+      result = config.send(:find_latest_prerelease, versions)
+
+      expect(result).to eq('9.0.0.beta.1')
+    end
+
+    it 'accepts versions with dash separator (e.g., 9.0.0-beta.1)' do
+      versions = ['9.0.0-beta.1', '8.0.2']
+      result = config.send(:find_latest_prerelease, versions)
+
+      expect(result).to eq('9.0.0-beta.1')
+    end
+
+    it 'rejects invalid formats' do
+      versions = ['9.0.beta', '8.0.2', 'foo.beta.1']
+      result = config.send(:find_latest_prerelease, versions)
+
+      expect(result).to be_nil
+    end
+
+    it 'rejects versions with beta/rc not following semver' do
+      versions = ['beta.9.0.0', '8.0.2']
+      result = config.send(:find_latest_prerelease, versions)
+
+      expect(result).to be_nil
+    end
+
+    it 'returns nil when no prerelease versions exist' do
+      versions = ['8.0.2', '8.0.1', '7.9.0']
+      result = config.send(:find_latest_prerelease, versions)
+
+      expect(result).to be_nil
+    end
+
+    it 'returns first prerelease (latest) when multiple exist' do
+      # rubygems returns versions in descending order
+      versions = ['9.0.0.beta.2', '9.0.0.beta.1', '8.0.2']
+      result = config.send(:find_latest_prerelease, versions)
+
+      expect(result).to eq('9.0.0.beta.2')
+    end
+
+    it 'handles empty array' do
+      result = config.send(:find_latest_prerelease, [])
+      expect(result).to be_nil
+    end
+  end
+
+  describe '#default_version_for' do
+    let(:config) { described_class.new(config_file: '/nonexistent') }
+
+    it 'returns default shakapacker version' do
+      expect(config.send(:default_version_for, 'shakapacker')).to eq('~> 8.0')
+    end
+
+    it 'returns default react_on_rails version' do
+      expect(config.send(:default_version_for, 'react_on_rails')).to eq('~> 16.0')
+    end
+
+    it 'raises ArgumentError for unknown gem' do
+      expect do
+        config.send(:default_version_for, 'unknown_gem')
+      end.to raise_error(ArgumentError, 'Unknown gem: unknown_gem')
+    end
+  end
+
+  describe '#fetch_latest_prerelease integration' do
+    let(:config) { described_class.new(config_file: '/nonexistent') }
+
+    it 'returns nil on command failure' do
+      allow(Open3).to receive(:capture3).and_return(['', 'error', double(success?: false)])
+
+      result = config.send(:fetch_latest_prerelease, 'shakapacker')
+      expect(result).to be_nil
+    end
+
+    it 'returns nil when exception occurs' do
+      allow(Open3).to receive(:capture3).and_raise(StandardError, 'test error')
+
+      result = config.send(:fetch_latest_prerelease, 'shakapacker')
+      expect(result).to be_nil
+    end
+
+    it 'uses array syntax for gem search command (security)' do
+      expect(Open3).to receive(:capture3).with('gem', 'search', '-ra', '^shakapacker$')
+                                         .and_return(['shakapacker (8.0.0)', '', double(success?: true)])
+
+      config.send(:fetch_latest_prerelease, 'shakapacker')
+    end
+  end
 end

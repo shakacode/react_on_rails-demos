@@ -62,7 +62,8 @@ module DemoScripts
     def fetch_latest_prerelease(gem_name)
       require 'open3'
 
-      stdout, stderr, status = Open3.capture3("gem search -ra '^#{gem_name}$'")
+      # Use array syntax to prevent command injection
+      stdout, stderr, status = Open3.capture3('gem', 'search', '-ra', "^#{gem_name}$")
 
       unless status.success?
         warn "Warning: Failed to fetch prerelease version for #{gem_name}: #{stderr}"
@@ -70,7 +71,7 @@ module DemoScripts
       end
 
       versions = parse_gem_versions(stdout)
-      prerelease = versions.find { |v| v.match?(/\.(beta|rc)/) }
+      prerelease = find_latest_prerelease(versions)
 
       if prerelease
         puts "   Found prerelease version for #{gem_name}: #{prerelease}"
@@ -90,6 +91,18 @@ module DemoScripts
       return [] unless match
 
       match[1].split(',').map(&:strip)
+    end
+
+    def find_latest_prerelease(versions)
+      # Strict semver prerelease pattern: must have major.minor.patch followed by -beta.N or -rc.N
+      # This ensures we only match valid semver prereleases, not arbitrary strings
+      prerelease_versions = versions.grep(/^\d+\.\d+\.\d+[.-](beta|rc)(\.\d+)?$/i)
+
+      return nil if prerelease_versions.empty?
+
+      # Sort by version to get the latest (versions are already sorted by rubygems, but be explicit)
+      # rubygems returns versions in descending order, so first match is latest
+      prerelease_versions.first
     end
   end
 end
