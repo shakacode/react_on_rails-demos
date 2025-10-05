@@ -10,12 +10,12 @@ module DemoScripts
     attr_reader :shakapacker_version, :react_on_rails_version, :rails_version
 
     def initialize(config_file: nil, shakapacker_version: nil, react_on_rails_version: nil, rails_version: nil,
-                   use_prerelease: false)
+                   shakapacker_prerelease: false, react_on_rails_prerelease: false)
       @config_file = config_file || File.join(Dir.pwd, '.new-demo-versions')
       load_config if File.exist?(@config_file)
 
-      @shakapacker_version = resolve_version('shakapacker', shakapacker_version, use_prerelease)
-      @react_on_rails_version = resolve_version('react_on_rails', react_on_rails_version, use_prerelease)
+      @shakapacker_version = resolve_version('shakapacker', shakapacker_version, shakapacker_prerelease)
+      @react_on_rails_version = resolve_version('react_on_rails', react_on_rails_version, react_on_rails_prerelease)
       @rails_version = rails_version || @rails_version || DEFAULT_RAILS_VERSION
     end
 

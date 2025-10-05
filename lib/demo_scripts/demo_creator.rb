@@ -6,6 +6,7 @@ require 'json'
 
 module DemoScripts
   # Creates a new React on Rails demo
+  # rubocop:disable Metrics/ClassLength
   class DemoCreator
     include GitHubSpecParser
 
@@ -17,14 +18,16 @@ module DemoScripts
       react_on_rails_args: [],
       dry_run: false,
       skip_pre_flight: false,
-      use_prerelease: false
+      shakapacker_prerelease: false,
+      react_on_rails_prerelease: false
     )
       @demo_name = demo_name
       @demo_dir = File.join('demos', demo_name)
       @config = Config.new(
         shakapacker_version: shakapacker_version,
         react_on_rails_version: react_on_rails_version,
-        use_prerelease: use_prerelease
+        shakapacker_prerelease: shakapacker_prerelease,
+        react_on_rails_prerelease: react_on_rails_prerelease
       )
       @rails_args = rails_args || []
       @react_on_rails_args = react_on_rails_args || []
@@ -51,6 +54,7 @@ module DemoScripts
       create_symlinks
       install_shakapacker
       install_react_on_rails
+      install_demo_common_generator
       build_github_npm_packages if using_github_sources?
       create_readme
       cleanup_unnecessary_files
@@ -313,6 +317,12 @@ module DemoScripts
       )
     end
 
+    def install_demo_common_generator
+      puts ''
+      puts '📦 Installing demo common tools (Playwright, linting, git hooks)...'
+      @runner.run!('bin/rails generate shakacode_demo_common:install', dir: @demo_dir)
+    end
+
     def create_readme
       puts ''
       puts '📝 Creating README...'
@@ -405,4 +415,5 @@ module DemoScripts
       end
     end
   end
+  # rubocop:enable Metrics/ClassLength
 end
