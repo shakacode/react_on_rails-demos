@@ -21,7 +21,7 @@ namespace :e2e do
       begin
         # Start the server in the background
         puts "Starting server: #{mode[:command]}..."
-        server_pid = spawn(mode[:env], mode[:command], out: '/dev/null', err: '/dev/null')
+        server_pid = spawn(mode[:env], mode[:command], out: File::NULL, err: File::NULL)
 
         # Wait for server to be ready
         puts 'Waiting for server to be ready...'
