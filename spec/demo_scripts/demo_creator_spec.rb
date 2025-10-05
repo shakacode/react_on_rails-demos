@@ -670,6 +670,30 @@ RSpec.describe DemoScripts::DemoCreator do
       expect(command).to include('--scratch')
     end
 
+    it 'includes typescript flag when enabled' do
+      creator = described_class.new(
+        demo_name: demo_name,
+        typescript: true,
+        dry_run: true,
+        skip_pre_flight: true
+      )
+
+      command = creator.send(:reconstruct_command)
+      expect(command).to include('--typescript')
+    end
+
+    it 'includes skip-playwright flag when enabled' do
+      creator = described_class.new(
+        demo_name: demo_name,
+        skip_playwright: true,
+        dry_run: true,
+        skip_pre_flight: true
+      )
+
+      command = creator.send(:reconstruct_command)
+      expect(command).to include('--skip-playwright')
+    end
+
     it 'includes custom version arguments' do
       creator = described_class.new(
         demo_name: demo_name,

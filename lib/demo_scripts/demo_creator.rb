@@ -502,6 +502,8 @@ module DemoScripts
     def reconstruct_command
       cmd_parts = ["bin/new-demo #{@demo_name}"]
       cmd_parts << '--scratch' if @scratch
+      cmd_parts << '--typescript' if @typescript
+      cmd_parts << '--skip-playwright' if @skip_playwright
       if @config.shakapacker_version != Config::DEFAULT_SHAKAPACKER_VERSION
         cmd_parts << "--shakapacker-version=\"#{@config.shakapacker_version}\""
       end
