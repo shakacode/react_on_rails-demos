@@ -50,6 +50,8 @@ module DemoScripts
       end
       puts ''
 
+      @creation_start_time = Time.now
+
       create_rails_app
       setup_database
       add_gems
@@ -61,6 +63,7 @@ module DemoScripts
       build_github_npm_packages if using_github_sources?
       create_readme
       cleanup_unnecessary_files
+      create_metadata_file
 
       print_completion_message
     end
@@ -400,6 +403,55 @@ module DemoScripts
         - [Version Management](../../docs/VERSION_MANAGEMENT.md)
         - [Main repository README](../../README.md)
       README
+    end
+
+    def create_metadata_file
+      puts ''
+      puts '📝 Creating demo metadata file...'
+
+      return if @dry_run
+
+      shakapacker_github = @config.shakapacker_version&.start_with?('github:')
+      react_on_rails_github = @config.react_on_rails_version&.start_with?('github:')
+
+      metadata = {
+        demo_name: @demo_name,
+        demo_directory: @demo_dir,
+        scratch_mode: @scratch,
+        created_at: @creation_start_time.iso8601,
+        versions: {
+          rails: @config.rails_version,
+          shakapacker: @config.shakapacker_version,
+          react_on_rails: @config.react_on_rails_version
+        },
+        options: {
+          rails_args: @rails_args,
+          react_on_rails_args: @react_on_rails_args,
+          shakapacker_prerelease: shakapacker_github ? false : nil,
+          react_on_rails_prerelease: react_on_rails_github ? false : nil
+        }.compact,
+        command: reconstruct_command,
+        ruby_version: RUBY_VERSION,
+        bundler_version: Gem::Version.new(Bundler::VERSION).to_s
+      }
+
+      metadata_path = File.join(@demo_dir, '.demo-metadata.json')
+      File.write(metadata_path, JSON.pretty_generate(metadata))
+      puts "   Created #{metadata_path}"
+    end
+
+    def reconstruct_command
+      cmd_parts = ["bin/new-demo #{@demo_name}"]
+      cmd_parts << '--scratch' if @scratch
+      if @config.shakapacker_version != Config::DEFAULT_SHAKAPACKER_VERSION
+        cmd_parts << "--shakapacker-version=\"#{@config.shakapacker_version}\""
+      end
+      if @config.react_on_rails_version != Config::DEFAULT_REACT_ON_RAILS_VERSION
+        cmd_parts << "--react-on-rails-version=\"#{@config.react_on_rails_version}\""
+      end
+      cmd_parts << "--rails-args=\"#{@rails_args.join(',')}\"" if @rails_args.any?
+      cmd_parts << "--react-on-rails-args=\"#{@react_on_rails_args.join(',')}\"" if @react_on_rails_args.any?
+      cmd_parts.join(' ')
     end
 
     def print_completion_message

@@ -542,4 +542,119 @@ RSpec.describe DemoScripts::DemoCreator do
       dry_run_creator.send(:cleanup_unnecessary_files)
     end
   end
+
+  describe '#create_metadata_file' do
+    subject(:creator) do
+      described_class.new(
+        demo_name: demo_name,
+        shakapacker_version: 'github:shakacode/shakapacker@main',
+        react_on_rails_version: '~> 16.0',
+        rails_args: ['--skip-test'],
+        react_on_rails_args: ['--redux', '--typescript'],
+        scratch: true,
+        dry_run: false,
+        skip_pre_flight: true
+      )
+    end
+
+    it 'creates metadata JSON file with correct structure' do
+      creator.instance_variable_set(:@creation_start_time, Time.now)
+      scratch_demo_dir = 'demos-scratch/test-demo'
+      metadata_path = File.join(scratch_demo_dir, '.demo-metadata.json')
+
+      expect(File).to receive(:write).with(metadata_path, anything)
+
+      creator.send(:create_metadata_file)
+    end
+
+    it 'includes all required metadata fields' do
+      creator.instance_variable_set(:@creation_start_time, Time.new(2025, 1, 1, 12, 0, 0, '+00:00'))
+      scratch_demo_dir = 'demos-scratch/test-demo'
+      metadata_path = File.join(scratch_demo_dir, '.demo-metadata.json')
+
+      allow(File).to receive(:write) do |path, content|
+        expect(path).to eq(metadata_path)
+        metadata = JSON.parse(content)
+
+        expect(metadata['demo_name']).to eq('test-demo')
+        expect(metadata['demo_directory']).to eq('demos-scratch/test-demo')
+        expect(metadata['scratch_mode']).to be true
+        expect(metadata['created_at']).to match(/2025-01-01T12:00:00/)
+        expect(metadata['versions']['shakapacker']).to eq('github:shakacode/shakapacker@main')
+        expect(metadata['versions']['react_on_rails']).to eq('~> 16.0')
+        expect(metadata['options']['rails_args']).to eq(['--skip-test'])
+        expect(metadata['options']['react_on_rails_args']).to eq(['--redux', '--typescript'])
+        expect(metadata['command']).to include('--scratch')
+        expect(metadata['ruby_version']).to eq(RUBY_VERSION)
+      end
+
+      creator.send(:create_metadata_file)
+    end
+
+    it 'does not create file in dry-run mode' do
+      dry_run_creator = described_class.new(
+        demo_name: demo_name,
+        dry_run: true,
+        skip_pre_flight: true
+      )
+      dry_run_creator.instance_variable_set(:@creation_start_time, Time.now)
+
+      expect(File).not_to receive(:write)
+
+      dry_run_creator.send(:create_metadata_file)
+    end
+  end
+
+  describe '#reconstruct_command' do
+    it 'reconstructs basic command' do
+      creator = described_class.new(
+        demo_name: demo_name,
+        dry_run: true,
+        skip_pre_flight: true
+      )
+
+      command = creator.send(:reconstruct_command)
+      expect(command).to eq('bin/new-demo test-demo')
+    end
+
+    it 'includes scratch flag when enabled' do
+      creator = described_class.new(
+        demo_name: demo_name,
+        scratch: true,
+        dry_run: true,
+        skip_pre_flight: true
+      )
+
+      command = creator.send(:reconstruct_command)
+      expect(command).to include('--scratch')
+    end
+
+    it 'includes custom version arguments' do
+      creator = described_class.new(
+        demo_name: demo_name,
+        shakapacker_version: 'github:shakacode/shakapacker@main',
+        react_on_rails_version: '~> 16.1',
+        dry_run: true,
+        skip_pre_flight: true
+      )
+
+      command = creator.send(:reconstruct_command)
+      expect(command).to include('--shakapacker-version="github:shakacode/shakapacker@main"')
+      expect(command).to include('--react-on-rails-version="~> 16.1"')
+    end
+
+    it 'includes rails and react-on-rails args' do
+      creator = described_class.new(
+        demo_name: demo_name,
+        rails_args: ['--skip-test', '--api'],
+        react_on_rails_args: ['--redux', '--typescript'],
+        dry_run: true,
+        skip_pre_flight: true
+      )
+
+      command = creator.send(:reconstruct_command)
+      expect(command).to include('--rails-args="--skip-test,--api"')
+      expect(command).to include('--react-on-rails-args="--redux,--typescript"')
+    end
+  end
 end
