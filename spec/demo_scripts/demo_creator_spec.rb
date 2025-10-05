@@ -623,11 +623,33 @@ RSpec.describe DemoScripts::DemoCreator do
         expect(metadata['versions']['react_on_rails']).to eq('~> 16.0')
         expect(metadata['options']['rails_args']).to eq(['--skip-test'])
         expect(metadata['options']['react_on_rails_args']).to eq(['--redux', '--typescript'])
+        expect(metadata['options']['shakapacker_prerelease']).to be true
+        expect(metadata['options']['react_on_rails_prerelease']).to be false
         expect(metadata['command']).to include('--scratch')
         expect(metadata['ruby_version']).to eq(RUBY_VERSION)
       end
 
       creator.send(:create_metadata_file)
+    end
+
+    it 'sets prerelease flags to false for non-GitHub versions' do
+      non_github_creator = described_class.new(
+        demo_name: demo_name,
+        shakapacker_version: '~> 8.0',
+        react_on_rails_version: '~> 16.0',
+        dry_run: false,
+        skip_pre_flight: true
+      )
+      non_github_creator.instance_variable_set(:@creation_start_time, Time.now)
+
+      allow(File).to receive(:write) do |_path, content|
+        metadata = YAML.safe_load(content, permitted_classes: [Time, Symbol])
+
+        expect(metadata['options']['shakapacker_prerelease']).to be false
+        expect(metadata['options']['react_on_rails_prerelease']).to be false
+      end
+
+      non_github_creator.send(:create_metadata_file)
     end
 
     it 'does not create file in dry-run mode' do

@@ -479,7 +479,8 @@ module DemoScripts
         'options' => {
           'rails_args' => @rails_args,
           'react_on_rails_args' => @react_on_rails_args,
-          'react_on_rails_prerelease' => @config.react_on_rails_version&.start_with?('github:') ? nil : false
+          'shakapacker_prerelease' => @config.shakapacker_version&.start_with?('github:') || false,
+          'react_on_rails_prerelease' => @config.react_on_rails_version&.start_with?('github:') || false
         }.compact,
         'command' => reconstruct_command,
         'ruby_version' => RUBY_VERSION,
