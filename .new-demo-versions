@@ -10,10 +10,10 @@
 RAILS_VERSION="8.0.3"
 
 # Shakapacker version (use ~> for compatibility range, or specific version)
-SHAKAPACKER_VERSION="~> 8.0"
+SHAKAPACKER_VERSION="github:shakacode/shakapacker"
 
 # React on Rails version (use ~> for compatibility range, or specific version)
-REACT_ON_RAILS_VERSION="~> 16.0"
+REACT_ON_RAILS_VERSION="~> 16.1"
 
 # ═══════════════════════════════════════════════════════════════════════
 # Version Management Workflows
