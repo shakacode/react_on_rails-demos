@@ -568,10 +568,10 @@ RSpec.describe DemoScripts::DemoCreator do
       )
     end
 
-    it 'creates metadata JSON file with correct structure' do
+    it 'creates metadata YAML file with correct structure' do
       creator.instance_variable_set(:@creation_start_time, Time.now)
       scratch_demo_dir = 'demos-scratch/test-demo'
-      metadata_path = File.join(scratch_demo_dir, '.demo-metadata.json')
+      metadata_path = File.join(scratch_demo_dir, '.demo-metadata.yml')
 
       expect(File).to receive(:write).with(metadata_path, anything)
 
@@ -581,16 +581,20 @@ RSpec.describe DemoScripts::DemoCreator do
     it 'includes all required metadata fields' do
       creator.instance_variable_set(:@creation_start_time, Time.new(2025, 1, 1, 12, 0, 0, '+00:00'))
       scratch_demo_dir = 'demos-scratch/test-demo'
-      metadata_path = File.join(scratch_demo_dir, '.demo-metadata.json')
+      metadata_path = File.join(scratch_demo_dir, '.demo-metadata.yml')
 
       allow(File).to receive(:write) do |path, content|
         expect(path).to eq(metadata_path)
-        metadata = JSON.parse(content)
+
+        # Verify the raw YAML content has the ISO8601 timestamp
+        expect(content).to include('2025-01-01T12:00:00')
+
+        metadata = YAML.safe_load(content, permitted_classes: [Time, Symbol])
 
         expect(metadata['demo_name']).to eq('test-demo')
         expect(metadata['demo_directory']).to eq('demos-scratch/test-demo')
         expect(metadata['scratch_mode']).to be true
-        expect(metadata['created_at']).to match(/2025-01-01T12:00:00/)
+        expect(metadata['created_at']).to be_a(Time)
         expect(metadata['versions']['shakapacker']).to eq('github:shakacode/shakapacker@main')
         expect(metadata['versions']['react_on_rails']).to eq('~> 16.0')
         expect(metadata['options']['rails_args']).to eq(['--skip-test'])
