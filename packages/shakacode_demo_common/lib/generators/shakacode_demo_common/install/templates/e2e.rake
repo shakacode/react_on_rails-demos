@@ -97,7 +97,12 @@ namespace :e2e do
 
   desc 'Run Playwright tests (assumes server is already running)'
   task test: :environment do
-    exec 'npx playwright test'
+    exec 'bin/rails playwright:run'
+  end
+
+  desc 'Open Playwright test UI'
+  task open: :environment do
+    exec 'bin/rails playwright:open'
   end
 
   desc 'Show Playwright test report'

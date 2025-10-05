@@ -118,6 +118,11 @@ module ShakacodeDemoCommon
         end
       end
 
+      def install_cypress_on_rails_with_playwright
+        say 'Installing cypress-on-rails with Playwright framework'
+        run 'bin/rails generate cypress_on_rails:install --framework playwright'
+      end
+
       def copy_playwright_config
         say 'Creating Playwright configuration'
         copy_file 'playwright.config.ts', 'playwright.config.ts'
@@ -142,8 +147,9 @@ module ShakacodeDemoCommon
         say "  2. Run 'npm run lint' to check JavaScript code style"
         say "  3. Run 'bundle exec rake demo_common:all' to run all checks"
         say '  4. Commit hooks are now active via Lefthook'
-        say "  5. Run 'npx playwright test' to run E2E tests"
-        say "  6. Run 'bundle exec rake e2e:test_all_modes' to test all dev modes"
+        say "  5. Run 'bin/rails playwright:run' to run E2E tests"
+        say "  6. Run 'bin/rails playwright:open' to open Playwright UI"
+        say "  7. Run 'bundle exec rake e2e:test_all_modes' to test all dev modes"
         say "\nCustomize configurations in:", :blue
         say '  - .rubocop.yml'
         say '  - .eslintrc.js'
