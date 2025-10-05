@@ -29,11 +29,11 @@ parser = OptionParser.new do |opts|
     options[:dry_run] = true
   end
 
-  opts.on('--shakapacker-version VERSION', 'Shakapacker version') do |v|
+  opts.on('--shakapacker-version VERSION', 'Shakapacker version (or github:org/repo@branch)') do |v|
     options[:shakapacker_version] = v
   end
 
-  opts.on('--react-on-rails-version VERSION', 'React on Rails version') do |v|
+  opts.on('--react-on-rails-version VERSION', 'React on Rails version (or github:org/repo@branch)') do |v|
     options[:react_on_rails_version] = v
   end
 
@@ -53,6 +53,8 @@ parser = OptionParser.new do |opts|
     puts '  bin/new-demo my-demo --rails-args="--skip-test,--api"'
     puts '  bin/new-demo my-demo --react-on-rails-args="--redux,--node"'
     puts '  bin/new-demo my-demo --rails-args="--skip-test" --react-on-rails-args="--redux"'
+    puts '  bin/new-demo my-demo --shakapacker-version="github:shakacode/shakapacker@my-branch"'
+    puts '  bin/new-demo my-demo --react-on-rails-version="github:shakacode/react_on_rails@fix-hmr"'
     exit
   end
 end
