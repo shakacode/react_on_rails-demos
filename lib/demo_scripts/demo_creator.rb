@@ -322,12 +322,35 @@ module DemoScripts
     def install_react_on_rails
       puts ''
       puts '📦 Installing React on Rails (skipping git check)...'
+
+      # Remove files that will conflict with React on Rails generator
+      cleanup_conflicting_files
+
       base_args = ['--ignore-warnings', '--force', '--skip']
       all_args = (base_args + @react_on_rails_args).join(' ')
       @runner.run!(
         "bin/rails generate react_on_rails:install #{all_args}",
         dir: @demo_dir
       )
+    end
+
+    def cleanup_conflicting_files
+      return if @dry_run
+
+      conflicting_files = [
+        'config/shakapacker.yml',
+        'Procfile.dev',
+        'Procfile.dev-static-assets',
+        'Procfile.dev-prod-assets'
+      ]
+
+      conflicting_files.each do |file|
+        file_path = File.join(@demo_dir, file)
+        if File.exist?(file_path)
+          File.delete(file_path)
+          puts "   Removed conflicting file: #{file}"
+        end
+      end
     end
 
     def install_demo_common_generator
