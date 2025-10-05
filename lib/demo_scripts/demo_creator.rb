@@ -21,11 +21,13 @@ module DemoScripts
       shakapacker_prerelease: false,
       react_on_rails_prerelease: false,
       scratch: false,
-      skip_playwright: false
+      skip_playwright: false,
+      typescript: false
     )
       @demo_name = demo_name
       @scratch = scratch
       @skip_playwright = skip_playwright
+      @typescript = typescript
       demos_base_dir = scratch ? 'demos-scratch' : 'demos'
       @demo_dir = File.join(demos_base_dir, demo_name)
       @config = Config.new(
@@ -36,6 +38,7 @@ module DemoScripts
       )
       @rails_args = rails_args || []
       @react_on_rails_args = react_on_rails_args || []
+      @react_on_rails_args << '--typescript' if typescript && !@react_on_rails_args.include?('--typescript')
       @runner = CommandRunner.new(dry_run: dry_run)
       @dry_run = dry_run
       @skip_pre_flight = skip_pre_flight
@@ -312,7 +315,9 @@ module DemoScripts
     def install_shakapacker
       puts ''
       puts '📦 Installing Shakapacker...'
-      @runner.run!('bin/rails shakapacker:install --force', dir: @demo_dir)
+      shakapacker_args = ['--force']
+      shakapacker_args << '--typescript' if @typescript
+      @runner.run!("bin/rails shakapacker:install #{shakapacker_args.join(' ')}", dir: @demo_dir)
     end
 
     def install_react_on_rails

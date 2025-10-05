@@ -50,6 +50,29 @@ RSpec.describe DemoScripts::DemoCreator do
 
       expect(creator.instance_variable_get(:@skip_playwright)).to be true
     end
+
+    it 'adds --typescript to react_on_rails_args when typescript flag is true' do
+      creator = described_class.new(
+        demo_name: demo_name,
+        typescript: true,
+        dry_run: true,
+        skip_pre_flight: true
+      )
+
+      expect(creator.instance_variable_get(:@react_on_rails_args)).to include('--typescript')
+    end
+
+    it 'does not duplicate --typescript in react_on_rails_args' do
+      creator = described_class.new(
+        demo_name: demo_name,
+        react_on_rails_args: ['--typescript', '--redux'],
+        typescript: true,
+        dry_run: true,
+        skip_pre_flight: true
+      )
+
+      expect(creator.instance_variable_get(:@react_on_rails_args).count('--typescript')).to eq(1)
+    end
   end
 
   describe '#create!' do
