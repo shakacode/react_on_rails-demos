@@ -25,7 +25,9 @@ module DemoScripts
       return custom_version if custom_version
 
       if use_prerelease
-        fetch_latest_prerelease(gem_name)
+        prerelease = fetch_latest_prerelease(gem_name)
+        # Prefer config file version over default if prerelease fetch fails
+        prerelease || instance_variable_get("@#{gem_name}_version") || default_version_for(gem_name)
       else
         instance_variable_get("@#{gem_name}_version") || default_version_for(gem_name)
       end
@@ -64,7 +66,7 @@ module DemoScripts
 
       unless status.success?
         warn "Warning: Failed to fetch prerelease version for #{gem_name}: #{stderr}"
-        return gem_name == 'shakapacker' ? DEFAULT_SHAKAPACKER_VERSION : DEFAULT_REACT_ON_RAILS_VERSION
+        return nil
       end
 
       versions = parse_gem_versions(stdout)
@@ -74,9 +76,12 @@ module DemoScripts
         puts "   Found prerelease version for #{gem_name}: #{prerelease}"
         prerelease
       else
-        warn "Warning: No prerelease version found for #{gem_name}, using default"
-        gem_name == 'shakapacker' ? DEFAULT_SHAKAPACKER_VERSION : DEFAULT_REACT_ON_RAILS_VERSION
+        warn "Warning: No prerelease version found for #{gem_name}"
+        nil
       end
+    rescue StandardError => e
+      warn "Warning: Error fetching prerelease version for #{gem_name}: #{e.message}"
+      nil
     end
 
     def parse_gem_versions(stdout)
