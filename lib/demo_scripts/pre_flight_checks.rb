@@ -28,10 +28,9 @@ module DemoScripts
     private
 
     def check_target_directory!
-      return unless Dir.exist?(@demo_dir)
+      raise PreFlightCheckError, "Demo directory already exists: #{@demo_dir}" if Dir.exist?(@demo_dir)
 
       puts '✓ Target directory does not exist' if @verbose
-      raise PreFlightCheckError, "Demo directory already exists: #{@demo_dir}"
     end
 
     def check_git_repository!

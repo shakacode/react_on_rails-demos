@@ -229,6 +229,8 @@ module DemoScripts
     def build_github_npm_package(gem_name, version_spec)
       raise Error, 'Invalid gem name: cannot be empty' if gem_name.nil? || gem_name.strip.empty?
 
+      return if @dry_run
+
       github_spec = version_spec.sub('github:', '').strip
       repo, branch = parse_github_spec(github_spec)
 
@@ -237,7 +239,7 @@ module DemoScripts
       Dir.mktmpdir("#{gem_name}-") do |temp_dir|
         clone_and_build_package(temp_dir, repo, branch, gem_name)
       end
-    rescue StandardError => e
+    rescue CommandError, IOError, SystemCallError => e
       error_message = <<~ERROR
         Failed to build npm package for #{gem_name}
 
@@ -251,7 +253,9 @@ module DemoScripts
         You may need to manually build the package or use a published version.
       ERROR
 
-      raise Error, error_message
+      new_error = Error.new(error_message)
+      new_error.set_backtrace(e.backtrace)
+      raise new_error
     end
 
     def clone_and_build_package(temp_dir, repo, branch, gem_name)

@@ -21,7 +21,7 @@ module DemoScripts
     def validate_github_repo(repo)
       raise Error, 'Invalid GitHub repo: cannot be empty' if repo.nil? || repo.empty?
 
-      parts = repo.split('/')
+      parts = repo.split('/', -1) # Use -1 to keep empty strings
       raise Error, "Invalid GitHub repo format: expected 'org/repo', got '#{repo}'" unless parts.length == 2
       raise Error, 'Invalid GitHub repo: empty organization' if parts[0].empty?
       raise Error, 'Invalid GitHub repo: empty repository name' if parts[1].empty?
@@ -33,15 +33,20 @@ module DemoScripts
       raise Error, "Invalid GitHub repo: '#{repo}' contains invalid characters"
     end
 
-    # Validates GitHub branch name
+    # Validates GitHub branch name according to Git ref naming rules
     def validate_github_branch(branch)
       raise Error, 'Invalid GitHub branch: cannot be empty' if branch.nil? || branch.empty?
+      raise Error, 'Invalid GitHub branch: cannot be just @' if branch == '@'
 
       # Git branch names cannot contain certain characters
       invalid_chars = ['..', '~', '^', ':', '?', '*', '[', '\\', ' ']
       invalid_chars.each do |char|
         raise Error, "Invalid GitHub branch: '#{branch}' contains invalid character '#{char}'" if branch.include?(char)
       end
+
+      # Additional Git ref naming rules
+      raise Error, 'Invalid GitHub branch: cannot end with .lock' if branch.end_with?('.lock')
+      raise Error, 'Invalid GitHub branch: cannot contain @{' if branch.include?('@{')
     end
   end
 end
