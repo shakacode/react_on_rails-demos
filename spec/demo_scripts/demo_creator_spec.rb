@@ -698,14 +698,14 @@ RSpec.describe DemoScripts::DemoCreator do
       creator = described_class.new(
         demo_name: demo_name,
         shakapacker_version: 'github:shakacode/shakapacker@main',
-        react_on_rails_version: '~> 16.1',
+        react_on_rails_version: '~> 16.0',
         dry_run: true,
         skip_pre_flight: true
       )
 
       command = creator.send(:reconstruct_command)
       expect(command).to include('--shakapacker-version="github:shakacode/shakapacker@main"')
-      expect(command).to include('--react-on-rails-version="~> 16.1"')
+      expect(command).to include('--react-on-rails-version="~> 16.0"')
     end
 
     it 'includes rails and react-on-rails args' do
