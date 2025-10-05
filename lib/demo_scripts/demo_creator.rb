@@ -6,7 +6,6 @@ require 'json'
 
 module DemoScripts
   # Creates a new React on Rails demo
-  # rubocop:disable Metrics/ClassLength
   class DemoCreator
     include GitHubSpecParser
 
@@ -17,13 +16,15 @@ module DemoScripts
       rails_args: [],
       react_on_rails_args: [],
       dry_run: false,
-      skip_pre_flight: false
+      skip_pre_flight: false,
+      use_prerelease: false
     )
       @demo_name = demo_name
       @demo_dir = File.join('demos', demo_name)
       @config = Config.new(
         shakapacker_version: shakapacker_version,
-        react_on_rails_version: react_on_rails_version
+        react_on_rails_version: react_on_rails_version,
+        use_prerelease: use_prerelease
       )
       @rails_args = rails_args || []
       @react_on_rails_args = react_on_rails_args || []
@@ -404,5 +405,4 @@ module DemoScripts
       end
     end
   end
-  # rubocop:enable Metrics/ClassLength
 end
