@@ -39,6 +39,17 @@ RSpec.describe DemoScripts::DemoCreator do
 
       expect(creator.instance_variable_get(:@demo_dir)).to eq("demos-scratch/#{demo_name}")
     end
+
+    it 'sets skip_playwright flag correctly' do
+      creator = described_class.new(
+        demo_name: demo_name,
+        skip_playwright: true,
+        dry_run: true,
+        skip_pre_flight: true
+      )
+
+      expect(creator.instance_variable_get(:@skip_playwright)).to be true
+    end
   end
 
   describe '#create!' do
@@ -609,6 +620,8 @@ RSpec.describe DemoScripts::DemoCreator do
     it 'reconstructs basic command' do
       creator = described_class.new(
         demo_name: demo_name,
+        shakapacker_version: DemoScripts::Config::DEFAULT_SHAKAPACKER_VERSION,
+        react_on_rails_version: DemoScripts::Config::DEFAULT_REACT_ON_RAILS_VERSION,
         dry_run: true,
         skip_pre_flight: true
       )

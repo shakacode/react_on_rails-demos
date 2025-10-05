@@ -13,7 +13,8 @@ options = {
   dry_run: false,
   shakapacker_prerelease: false,
   react_on_rails_prerelease: false,
-  scratch: false
+  scratch: false,
+  skip_playwright: false
 }
 
 parser = OptionParser.new do |opts|
@@ -69,6 +70,10 @@ parser = OptionParser.new do |opts|
 
   opts.on('--scratch', 'Create demo in gitignored /demos-scratch directory for experimentation') do
     options[:scratch] = true
+  end
+
+  opts.on('--skip-playwright', 'Skip Playwright browser installation') do
+    options[:skip_playwright] = true
   end
 
   opts.on('-h', '--help', 'Show this help message') do

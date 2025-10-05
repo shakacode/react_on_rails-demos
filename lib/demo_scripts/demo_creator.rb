@@ -20,10 +20,12 @@ module DemoScripts
       skip_pre_flight: false,
       shakapacker_prerelease: false,
       react_on_rails_prerelease: false,
-      scratch: false
+      scratch: false,
+      skip_playwright: false
     )
       @demo_name = demo_name
       @scratch = scratch
+      @skip_playwright = skip_playwright
       demos_base_dir = scratch ? 'demos-scratch' : 'demos'
       @demo_dir = File.join(demos_base_dir, demo_name)
       @config = Config.new(
@@ -61,6 +63,7 @@ module DemoScripts
       install_react_on_rails
       install_demo_common_generator
       build_github_npm_packages if using_github_sources?
+      install_playwright_browsers unless @skip_playwright
       create_readme
       cleanup_unnecessary_files
       create_metadata_file
@@ -327,6 +330,12 @@ module DemoScripts
       puts ''
       puts '📦 Installing demo common tools (Playwright, linting, git hooks)...'
       @runner.run!('bin/rails generate shakacode_demo_common:install --force', dir: @demo_dir)
+    end
+
+    def install_playwright_browsers
+      puts ''
+      puts '📦 Installing Playwright browsers...'
+      @runner.run!('npx playwright install', dir: @demo_dir)
     end
 
     def create_readme
