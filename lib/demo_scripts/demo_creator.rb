@@ -17,13 +17,17 @@ module DemoScripts
       rails_args: [],
       react_on_rails_args: [],
       dry_run: false,
-      skip_pre_flight: false
+      skip_pre_flight: false,
+      shakapacker_prerelease: false,
+      react_on_rails_prerelease: false
     )
       @demo_name = demo_name
       @demo_dir = File.join('demos', demo_name)
       @config = Config.new(
         shakapacker_version: shakapacker_version,
-        react_on_rails_version: react_on_rails_version
+        react_on_rails_version: react_on_rails_version,
+        shakapacker_prerelease: shakapacker_prerelease,
+        react_on_rails_prerelease: react_on_rails_prerelease
       )
       @rails_args = rails_args || []
       @react_on_rails_args = react_on_rails_args || []
@@ -50,6 +54,7 @@ module DemoScripts
       create_symlinks
       install_shakapacker
       install_react_on_rails
+      install_demo_common_generator
       build_github_npm_packages if using_github_sources?
       create_readme
       cleanup_unnecessary_files
@@ -310,6 +315,12 @@ module DemoScripts
         "bin/rails generate react_on_rails:install #{all_args}",
         dir: @demo_dir
       )
+    end
+
+    def install_demo_common_generator
+      puts ''
+      puts '📦 Installing demo common tools (Playwright, linting, git hooks)...'
+      @runner.run!('bin/rails generate shakacode_demo_common:install', dir: @demo_dir)
     end
 
     def create_readme

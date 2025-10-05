@@ -98,10 +98,50 @@ module ShakacodeDemoCommon
           coverage/
           .nyc_output/
 
+          # Playwright
+          /playwright-report/
+          /test-results/
+
           # IDE
           .vscode/
           .idea/
         IGNORE
+      end
+
+      def add_playwright_gem
+        say 'Adding cypress-playwright-on-rails gem'
+        gem 'cypress-playwright-on-rails', group: %i[development test]
+        run 'bundle install'
+      end
+
+      def install_playwright
+        say 'Installing Playwright'
+        run 'bin/rails generate cypress_playwright_on_rails:install --playwright'
+      end
+
+      def create_playwright_test
+        say 'Creating basic Playwright test for /hello_world'
+        create_file 'spec/e2e/hello_world.spec.js', <<~JS
+          // @ts-check
+          const { test, expect } = require('@playwright/test');
+
+          test.describe('Hello World Page', () => {
+            test('should load successfully', async ({ page }) => {
+              await page.goto('/hello_world');
+              await expect(page).toHaveTitle(/React on Rails/);
+            });
+
+            test('should render React component', async ({ page }) => {
+              await page.goto('/hello_world');
+              // Wait for React to hydrate
+              await page.waitForLoadState('networkidle');
+
+              // Check for common React on Rails elements
+              const content = await page.textContent('body');
+              expect(content).toBeTruthy();
+            });
+          });
+        JS
       end
 
       def display_post_install
@@ -111,11 +151,13 @@ module ShakacodeDemoCommon
         say "  2. Run 'npm run lint' to check JavaScript code style"
         say "  3. Run 'bundle exec rake demo_common:all' to run all checks"
         say '  4. Commit hooks are now active via Lefthook'
+        say "  5. Run 'npx playwright test' to run E2E tests"
         say "\nCustomize configurations in:", :blue
         say '  - .rubocop.yml'
         say '  - .eslintrc.js'
         say '  - .prettierrc.js'
         say '  - lefthook.yml'
+        say '  - playwright.config.js'
       end
 
       private

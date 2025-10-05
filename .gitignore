@@ -45,6 +45,12 @@ vendor/bundle/
 /demos/*/coverage/
 /demos/*/test/reports/
 spec/examples.txt
+/test-results/
+/playwright-report/
+
+# Generated demo config files
+/packages/shakacode_demo_common/config/.eslintrc.js
+/packages/shakacode_demo_common/config/.rubocop.yml
 
 # Database
 /demos/*/db/*.sqlite3
