@@ -64,18 +64,27 @@ namespace :e2e do
         puts "ERROR: #{e.message}"
         results[mode[:name]] = { success: false, error: e.message }
       ensure
-        # Stop the server
+        # Stop the server and all child processes
         if server_pid
           puts 'Stopping server...'
           begin
-            Process.kill('TERM', server_pid)
+            # Kill the entire process group (negative PID)
+            # This ensures bin/dev's child processes (Rails, webpack, etc.) are also terminated
+            Process.kill('TERM', -server_pid)
+            sleep 1
+            # Force kill any remaining processes
+            begin
+              Process.kill('KILL', -server_pid)
+            rescue StandardError
+              nil
+            end
             Process.wait(server_pid)
           rescue Errno::ESRCH, Errno::ECHILD
             # Process already terminated
           end
         end
 
-        # Give the server time to shut down
+        # Give the server time to shut down and release ports
         sleep 2
       end
     end

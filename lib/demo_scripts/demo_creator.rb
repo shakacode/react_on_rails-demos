@@ -65,9 +65,19 @@ module DemoScripts
       install_shakapacker
       install_react_on_rails
       install_demo_common_generator
+
+      # Install Playwright browsers early for non-GitHub sources
+      # (dependencies are already installed via demo_common generator)
       install_playwright_browsers unless @skip_playwright || using_github_sources?
+
+      # Build GitHub packages and reinstall dependencies
+      # This updates package.json and runs npm install again
       build_github_npm_packages if using_github_sources?
+
+      # Install Playwright browsers after GitHub package building
+      # (npm dependencies are now ready after rebuild)
       install_playwright_browsers if !@skip_playwright && using_github_sources?
+
       create_readme
       cleanup_unnecessary_files
       create_metadata_file
@@ -455,53 +465,38 @@ module DemoScripts
     end
 
     def generate_metadata_yaml
-      shakapacker_github = @config.shakapacker_version&.start_with?('github:')
-      react_on_rails_github = @config.react_on_rails_version&.start_with?('github:')
+      # Build metadata hash structure
+      metadata = {
+        'demo_name' => @demo_name,
+        'demo_directory' => @demo_dir,
+        'scratch_mode' => @scratch,
+        'created_at' => @creation_start_time.iso8601,
+        'versions' => {
+          'rails' => @config.rails_version,
+          'shakapacker' => @config.shakapacker_version,
+          'react_on_rails' => @config.react_on_rails_version
+        },
+        'options' => {
+          'rails_args' => @rails_args,
+          'react_on_rails_args' => @react_on_rails_args,
+          'react_on_rails_prerelease' => @config.react_on_rails_version&.start_with?('github:') ? nil : false
+        }.compact,
+        'command' => reconstruct_command,
+        'ruby_version' => RUBY_VERSION,
+        'bundler_version' => Gem::Version.new(Bundler::VERSION).to_s
+      }
 
-      rails_args_yaml = format_array_for_yaml(@rails_args, 2)
-      react_on_rails_args_yaml = format_array_for_yaml(@react_on_rails_args, 2)
+      # Generate YAML with comments
+      yaml_output = YAML.dump(metadata)
 
+      # Add helpful comments at the top
       <<~YAML
         # Demo Metadata
         # This file contains information about how this demo was created.
         # It can be used to recreate the demo or understand its configuration.
 
-        demo_name: #{@demo_name}
-        demo_directory: #{@demo_dir}
-        scratch_mode: #{@scratch}
-
-        # When this demo was created
-        created_at: #{@creation_start_time.iso8601}
-
-        # Gem versions used
-        versions:
-          rails: #{@config.rails_version}
-          shakapacker: #{@config.shakapacker_version}
-          react_on_rails: #{@config.react_on_rails_version}
-
-        # Additional options passed to generators
-        options:
-          rails_args:#{rails_args_yaml}
-          react_on_rails_args:#{react_on_rails_args_yaml}#{unless shakapacker_github
-                                                             "\n  shakapacker_prerelease: false"
-                                                           end}#{unless react_on_rails_github
-                                                                   "\n  react_on_rails_prerelease: false"
-                                                                 end}
-
-        # Command used to create this demo
-        command: #{reconstruct_command}
-
-        # Ruby environment
-        ruby_version: #{RUBY_VERSION}
-        bundler_version: #{Gem::Version.new(Bundler::VERSION)}
+        #{yaml_output}
       YAML
-    end
-
-    def format_array_for_yaml(array, indent_level)
-      return ' []' if array.empty?
-
-      indent = ' ' * indent_level
-      "\n#{array.map { |item| "#{indent}- #{item}" }.join("\n")}"
     end
 
     def reconstruct_command

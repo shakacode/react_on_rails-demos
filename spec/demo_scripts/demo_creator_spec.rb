@@ -617,7 +617,8 @@ RSpec.describe DemoScripts::DemoCreator do
         expect(metadata['demo_name']).to eq('test-demo')
         expect(metadata['demo_directory']).to eq('demos-scratch/test-demo')
         expect(metadata['scratch_mode']).to be true
-        expect(metadata['created_at']).to be_a(Time)
+        # YAML.dump serializes Time as ISO8601 string (which is more portable)
+        expect(metadata['created_at']).to eq('2025-01-01T12:00:00+00:00')
         expect(metadata['versions']['shakapacker']).to eq('github:shakacode/shakapacker@main')
         expect(metadata['versions']['react_on_rails']).to eq('~> 16.0')
         expect(metadata['options']['rails_args']).to eq(['--skip-test'])
