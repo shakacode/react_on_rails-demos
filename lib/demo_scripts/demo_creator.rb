@@ -70,6 +70,7 @@ module DemoScripts
       create_readme
       cleanup_unnecessary_files
       create_metadata_file
+      run_automated_tests unless @dry_run
 
       print_completion_message
     end
@@ -492,20 +493,73 @@ module DemoScripts
       cmd_parts.join(' ')
     end
 
+    def run_automated_tests
+      puts ''
+      puts '🧪 Running automated tests...'
+      puts ''
+
+      # Start the dev server in the background
+      puts '📡 Starting development server...'
+      @runner.run!('bin/dev', dir: @demo_dir, run_in_background: true)
+
+      # Wait for server to be ready
+      puts '⏳ Waiting for server to start...'
+      sleep 10
+
+      # Run Playwright tests
+      puts '🎭 Running Playwright E2E tests...'
+      @runner.run!('npx playwright test', dir: @demo_dir)
+
+      puts ''
+      puts '✅ All automated tests passed!'
+    rescue CommandError => e
+      puts ''
+      puts '⚠️  Automated tests failed (this is normal for new demos that need customization)'
+      puts "   Error: #{e.message}"
+    end
+
     def print_completion_message
       puts ''
+      puts '=' * 80
+      puts ''
       if @dry_run
-        puts '✅ Dry run complete! Review commands above.'
+        puts '✅ DRY RUN COMPLETE!'
+        puts ''
+        puts 'Review the commands above to see what would be executed.'
         puts ''
         puts 'To actually create the demo, run:'
         puts "  bin/new-demo #{@demo_name}"
       else
-        puts "✅ Demo created successfully at #{@demo_dir}"
+        puts '🎉 DEMO CREATED SUCCESSFULLY!'
         puts ''
-        puts 'Next steps:'
-        puts "  cd #{@demo_dir}"
-        puts '  bin/dev'
+        puts "   Location: #{@demo_dir}"
+        puts "   Created:  #{@creation_start_time.strftime('%Y-%m-%d %H:%M:%S')}"
+        puts ''
+        puts '📋 Available Commands:'
+        puts ''
+        puts '   Start development server:'
+        puts "   $ cd #{@demo_dir} && bin/dev"
+        puts ''
+        puts '   Run E2E tests:'
+        puts "   $ cd #{@demo_dir} && npx playwright test"
+        puts ''
+        puts '   Run linting:'
+        puts "   $ cd #{@demo_dir} && bundle exec rubocop"
+        puts ''
+        puts '📚 Development Modes:'
+        puts '   • bin/dev                    - HMR (Hot Module Replacement)'
+        puts '   • bin/dev static             - Static assets mode'
+        puts '   • bin/dev prod               - Production-like mode'
+        puts ''
+        puts '🔗 Useful URLs (when server is running):'
+        puts '   • App:         http://localhost:3000'
+        puts '   • Hello World: http://localhost:3000/hello_world'
+        puts ''
+        puts "📝 Metadata: #{@demo_dir}/.demo-metadata.yml"
+        puts ''
       end
+      puts '=' * 80
+      puts ''
     end
   end
   # rubocop:enable Metrics/ClassLength

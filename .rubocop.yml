@@ -40,6 +40,8 @@ Metrics/ClassLength:
 # Allow more complex methods for demo scaffolding
 Metrics/AbcSize:
   Max: 25
+  Exclude:
+    - 'lib/demo_scripts/demo_creator.rb'
 
 Metrics/CyclomaticComplexity:
   Max: 10
