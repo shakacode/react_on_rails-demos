@@ -743,5 +743,19 @@ RSpec.describe DemoScripts::DemoCreator do
       expect(command).to include('--rails-args="--skip-test,--api"')
       expect(command).to include('--react-on-rails-args="--redux,--typescript"')
     end
+
+    it 'includes prerelease flags when enabled' do
+      creator = described_class.new(
+        demo_name: demo_name,
+        shakapacker_prerelease: true,
+        react_on_rails_prerelease: true,
+        dry_run: true,
+        skip_pre_flight: true
+      )
+
+      command = creator.send(:reconstruct_command)
+      expect(command).to include('--shakapacker-prerelease')
+      expect(command).to include('--react-on-rails-prerelease')
+    end
   end
 end

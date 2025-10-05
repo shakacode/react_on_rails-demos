@@ -28,6 +28,8 @@ module DemoScripts
       @scratch = scratch
       @skip_playwright = skip_playwright
       @typescript = typescript
+      @shakapacker_prerelease = shakapacker_prerelease
+      @react_on_rails_prerelease = react_on_rails_prerelease
       demos_base_dir = scratch ? 'demos-scratch' : 'demos'
       @demo_dir = File.join(demos_base_dir, demo_name)
       @config = Config.new(
@@ -505,6 +507,8 @@ module DemoScripts
       cmd_parts << '--scratch' if @scratch
       cmd_parts << '--typescript' if @typescript
       cmd_parts << '--skip-playwright' if @skip_playwright
+      cmd_parts << '--shakapacker-prerelease' if @shakapacker_prerelease
+      cmd_parts << '--react-on-rails-prerelease' if @react_on_rails_prerelease
       if @config.shakapacker_version != Config::DEFAULT_SHAKAPACKER_VERSION
         cmd_parts << "--shakapacker-version=\"#{@config.shakapacker_version}\""
       end
