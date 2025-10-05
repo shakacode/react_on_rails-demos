@@ -315,9 +315,14 @@ module DemoScripts
     def install_shakapacker
       puts ''
       puts '📦 Installing Shakapacker...'
-      shakapacker_args = ['--force']
+      shakapacker_args = []
       shakapacker_args << '--typescript' if @typescript
-      @runner.run!("bin/rails shakapacker:install #{shakapacker_args.join(' ')}", dir: @demo_dir)
+      cmd = if shakapacker_args.any?
+              "bin/rails shakapacker:install #{shakapacker_args.join(' ')}"
+            else
+              'bin/rails shakapacker:install'
+            end
+      @runner.run!(cmd, dir: @demo_dir)
     end
 
     def install_react_on_rails
