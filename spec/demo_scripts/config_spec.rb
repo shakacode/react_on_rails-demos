@@ -8,8 +8,8 @@ RSpec.describe DemoScripts::Config do
       it 'uses default versions' do
         config = described_class.new(config_file: '/nonexistent')
 
-        expect(config.shakapacker_version).to eq('~> 8.0')
-        expect(config.react_on_rails_version).to eq('~> 16.0')
+        expect(config.shakapacker_version).to eq('github:shakacode/shakapacker')
+        expect(config.react_on_rails_version).to eq('~> 16.1')
       end
     end
 
@@ -113,8 +113,8 @@ RSpec.describe DemoScripts::Config do
         )
 
         # Should fall back to default constants
-        expect(config.shakapacker_version).to eq('~> 8.0')
-        expect(config.react_on_rails_version).to eq('~> 16.0')
+        expect(config.shakapacker_version).to eq('github:shakacode/shakapacker')
+        expect(config.react_on_rails_version).to eq('~> 16.1')
       end
 
       it 'uses prerelease version when fetch succeeds' do
@@ -242,11 +242,11 @@ RSpec.describe DemoScripts::Config do
     let(:config) { described_class.new(config_file: '/nonexistent') }
 
     it 'returns default shakapacker version' do
-      expect(config.send(:default_version_for, 'shakapacker')).to eq('~> 8.0')
+      expect(config.send(:default_version_for, 'shakapacker')).to eq('github:shakacode/shakapacker')
     end
 
     it 'returns default react_on_rails version' do
-      expect(config.send(:default_version_for, 'react_on_rails')).to eq('~> 16.0')
+      expect(config.send(:default_version_for, 'react_on_rails')).to eq('~> 16.1')
     end
 
     it 'raises ArgumentError for unknown gem' do

@@ -3,8 +3,8 @@
 module DemoScripts
   # Configuration loader for demo versions
   class Config
-    DEFAULT_SHAKAPACKER_VERSION = '~> 8.0'
-    DEFAULT_REACT_ON_RAILS_VERSION = '~> 16.0'
+    DEFAULT_SHAKAPACKER_VERSION = 'github:shakacode/shakapacker'
+    DEFAULT_REACT_ON_RAILS_VERSION = '~> 16.1'
     DEFAULT_RAILS_VERSION = '8.0.3'
 
     attr_reader :shakapacker_version, :react_on_rails_version, :rails_version

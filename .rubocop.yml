@@ -1,12 +1,12 @@
 # RuboCop configuration for React on Rails Demos monorepo
 
-plugins:
+require:
   - rubocop-performance
 
 AllCops:
   NewCops: enable
   SuggestExtensions: false
-  TargetRubyVersion: 3.0
+  TargetRubyVersion: 3.1
   Exclude:
     - 'node_modules/**/*'
     - 'demos/**/node_modules/**/*'

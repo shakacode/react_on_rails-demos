@@ -2,7 +2,6 @@
 # Based on Rails Omakase with adjustments for React on Rails
 
 require:
-  - rubocop-rails
   - rubocop-performance
 
 AllCops:
@@ -58,18 +57,6 @@ Metrics/BlockLength:
 Metrics/ClassLength:
   Max: 200
 
-# Rails specific
-Rails/ApplicationRecord:
-  Enabled: true
-
-Rails/I18nLocaleTexts:
-  Enabled: false
-
 # Performance
 Performance/RedundantMerge:
   Enabled: true
-
-# React on Rails specific patterns
-Rails/OutputSafety:
-  Exclude:
-    - 'app/helpers/react_on_rails_helper.rb'

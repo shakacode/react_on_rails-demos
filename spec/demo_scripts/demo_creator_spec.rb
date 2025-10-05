@@ -18,6 +18,118 @@ RSpec.describe DemoScripts::DemoCreator do
 
       expect(creator).to be_a(described_class)
     end
+
+    context 'demo_name validation' do
+      it 'raises error for empty demo name' do
+        expect do
+          described_class.new(demo_name: '', dry_run: true, skip_pre_flight: true)
+        end.to raise_error(ArgumentError, 'Demo name cannot be empty')
+      end
+
+      it 'raises error for nil demo name' do
+        expect do
+          described_class.new(demo_name: nil, dry_run: true, skip_pre_flight: true)
+        end.to raise_error(ArgumentError, 'Demo name cannot be empty')
+      end
+
+      it 'raises error for demo name with slashes' do
+        expect do
+          described_class.new(demo_name: 'demo/test', dry_run: true, skip_pre_flight: true)
+        end.to raise_error(ArgumentError, 'Demo name cannot contain slashes')
+      end
+
+      it 'raises error for demo name starting with dot' do
+        expect do
+          described_class.new(demo_name: '.hidden', dry_run: true, skip_pre_flight: true)
+        end.to raise_error(ArgumentError, 'Demo name cannot start with . or _')
+      end
+
+      it 'raises error for demo name starting with underscore' do
+        expect do
+          described_class.new(demo_name: '_private', dry_run: true, skip_pre_flight: true)
+        end.to raise_error(ArgumentError, 'Demo name cannot start with . or _')
+      end
+
+      it 'raises error for demo name with special characters' do
+        expect do
+          described_class.new(demo_name: 'demo@test', dry_run: true, skip_pre_flight: true)
+        end.to raise_error(ArgumentError,
+                           'Demo name can only contain alphanumeric characters, hyphens, and underscores')
+      end
+
+      it 'accepts valid demo names with hyphens' do
+        expect do
+          described_class.new(demo_name: 'test-demo', dry_run: true, skip_pre_flight: true)
+        end.not_to raise_error
+      end
+
+      it 'accepts valid demo names with underscores' do
+        expect do
+          described_class.new(demo_name: 'test_demo', dry_run: true, skip_pre_flight: true)
+        end.not_to raise_error
+      end
+
+      it 'accepts valid demo names with numbers' do
+        expect do
+          described_class.new(demo_name: 'test123', dry_run: true, skip_pre_flight: true)
+        end.not_to raise_error
+      end
+    end
+
+    it 'uses demos directory by default' do
+      creator = described_class.new(
+        demo_name: demo_name,
+        dry_run: true,
+        skip_pre_flight: true
+      )
+
+      expect(creator.instance_variable_get(:@demo_dir)).to eq("demos/#{demo_name}")
+    end
+
+    it 'uses demos-scratch directory when scratch flag is true' do
+      creator = described_class.new(
+        demo_name: demo_name,
+        scratch: true,
+        dry_run: true,
+        skip_pre_flight: true
+      )
+
+      expect(creator.instance_variable_get(:@demo_dir)).to eq("demos-scratch/#{demo_name}")
+    end
+
+    it 'sets skip_playwright flag correctly' do
+      creator = described_class.new(
+        demo_name: demo_name,
+        skip_playwright: true,
+        dry_run: true,
+        skip_pre_flight: true
+      )
+
+      expect(creator.instance_variable_get(:@skip_playwright)).to be true
+    end
+
+    it 'adds --typescript to react_on_rails_args when typescript flag is true' do
+      creator = described_class.new(
+        demo_name: demo_name,
+        typescript: true,
+        dry_run: true,
+        skip_pre_flight: true
+      )
+
+      expect(creator.instance_variable_get(:@react_on_rails_args)).to include('--typescript')
+    end
+
+    it 'does not duplicate --typescript in react_on_rails_args' do
+      creator = described_class.new(
+        demo_name: demo_name,
+        react_on_rails_args: ['--typescript', '--redux'],
+        typescript: true,
+        dry_run: true,
+        skip_pre_flight: true
+      )
+
+      expect(creator.instance_variable_get(:@react_on_rails_args).count('--typescript')).to eq(1)
+    end
   end
 
   describe '#create!' do
@@ -519,6 +631,188 @@ RSpec.describe DemoScripts::DemoCreator do
       expect(FileUtils).not_to receive(:rm_rf)
 
       dry_run_creator.send(:cleanup_unnecessary_files)
+    end
+  end
+
+  describe '#create_metadata_file' do
+    subject(:creator) do
+      described_class.new(
+        demo_name: demo_name,
+        shakapacker_version: 'github:shakacode/shakapacker@main',
+        react_on_rails_version: '~> 16.0',
+        rails_args: ['--skip-test'],
+        react_on_rails_args: ['--redux', '--typescript'],
+        scratch: true,
+        dry_run: false,
+        skip_pre_flight: true
+      )
+    end
+
+    it 'creates metadata YAML file with correct structure' do
+      creator.instance_variable_set(:@creation_start_time, Time.now)
+      scratch_demo_dir = 'demos-scratch/test-demo'
+      metadata_path = File.join(scratch_demo_dir, '.demo-metadata.yml')
+
+      expect(File).to receive(:write).with(metadata_path, anything)
+
+      creator.send(:create_metadata_file)
+    end
+
+    it 'includes all required metadata fields' do
+      creator.instance_variable_set(:@creation_start_time, Time.new(2025, 1, 1, 12, 0, 0, '+00:00'))
+      scratch_demo_dir = 'demos-scratch/test-demo'
+      metadata_path = File.join(scratch_demo_dir, '.demo-metadata.yml')
+
+      allow(File).to receive(:write) do |path, content|
+        expect(path).to eq(metadata_path)
+
+        # Verify the raw YAML content has the ISO8601 timestamp
+        expect(content).to include('2025-01-01T12:00:00')
+
+        metadata = YAML.safe_load(content, permitted_classes: [Time, Symbol])
+
+        expect(metadata['demo_name']).to eq('test-demo')
+        expect(metadata['demo_directory']).to eq('demos-scratch/test-demo')
+        expect(metadata['scratch_mode']).to be true
+        # YAML.dump serializes Time as ISO8601 string (which is more portable)
+        expect(metadata['created_at']).to eq('2025-01-01T12:00:00+00:00')
+        expect(metadata['versions']['shakapacker']).to eq('github:shakacode/shakapacker@main')
+        expect(metadata['versions']['react_on_rails']).to eq('~> 16.0')
+        expect(metadata['options']['rails_args']).to eq(['--skip-test'])
+        expect(metadata['options']['react_on_rails_args']).to eq(['--redux', '--typescript'])
+        expect(metadata['options']['shakapacker_prerelease']).to be true
+        expect(metadata['options']['react_on_rails_prerelease']).to be false
+        expect(metadata['command']).to include('--scratch')
+        expect(metadata['ruby_version']).to eq(RUBY_VERSION)
+      end
+
+      creator.send(:create_metadata_file)
+    end
+
+    it 'sets prerelease flags to false for non-GitHub versions' do
+      non_github_creator = described_class.new(
+        demo_name: demo_name,
+        shakapacker_version: '~> 8.0',
+        react_on_rails_version: '~> 16.0',
+        dry_run: false,
+        skip_pre_flight: true
+      )
+      non_github_creator.instance_variable_set(:@creation_start_time, Time.now)
+
+      allow(File).to receive(:write) do |_path, content|
+        metadata = YAML.safe_load(content, permitted_classes: [Time, Symbol])
+
+        expect(metadata['options']['shakapacker_prerelease']).to be false
+        expect(metadata['options']['react_on_rails_prerelease']).to be false
+      end
+
+      non_github_creator.send(:create_metadata_file)
+    end
+
+    it 'does not create file in dry-run mode' do
+      dry_run_creator = described_class.new(
+        demo_name: demo_name,
+        dry_run: true,
+        skip_pre_flight: true
+      )
+      dry_run_creator.instance_variable_set(:@creation_start_time, Time.now)
+
+      expect(File).not_to receive(:write)
+
+      dry_run_creator.send(:create_metadata_file)
+    end
+  end
+
+  describe '#reconstruct_command' do
+    it 'reconstructs basic command' do
+      creator = described_class.new(
+        demo_name: demo_name,
+        shakapacker_version: DemoScripts::Config::DEFAULT_SHAKAPACKER_VERSION,
+        react_on_rails_version: DemoScripts::Config::DEFAULT_REACT_ON_RAILS_VERSION,
+        dry_run: true,
+        skip_pre_flight: true
+      )
+
+      command = creator.send(:reconstruct_command)
+      expect(command).to eq('bin/new-demo test-demo')
+    end
+
+    it 'includes scratch flag when enabled' do
+      creator = described_class.new(
+        demo_name: demo_name,
+        scratch: true,
+        dry_run: true,
+        skip_pre_flight: true
+      )
+
+      command = creator.send(:reconstruct_command)
+      expect(command).to include('--scratch')
+    end
+
+    it 'includes typescript flag when enabled' do
+      creator = described_class.new(
+        demo_name: demo_name,
+        typescript: true,
+        dry_run: true,
+        skip_pre_flight: true
+      )
+
+      command = creator.send(:reconstruct_command)
+      expect(command).to include('--typescript')
+    end
+
+    it 'includes skip-playwright flag when enabled' do
+      creator = described_class.new(
+        demo_name: demo_name,
+        skip_playwright: true,
+        dry_run: true,
+        skip_pre_flight: true
+      )
+
+      command = creator.send(:reconstruct_command)
+      expect(command).to include('--skip-playwright')
+    end
+
+    it 'includes custom version arguments' do
+      creator = described_class.new(
+        demo_name: demo_name,
+        shakapacker_version: 'github:shakacode/shakapacker@main',
+        react_on_rails_version: '~> 16.0',
+        dry_run: true,
+        skip_pre_flight: true
+      )
+
+      command = creator.send(:reconstruct_command)
+      expect(command).to include('--shakapacker-version="github:shakacode/shakapacker@main"')
+      expect(command).to include('--react-on-rails-version="~> 16.0"')
+    end
+
+    it 'includes rails and react-on-rails args' do
+      creator = described_class.new(
+        demo_name: demo_name,
+        rails_args: ['--skip-test', '--api'],
+        react_on_rails_args: ['--redux', '--typescript'],
+        dry_run: true,
+        skip_pre_flight: true
+      )
+
+      command = creator.send(:reconstruct_command)
+      expect(command).to include('--rails-args="--skip-test,--api"')
+      expect(command).to include('--react-on-rails-args="--redux,--typescript"')
+    end
+
+    it 'includes prerelease flags when enabled' do
+      creator = described_class.new(
+        demo_name: demo_name,
+        shakapacker_prerelease: true,
+        react_on_rails_prerelease: true,
+        dry_run: true,
+        skip_pre_flight: true
+      )
+
+      command = creator.send(:reconstruct_command)
+      expect(command).to include('--shakapacker-prerelease')
+      expect(command).to include('--react-on-rails-prerelease')
     end
   end
 end

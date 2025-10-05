@@ -88,7 +88,7 @@ module ShakacodeDemoCommon
 
       def add_to_gitignore
         say 'Updating .gitignore'
-        append_to_file '.gitignore', <<~IGNORE
+        gitignore_content = <<~IGNORE
 
           # Lefthook
           .lefthook/
@@ -106,42 +106,41 @@ module ShakacodeDemoCommon
           .vscode/
           .idea/
         IGNORE
+
+        if File.exist?('.gitignore')
+          append_to_file '.gitignore', gitignore_content
+        else
+          create_file '.gitignore', gitignore_content
+        end
       end
 
-      def add_playwright_gem
-        say 'Adding cypress-playwright-on-rails gem'
-        gem 'cypress-playwright-on-rails', group: %i[development test]
-        run 'bundle install'
-      end
+      def install_cypress_on_rails_with_playwright
+        say 'Installing cypress-on-rails with Playwright framework'
+        success = run 'bin/rails generate cypress_on_rails:install --framework playwright --install_folder e2e'
 
-      def install_playwright
-        say 'Installing Playwright'
-        run 'bin/rails generate cypress_playwright_on_rails:install --playwright'
+        unless success
+          say 'Failed to install cypress-on-rails generator', :red
+          command = 'bin/rails generate cypress_on_rails:install --framework playwright --install_folder e2e'
+          say "You may need to run: #{command}", :yellow
+        end
+
+        success
       end
 
       def create_playwright_test
-        say 'Creating basic Playwright test for /hello_world'
-        create_file 'spec/e2e/hello_world.spec.js', <<~JS
-          // @ts-check
-          const { test, expect } = require('@playwright/test');
+        say 'Creating Playwright test for hello_world React component'
+        copy_file 'hello_world.spec.ts', 'e2e/hello_world.spec.ts'
+      end
 
-          test.describe('Hello World Page', () => {
-            test('should load successfully', async ({ page }) => {
-              await page.goto('/hello_world');
-              await expect(page).toHaveTitle(/React on Rails/);
-            });
+      def create_playwright_config_override
+        say 'Creating custom Playwright configuration'
+        copy_file 'playwright.config.ts', 'playwright.config.ts'
+      end
 
-            test('should render React component', async ({ page }) => {
-              await page.goto('/hello_world');
-              // Wait for React to hydrate
-              await page.waitForLoadState('networkidle');
-
-              // Check for common React on Rails elements
-              const content = await page.textContent('body');
-              expect(content).toBeTruthy();
-            });
-          });
-        JS
+      def create_e2e_rake_task
+        say 'Creating e2e rake tasks'
+        empty_directory 'lib/tasks'
+        copy_file 'e2e.rake', 'lib/tasks/e2e.rake'
       end
 
       def display_post_install
@@ -151,13 +150,15 @@ module ShakacodeDemoCommon
         say "  2. Run 'npm run lint' to check JavaScript code style"
         say "  3. Run 'bundle exec rake demo_common:all' to run all checks"
         say '  4. Commit hooks are now active via Lefthook'
-        say "  5. Run 'npx playwright test' to run E2E tests"
+        say "  5. Run 'bin/rails playwright:run' to run E2E tests"
+        say "  6. Run 'bin/rails playwright:open' to open Playwright UI"
+        say "  7. Run 'bundle exec rake e2e:test_all_modes' to test all dev modes"
         say "\nCustomize configurations in:", :blue
         say '  - .rubocop.yml'
         say '  - .eslintrc.js'
         say '  - .prettierrc.js'
         say '  - lefthook.yml'
-        say '  - playwright.config.js'
+        say '  - playwright.config.ts'
       end
 
       private

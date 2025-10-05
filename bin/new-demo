@@ -12,7 +12,10 @@ options = {
   react_on_rails_args: [],
   dry_run: false,
   shakapacker_prerelease: false,
-  react_on_rails_prerelease: false
+  react_on_rails_prerelease: false,
+  scratch: false,
+  skip_playwright: false,
+  typescript: false
 }
 
 parser = OptionParser.new do |opts|
@@ -66,6 +69,18 @@ parser = OptionParser.new do |opts|
     options[:react_on_rails_prerelease] = true
   end
 
+  opts.on('--scratch', 'Create demo in gitignored /demos-scratch directory for experimentation') do
+    options[:scratch] = true
+  end
+
+  opts.on('--skip-playwright', 'Skip Playwright browser installation') do
+    options[:skip_playwright] = true
+  end
+
+  opts.on('--typescript', 'Enable TypeScript for both Shakapacker and React on Rails') do
+    options[:typescript] = true
+  end
+
   opts.on('-h', '--help', 'Show this help message') do
     puts opts
     puts ''
@@ -86,6 +101,12 @@ parser = OptionParser.new do |opts|
     puts '  bin/new-demo my-demo --rails-args="--skip-test,--api"'
     puts '  bin/new-demo my-demo --react-on-rails-args="--redux,--node"'
     puts '  bin/new-demo my-demo --rails-args="--skip-test" --react-on-rails-args="--redux"'
+    puts ''
+    puts '  # Enable TypeScript'
+    puts '  bin/new-demo my-demo --typescript'
+    puts ''
+    puts '  # Create experimental demo in gitignored directory'
+    puts '  bin/new-demo my-demo --scratch'
     puts ''
     puts 'After creation, run E2E tests with:'
     puts '  cd demos/my-demo && npx playwright test'
