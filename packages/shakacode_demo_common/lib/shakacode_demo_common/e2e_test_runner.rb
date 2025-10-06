@@ -51,8 +51,33 @@ module ShakacodeDemoCommon
     end
 
     def cleanup_between_modes
-      puts 'Waiting 2 seconds for server to release port...'
-      sleep 2
+      puts 'Waiting for server to release port...'
+      wait_for_port_to_be_available
+    end
+
+    # rubocop:disable Naming/PredicateMethod
+    def wait_for_port_to_be_available(port = 3000, max_attempts = 10, check_interval = 0.5)
+      max_attempts.times do
+        return true unless port_in_use?(port)
+
+        print '.'
+        sleep check_interval
+      end
+      puts ''
+      puts "Warning: Port #{port} may still be in use after #{max_attempts * check_interval} seconds"
+      false
+    end
+    # rubocop:enable Naming/PredicateMethod
+
+    def port_in_use?(port)
+      require 'socket'
+      TCPServer.new('127.0.0.1', port).close
+      false
+    rescue Errno::EADDRINUSE
+      true
+    rescue StandardError => e
+      puts "Warning: Error checking port availability: #{e.message}"
+      false
     end
 
     def print_test_header(mode_name)
@@ -145,10 +170,13 @@ module ShakacodeDemoCommon
 
     def server_responding?
       url = "http://localhost:#{@port}"
-      response = Net::HTTP.get_response(URI(url))
+      uri = URI(url)
+      response = Net::HTTP.start(uri.host, uri.port, open_timeout: 2, read_timeout: 2) do |http|
+        http.get(uri.path.empty? ? '/' : uri.path)
+      end
       # Accept 200-399 (success and redirects), reject 404 and 5xx
       (200..399).cover?(response.code.to_i)
-    rescue Errno::ECONNREFUSED, Errno::EADDRNOTAVAIL, SocketError
+    rescue Errno::ECONNREFUSED, Errno::EADDRNOTAVAIL, SocketError, Net::OpenTimeout, Net::ReadTimeout
       false
     end
 

@@ -65,7 +65,6 @@ module DemoScripts
       create_readme
       cleanup_unnecessary_files
       create_metadata_file
-      run_automated_tests unless @dry_run
 
       print_completion_message
     end
@@ -543,12 +542,6 @@ module DemoScripts
       cmd_parts << "--rails-args=\"#{@rails_args.join(',')}\"" if @rails_args.any?
       cmd_parts << "--react-on-rails-args=\"#{@react_on_rails_args.join(',')}\"" if @react_on_rails_args.any?
       cmd_parts.join(' ')
-    end
-
-    def run_automated_tests
-      # Automated testing is complex - requires background process management
-      # For now, we'll skip this and let users run tests manually
-      # Future: implement proper background server and test execution
     end
 
     def print_completion_message

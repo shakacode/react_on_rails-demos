@@ -1,8 +1,5 @@
 # RuboCop configuration for React on Rails Demos monorepo
 
-require:
-  - rubocop-performance
-
 AllCops:
   NewCops: enable
   SuggestExtensions: false
