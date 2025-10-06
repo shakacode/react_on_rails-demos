@@ -88,9 +88,9 @@ module DemoScripts
       # - For GitHub sources: install after building packages (dependencies ready after rebuild)
       return if @skip_playwright
 
-      install_playwright_browsers unless using_github_sources?
       build_github_npm_packages if using_github_sources?
-      install_playwright_browsers if using_github_sources?
+      install_playwright_dependencies
+      install_playwright_browsers
     end
 
     def validate_demo_name!(name)
@@ -388,6 +388,12 @@ module DemoScripts
       puts ''
       puts '📦 Installing demo common tools (Playwright, linting, git hooks)...'
       @runner.run!('bin/rails generate shakacode_demo_common:install --force', dir: @demo_dir)
+    end
+
+    def install_playwright_dependencies
+      puts ''
+      puts '📦 Installing Playwright npm dependencies...'
+      @runner.run!('npm install @playwright/test', dir: @demo_dir)
     end
 
     def install_playwright_browsers
