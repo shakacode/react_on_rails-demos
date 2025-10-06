@@ -249,9 +249,11 @@ RSpec.describe ShakacodeDemoCommon::ServerManager do
   describe '#server_responding?' do
     let(:uri) { URI('http://localhost:3000') }
     let(:response) { instance_double(Net::HTTPResponse, code: '200') }
+    let(:http) { instance_double(Net::HTTP) }
 
     before do
-      allow(Net::HTTP).to receive(:get_response).with(uri).and_return(response)
+      allow(Net::HTTP).to receive(:start).and_yield(http)
+      allow(http).to receive(:get).and_return(response)
     end
 
     it 'returns true for successful response' do
@@ -275,12 +277,12 @@ RSpec.describe ShakacodeDemoCommon::ServerManager do
     end
 
     it 'returns false when connection is refused' do
-      allow(Net::HTTP).to receive(:get_response).and_raise(Errno::ECONNREFUSED)
+      allow(Net::HTTP).to receive(:start).and_raise(Errno::ECONNREFUSED)
       expect(server.send(:server_responding?)).to be false
     end
 
     it 'returns false for socket errors' do
-      allow(Net::HTTP).to receive(:get_response).and_raise(SocketError)
+      allow(Net::HTTP).to receive(:start).and_raise(SocketError)
       expect(server.send(:server_responding?)).to be false
     end
   end

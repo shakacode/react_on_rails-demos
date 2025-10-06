@@ -51,8 +51,21 @@ module ShakacodeDemoCommon
     end
 
     def cleanup_between_modes
-      puts 'Waiting 2 seconds for server to release port...'
-      sleep 2
+      puts 'Waiting for server to release port...'
+      max_attempts = 10
+      max_attempts.times do
+        return true unless port_in_use?(ServerManager::DEFAULT_PORT)
+
+        sleep 0.5
+      end
+      puts "Warning: Port #{ServerManager::DEFAULT_PORT} may still be in use"
+    end
+
+    def port_in_use?(port)
+      TCPServer.new('localhost', port).close
+      false
+    rescue Errno::EADDRINUSE
+      true
     end
 
     def print_test_header(mode_name)
@@ -144,11 +157,15 @@ module ShakacodeDemoCommon
     private
 
     def server_responding?
-      url = "http://localhost:#{@port}"
-      response = Net::HTTP.get_response(URI(url))
+      url = URI("http://localhost:#{@port}")
+      response = Net::HTTP.start(url.host, url.port,
+                                 open_timeout: 2,
+                                 read_timeout: 2) do |http|
+        http.get(url.path.empty? ? '/' : url.path)
+      end
       # Accept 200-399 (success and redirects), reject 404 and 5xx
       (200..399).cover?(response.code.to_i)
-    rescue Errno::ECONNREFUSED, Errno::EADDRNOTAVAIL, SocketError
+    rescue Errno::ECONNREFUSED, Errno::EADDRNOTAVAIL, SocketError, Net::OpenTimeout, Net::ReadTimeout
       false
     end
 
