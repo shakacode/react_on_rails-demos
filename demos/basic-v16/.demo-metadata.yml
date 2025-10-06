@@ -1,0 +1,22 @@
+# Demo Metadata
+# This file contains information about how this demo was created.
+# It can be used to recreate the demo or understand its configuration.
+
+---
+demo_name: basic-v16
+demo_directory: demos/basic-v16
+scratch_mode: false
+created_at: '2025-10-05T20:24:33-10:00'
+versions:
+  rails: 8.0.3
+  shakapacker: github:shakacode/shakapacker
+  react_on_rails: "~> 16.1"
+options:
+  rails_args: []
+  react_on_rails_args: []
+  shakapacker_prerelease: true
+  react_on_rails_prerelease: false
+command: bin/new-demo basic-v16
+ruby_version: 3.4.3
+bundler_version: 2.5.23
+
