@@ -146,7 +146,8 @@ module ShakacodeDemoCommon
     def server_responding?
       url = "http://localhost:#{@port}"
       response = Net::HTTP.get_response(URI(url))
-      response.code.to_i < 500
+      # Accept 200-399 (success and redirects), reject 404 and 5xx
+      (200..399).cover?(response.code.to_i)
     rescue Errno::ECONNREFUSED, Errno::EADDRNOTAVAIL, SocketError
       false
     end
@@ -170,8 +171,9 @@ module ShakacodeDemoCommon
         # Fall back to killing just the main process
         safe_kill_process('TERM', @server_pid)
       end
-    rescue Errno::ESRCH, Errno::EPERM
+    rescue Errno::ESRCH, Errno::EPERM => e
       # Process group doesn't exist or permission denied, try single process
+      puts "Warning: Failed to kill process group #{@server_pgid}: #{e.message}, trying single process"
       safe_kill_process('TERM', @server_pid)
     end
 
@@ -182,7 +184,8 @@ module ShakacodeDemoCommon
       else
         safe_kill_process('KILL', @server_pid)
       end
-    rescue Errno::ESRCH, Errno::EPERM
+    rescue Errno::ESRCH, Errno::EPERM => e
+      puts "Warning: Failed to kill process group #{@server_pgid}: #{e.message}, trying single process"
       safe_kill_process('KILL', @server_pid)
     end
 

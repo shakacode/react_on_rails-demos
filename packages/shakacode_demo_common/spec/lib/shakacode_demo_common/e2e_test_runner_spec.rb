@@ -206,6 +206,15 @@ RSpec.describe ShakacodeDemoCommon::ServerManager do
         allow(Process).to receive(:kill).and_raise(Errno::ESRCH)
         expect { server.stop }.not_to raise_error
       end
+
+      context 'when EPERM is raised' do
+        it 'logs warning and falls back to single process' do
+          allow(Process).to receive(:kill).with('TERM', -12345).and_raise(Errno::EPERM)
+          expect(server).to receive(:puts).with(/Warning: Failed to kill process group/)
+          expect(Process).to receive(:kill).with('TERM', 12345).and_raise(StandardError)
+          server.stop
+        end
+      end
     end
 
     context 'when server is running without process group' do
@@ -250,9 +259,14 @@ RSpec.describe ShakacodeDemoCommon::ServerManager do
       expect(server.send(:server_responding?)).to be true
     end
 
-    it 'returns true for client errors (4xx)' do
-      allow(response).to receive(:code).and_return('404')
+    it 'returns true for redirects (3xx)' do
+      allow(response).to receive(:code).and_return('302')
       expect(server.send(:server_responding?)).to be true
+    end
+
+    it 'returns false for client errors (4xx)' do
+      allow(response).to receive(:code).and_return('404')
+      expect(server.send(:server_responding?)).to be false
     end
 
     it 'returns false for server errors (5xx)' do
