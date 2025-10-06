@@ -1,0 +1,177 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Script to switch between webpack and rspack bundlers
+# Usage: bin/switch-bundler [webpack|rspack] [--install-deps]
+
+require 'yaml'
+require 'fileutils'
+require 'json'
+
+SHAKAPACKER_CONFIG = 'config/shakapacker.yml'
+PACKAGE_JSON = 'package.json'
+
+# Dependencies for each bundler
+RSPACK_DEPS = {
+  devDependencies: {
+    '@rspack/cli' => '^1.1.8',
+    '@rspack/plugin-react-refresh' => '^1.5.1'
+  },
+  dependencies: {
+    '@rspack/core' => '^1.1.8',
+    'rspack-manifest-plugin' => '^5.0.0'
+  }
+}.freeze
+
+WEBPACK_DEPS = {
+  devDependencies: {
+    'webpack' => '^5.102.0',
+    'webpack-cli' => '^6.0.1',
+    'webpack-dev-server' => '^5.2.2',
+    '@pmmmwh/react-refresh-webpack-plugin' => '^0.6.1'
+  },
+  dependencies: {
+    'webpack-assets-manifest' => '^6.3.0',
+    'webpack-merge' => '^6.0.1'
+  }
+}.freeze
+
+def current_bundler
+  config = YAML.load_file(SHAKAPACKER_CONFIG, aliases: true)
+  config.dig('default', 'assets_bundler') || 'webpack'
+end
+
+def read_package_json
+  JSON.parse(File.read(PACKAGE_JSON))
+end
+
+def write_package_json(data)
+  File.write(PACKAGE_JSON, "#{JSON.pretty_generate(data)}\n")
+end
+
+def install_dependencies(bundler, install_deps)
+  deps_to_install = bundler == 'rspack' ? RSPACK_DEPS : WEBPACK_DEPS
+  deps_to_remove = bundler == 'rspack' ? WEBPACK_DEPS : RSPACK_DEPS
+
+  puts ''
+  if install_deps
+    puts '📦 Managing dependencies...'
+
+    # Read package.json
+    package_data = read_package_json
+
+    # Add new dependencies
+    deps_to_install.each do |section, deps|
+      package_data[section.to_s] ||= {}
+      deps.each do |name, version|
+        package_data[section.to_s][name] = version
+      end
+    end
+
+    # Remove old dependencies
+    deps_to_remove.each do |section, deps|
+      next unless package_data[section.to_s]
+
+      deps.each_key do |name|
+        package_data[section.to_s].delete(name)
+      end
+    end
+
+    # Write package.json
+    write_package_json(package_data)
+    puts "   ✅ Updated #{PACKAGE_JSON}"
+
+    # Run npm install
+    puts ''
+    puts '   Running npm install...'
+    system('npm install')
+    puts '   ✅ Dependencies installed'
+  else
+    puts '⚠️  Dependencies not automatically installed (use --install-deps to auto-install)'
+    puts ''
+
+    if bundler == 'rspack'
+      puts '📦 To install rspack dependencies, run:'
+      puts '   npm install --save-dev @rspack/cli @rspack/plugin-react-refresh'
+      puts '   npm install --save @rspack/core rspack-manifest-plugin'
+      puts ''
+      puts '🗑️  To remove webpack dependencies, run:'
+      puts '   npm uninstall webpack webpack-cli webpack-dev-server @pmmmwh/react-refresh-webpack-plugin'
+      puts '   npm uninstall webpack-assets-manifest webpack-merge'
+    else
+      puts '📦 To install webpack dependencies, run:'
+      puts '   npm install --save-dev webpack webpack-cli webpack-dev-server @pmmmwh/react-refresh-webpack-plugin'
+      puts '   npm install --save webpack-assets-manifest webpack-merge'
+      puts ''
+      puts '🗑️  To remove rspack dependencies, run:'
+      puts '   npm uninstall @rspack/cli @rspack/plugin-react-refresh'
+      puts '   npm uninstall @rspack/core rspack-manifest-plugin'
+    end
+  end
+end
+
+def switch_to(bundler, install_deps)
+  unless %w[webpack rspack].include?(bundler)
+    puts "❌ Invalid bundler: #{bundler}"
+    puts '   Usage: bin/switch-bundler [webpack|rspack] [--install-deps]'
+    exit 1
+  end
+
+  current = current_bundler
+  if current == bundler
+    puts "✅ Already using #{bundler}"
+    exit 0
+  end
+
+  # Update shakapacker.yml using text replacement to preserve comments and structure
+  content = File.read(SHAKAPACKER_CONFIG)
+
+  # Replace assets_bundler value (matches both 'webpack' and "webpack" or rspack)
+  content.gsub!(/^(\s*assets_bundler:\s*['"]?)(webpack|rspack)(['"]?)/, "\\1#{bundler}\\3")
+
+  # Update javascript_transpiler recommendation for rspack
+  if bundler == 'rspack' && content !~ /javascript_transpiler:\s*['"]?swc['"]?/
+    content.gsub!(/^(\s*javascript_transpiler:\s*['"]?)\w+(['"]?)/, '\\1swc\\2')
+  end
+
+  File.write(SHAKAPACKER_CONFIG, content)
+
+  puts "✅ Switched from #{current} to #{bundler}"
+  puts ''
+  puts "📝 Configuration updated in #{SHAKAPACKER_CONFIG}"
+
+  # Manage dependencies
+  install_dependencies(bundler, install_deps)
+
+  puts ''
+  puts '🎯 Next steps:'
+  puts '   1. Restart your dev server: bin/dev'
+  puts '   2. Verify build works: bin/shakapacker'
+  puts ''
+  puts '💡 Tip: Both webpack and rspack can coexist in package.json during migration'
+  puts '        Use --install-deps to automatically manage dependencies, or manage manually'
+end
+
+def show_usage
+  current = current_bundler
+  puts "Current bundler: #{current}"
+  puts ''
+  puts 'Usage: bin/switch-bundler [webpack|rspack] [--install-deps]'
+  puts ''
+  puts 'Options:'
+  puts '  --install-deps    Automatically install/uninstall dependencies'
+  puts ''
+  puts 'Examples:'
+  puts '  bin/switch-bundler rspack              # Switch to rspack (manual dependency install)'
+  puts '  bin/switch-bundler rspack --install-deps   # Switch to rspack and auto-manage deps'
+  puts '  bin/switch-bundler webpack --install-deps  # Switch to webpack and auto-manage deps'
+end
+
+if ARGV.empty?
+  show_usage
+  exit 0
+else
+  bundler = ARGV[0]
+  install_deps = ARGV.include?('--install-deps')
+  switch_to(bundler, install_deps)
+end

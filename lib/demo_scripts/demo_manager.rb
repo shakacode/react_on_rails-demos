@@ -15,7 +15,7 @@ module DemoScripts
       setup_paths
     end
 
-    def each_demo(&block)
+    def each_demo(&)
       return enum_for(:each_demo) unless block_given?
 
       demos = find_demos
@@ -24,7 +24,7 @@ module DemoScripts
         return
       end
 
-      demos.each(&block)
+      demos.each(&)
     end
 
     def demo_name(path)
