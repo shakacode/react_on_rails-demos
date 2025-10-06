@@ -7,38 +7,29 @@
     "defaults"
   ],
   "dependencies": {
-    "@babel/preset-react": "^7.27.1",
     "@playwright/test": "^1.55.1",
+    "@rspack/core": "^1.1.8",
     "@swc/core": "^1.13.5",
-    "babel-plugin-macros": "^3.1.0",
-    "babel-plugin-transform-react-remove-prop-types": "^0.4.24",
-    "compression-webpack-plugin": "^11.1.0",
     "css-loader": "^7.1.2",
-    "css-minimizer-webpack-plugin": "^7.0.2",
     "mini-css-extract-plugin": "^2.9.4",
     "prop-types": "^15.8.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-on-rails": "^16.1.1",
+    "rspack-manifest-plugin": "^5.0.0",
     "sass-loader": "^16.0.5",
     "shakapacker": "github:shakacode/shakapacker",
     "style-loader": "^4.0.0",
-    "swc-loader": "^0.2.6",
-    "terser-webpack-plugin": "^5.3.14",
-    "webpack": "^5.102.0",
-    "webpack-assets-manifest": "^6.3.0",
-    "webpack-cli": "^6.0.1",
-    "webpack-merge": "^6.0.1",
-    "webpack-subresource-integrity": "^5.1.0"
+    "swc-loader": "^0.2.6"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.1.0",
     "@commitlint/config-conventional": "^20.0.0",
-    "@pmmmwh/react-refresh-webpack-plugin": "^0.6.1",
+    "@rspack/cli": "^1.1.8",
+    "@rspack/plugin-react-refresh": "^1.5.1",
     "@shakacode/react-on-rails-demo-common": "file:../../packages/shakacode_demo_common",
     "lefthook": "^1.13.6",
-    "react-refresh": "^0.18.0",
-    "webpack-dev-server": "^5.2.2"
+    "react-refresh": "^0.18.0"
   },
   "scripts": {
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
