@@ -14,3 +14,26 @@ coverage/
 # IDE
 .vscode/
 .idea/
+
+# React on Rails generated files
+/app/javascript/generated/
+/app/javascript/packs/generated/
+/ssr-generated/
+
+# Shakapacker compiled assets
+/public/packs/
+/public/packs-test/
+
+# Node
+/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Rails
+/log/*
+/tmp/*
+!/log/.keep
+!/tmp/.keep
+/storage/*
+!/storage/.keep
