@@ -45,12 +45,26 @@ The easiest way to switch between bundlers:
 # Check current bundler
 bin/switch-bundler
 
-# Switch to rspack
+# Switch to rspack (manual dependency install)
 bin/switch-bundler rspack
 
-# Switch back to webpack
-bin/switch-bundler webpack
+# Switch to rspack and automatically manage dependencies
+bin/switch-bundler rspack --install-deps
+
+# Switch back to webpack and automatically manage dependencies
+bin/switch-bundler webpack --install-deps
 ```
+
+**With `--install-deps` flag:**
+- Automatically adds/removes appropriate npm packages
+- Updates `package.json`
+- Runs `npm install`
+- Saves you from manual dependency management
+
+**Without `--install-deps` flag:**
+- Only updates `shakapacker.yml`
+- Shows you the commands to manually install/uninstall dependencies
+- Useful if you want both bundlers to coexist
 
 ### Manual Quick Start
 
