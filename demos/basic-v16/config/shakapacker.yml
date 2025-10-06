@@ -68,9 +68,11 @@ default: &default
     # https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity#cross-origin_resource_sharing_and_subresource_integrity
     cross_origin: "anonymous"
 
+  # We use procfiles for development to ensure speedy rebuilds.
+  compile: false
+
 development:
   <<: *default
-  compile: true
   compiler_strategy: mtime
 
   # Reference: https://webpack.js.org/configuration/dev-server/
