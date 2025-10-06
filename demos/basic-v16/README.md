@@ -56,7 +56,40 @@ bin/switch-bundler webpack
 bin/dev
 ```
 
-Both bundlers can coexist in `package.json` during migration.
+### Package Dependencies
+
+Both bundlers can coexist in `package.json` during migration. Here are the bundler-specific packages:
+
+**Rspack Dependencies:**
+```bash
+# Install rspack packages
+npm install --save-dev @rspack/cli @rspack/plugin-react-refresh
+npm install --save @rspack/core rspack-manifest-plugin
+
+# Required transpiler (SWC recommended with rspack)
+npm install --save @swc/core swc-loader
+```
+
+**Webpack Dependencies:**
+```bash
+# Install webpack packages
+npm install --save-dev webpack webpack-cli webpack-dev-server
+npm install --save-dev @pmmmwh/react-refresh-webpack-plugin
+npm install --save webpack-assets-manifest webpack-merge
+```
+
+**Shared Dependencies** (work with both bundlers):
+- `css-loader`, `sass-loader`, `style-loader`
+- `mini-css-extract-plugin`
+- `react`, `react-dom`
+- `react-on-rails`
+- `shakapacker`
+
+**Note**: Keeping both bundlers installed is useful for:
+- A/B testing performance differences
+- Gradual team migration
+- Having a fallback if issues arise
+- They don't conflict with each other
 
 ## Migration Guide
 
