@@ -1,4 +1,4 @@
-# basic-v16
+# basic-v16-rspack
 
 A React on Rails demo application showcasing **Rspack integration** with unified webpack/rspack configuration.
 
@@ -6,7 +6,7 @@ A React on Rails demo application showcasing **Rspack integration** with unified
 
 This demo uses:
 - **React on Rails**: `~> 16.1`
-- **Shakapacker**: `github:shakacode/shakapacker` (9.x with rspack support)
+- **Shakapacker**: `~> 9.0.0` (with rspack support)
 - **React**: `^19.2.0`
 
 Created: 2025-10-05
