@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative "../../../shakacode_demo_common/e2e_test_runner"
+require_relative "../../../../packages/shakacode_demo_common/lib/shakacode_demo_common/e2e_test_runner"
 
 namespace :e2e do
   desc "Run Playwright tests against all dev modes (bin/dev, bin/dev static, bin/dev prod)"
