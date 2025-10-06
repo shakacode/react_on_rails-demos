@@ -10,13 +10,11 @@ const developmentEnvOnly = (clientWebpackConfig, _serverWebpackConfig) => {
   if (process.env.WEBPACK_SERVE) {
     // eslint-disable-next-line global-require
     if (config.assets_bundler === 'rspack') {
-      // Rspack has built-in HMR support
-      const rspack = require('@rspack/core');
-      clientWebpackConfig.plugins.push(
-        new rspack.HotModuleReplacementPlugin(),
-      );
+      // Rspack uses @rspack/plugin-react-refresh for React Fast Refresh
+      const ReactRefreshPlugin = require('@rspack/plugin-react-refresh');
+      clientWebpackConfig.plugins.push(new ReactRefreshPlugin());
     } else {
-      // Webpack uses React Refresh plugin
+      // Webpack uses @pmmmwh/react-refresh-webpack-plugin
       const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
       clientWebpackConfig.plugins.push(
         new ReactRefreshWebpackPlugin({

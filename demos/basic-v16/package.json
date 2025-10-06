@@ -26,6 +26,7 @@
     "@commitlint/cli": "^20.1.0",
     "@commitlint/config-conventional": "^20.0.0",
     "@rspack/cli": "^1.1.8",
+    "@rspack/plugin-react-refresh": "^1.5.1",
     "@shakacode/react-on-rails-demo-common": "file:../../packages/shakacode_demo_common",
     "lefthook": "^1.13.6",
     "react-refresh": "^0.18.0"
