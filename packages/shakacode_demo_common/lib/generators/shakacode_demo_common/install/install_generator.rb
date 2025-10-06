@@ -107,11 +107,7 @@ module ShakacodeDemoCommon
           .idea/
         IGNORE
 
-        if File.exist?('.gitignore')
-          append_to_file '.gitignore', gitignore_content
-        else
-          create_file '.gitignore', gitignore_content
-        end
+        append_to_file '.gitignore', gitignore_content, force: true
       end
 
       def install_cypress_on_rails_with_playwright
