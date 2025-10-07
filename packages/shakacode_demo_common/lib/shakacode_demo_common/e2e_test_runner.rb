@@ -74,14 +74,12 @@ module ShakacodeDemoCommon
 
     # Check if a port is in use by attempting to connect to it
     # Returns true if something is listening on the port, false if port is free
-    # Uses Socket.tcp for a lighter check than creating a TCPServer
+    # Uses Socket.tcp (client operation) for a lighter check than creating a TCPServer
     def port_in_use?(port)
       Socket.tcp('localhost', port, connect_timeout: PORT_CONNECTION_TIMEOUT).close
       true # If connection succeeds, something is listening
     rescue Errno::ECONNREFUSED, Errno::ETIMEDOUT
-      false # Port is free
-    rescue Errno::EADDRINUSE
-      true # Port is in use
+      false # Port is free (no server listening)
     end
 
     def print_test_header(mode_name)
