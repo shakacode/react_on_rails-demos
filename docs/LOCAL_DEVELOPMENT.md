@@ -7,9 +7,11 @@ This guide explains how to test local versions of gems (shakapacker, react_on_ra
 When developing changes to shakapacker, react_on_rails, or cypress-on-rails, you often need to test those changes against real applications. The `bin/use-local-gems` utility makes this process seamless by:
 
 1. **Swapping gem versions** - Replaces published gem versions with local file paths in Gemfiles
-2. **Swapping npm packages** - Replaces published npm packages with local file paths in package.json
+2. **Swapping npm packages** - Replaces published npm packages with local file paths in package.json (using `file:` protocol)
 3. **Building packages** - Automatically builds local npm packages after swapping
 4. **Easy restoration** - Simple command to restore original versions
+
+**Important:** By default, the utility swaps **ALL demos** in the repository. Use `--demo` flag to target a specific demo.
 
 ## Quick Start
 
@@ -36,13 +38,19 @@ When developing changes to shakapacker, react_on_rails, or cypress-on-rails, you
 ### Daily Workflow
 
 ```bash
-# Swap to local gems
+# Swap ALL demos to local gems
 bin/use-local-gems --apply
 
 # Make changes in your local gem repositories
-# Test with the demo applications
+# For packages that compile (react_on_rails), rebuild:
+cd ~/dev/react_on_rails/node_package
+npm run build
 
-# Restore to published versions when done
+# Test with the demo applications
+cd path/to/react_on_rails-demos/demos/basic-v16-rspack
+./bin/dev
+
+# Restore ALL demos to published versions when done
 bin/use-local-gems --restore
 ```
 
@@ -50,22 +58,24 @@ bin/use-local-gems --restore
 
 ### Swap Individual Gems
 
-Swap just one gem without using a config file:
+Swap just one gem without using a config file (**swaps ALL demos by default**):
 
 ```bash
+# This swaps react_on_rails in ALL demos
 bin/use-local-gems --react-on-rails ~/dev/react_on_rails
 ```
 
-Swap multiple gems:
+Swap multiple gems (**swaps ALL demos by default**):
 
 ```bash
+# This swaps both gems in ALL demos
 bin/use-local-gems --shakapacker ~/dev/shakapacker \
                    --react-on-rails ~/dev/react_on_rails
 ```
 
 ### Apply to Specific Demo
 
-Test against a single demo instead of all demos:
+Test against a **single demo** instead of all demos:
 
 ```bash
 bin/use-local-gems --demo basic-v16-rspack \
@@ -102,14 +112,57 @@ bin/use-local-gems --restore
 
 ## How It Works
 
+### Understanding Changes and Rebuilds
+
+**Key Concept:** The `file:` protocol creates a symlink, so source file changes are immediate, but **compiled packages need rebuilding**.
+
+#### What's Automatic ✅
+- **Source file changes** are immediately visible (files are symlinked)
+- **Ruby gem changes** are immediately available (no compilation needed)
+- **JavaScript changes** in packages without a build step (like shakapacker config files)
+
+#### What Requires Rebuilding 🔨
+
+For packages with a build step (like `react_on_rails`):
+
+```bash
+# After making changes to react_on_rails source:
+cd ~/dev/react_on_rails/node_package
+npm run build
+
+# Changes are now visible in all demo apps
+```
+
+#### When to Rebuild
+
+| You Changed... | Action Required |
+|----------------|-----------------|
+| Ruby gem code | None - restart Rails server to see changes |
+| TypeScript/JSX source in react_on_rails | Rebuild: `npm run build` in node_package/ |
+| Config files in shakapacker | None - usually immediate |
+| Built files directly | None - but not recommended! |
+
+#### Watch Mode for Active Development
+
+Skip manual rebuilds during development:
+
+```bash
+# Start with watch mode enabled
+bin/use-local-gems --apply --watch
+
+# Now changes auto-rebuild in the background
+# Make changes, they'll be compiled automatically
+```
+
 ### File Protocol for npm Packages
 
 Modern npm (version 5+) uses **symlinks** when you specify dependencies with the `file:` protocol. This means:
 
-- Changes in your local repository are **immediately reflected** in the demo apps
+- **Source files** in your local repository are **immediately visible** in the demo apps
 - No need to copy files back and forth
 - Behaves like `npm link` but more reliably
 - Works correctly with peer dependencies
+- **Compiled packages still need rebuilding** to see changes
 
 Example transformation in `package.json`:
 
@@ -167,6 +220,39 @@ Running `--restore` copies these backups back and runs `bundle install` and `npm
 
 ## Troubleshooting
 
+### Quick Rebuild Reference
+
+When you make changes and they're not showing up:
+
+```bash
+# react_on_rails (has TypeScript that needs compiling)
+cd ~/dev/react_on_rails/node_package && npm run build
+
+# shakapacker (usually no build needed, but if it has one)
+cd ~/dev/shakapacker && npm run build
+
+# cypress-on-rails (Ruby only, no npm package)
+# Just restart the Rails server
+```
+
+### Changes Not Reflected
+
+**Most common issue:** You changed compiled code but forgot to rebuild.
+
+If your changes aren't showing up:
+
+1. **First, check if package needs rebuilding** (see Quick Rebuild Reference above)
+2. **For Ruby gems**: Restart the Rails server (`./bin/dev` or `rails server`)
+3. **For compiled npm packages**: Run `npm run build` in the package directory
+4. **For webpack cache issues**: Clear the cache:
+   ```bash
+   rm -rf demos/*/tmp/cache/webpacker
+   ```
+5. **Verify symlink works**: Check that `node_modules/react-on-rails` points to your local path:
+   ```bash
+   ls -la demos/basic-v16-rspack/node_modules/react-on-rails
+   ```
+
 ### Build Errors
 
 If you see errors after swapping, try building the local packages manually:
@@ -188,17 +274,6 @@ If npm can't find the local package:
 1. Verify the path in your config is correct
 2. Check that package.json exists in the npm package directory
 3. Try running `npm install` manually in the demo directory
-
-### Changes Not Reflected
-
-If your changes aren't showing up:
-
-1. **For npm packages**: Check if the package needs to be rebuilt
-2. **For Ruby gems**: Try restarting the Rails server
-3. **For Webpacker/Shakapacker**: Clear the webpack cache:
-   ```bash
-   rm -rf demos/*/tmp/cache/webpacker
-   ```
 
 ### Restore Doesn't Work
 
