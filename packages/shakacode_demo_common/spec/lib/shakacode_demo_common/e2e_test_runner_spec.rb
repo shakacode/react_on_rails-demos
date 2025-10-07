@@ -285,6 +285,16 @@ RSpec.describe ShakacodeDemoCommon::ServerManager do
       allow(Net::HTTP).to receive(:start).and_raise(SocketError)
       expect(server.send(:server_responding?)).to be false
     end
+
+    it 'returns false when open timeout occurs' do
+      allow(Net::HTTP).to receive(:start).and_raise(Net::OpenTimeout)
+      expect(server.send(:server_responding?)).to be false
+    end
+
+    it 'returns false when read timeout occurs' do
+      allow(Net::HTTP).to receive(:start).and_raise(Net::ReadTimeout)
+      expect(server.send(:server_responding?)).to be false
+    end
   end
 end
 # rubocop:enable Metrics/BlockLength
