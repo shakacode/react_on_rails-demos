@@ -107,6 +107,8 @@ module ShakacodeDemoCommon
           .idea/
         IGNORE
 
+        return if File.exist?('.gitignore') && File.read('.gitignore').include?('# Lefthook')
+
         append_to_file '.gitignore', gitignore_content, force: true
       end
 
