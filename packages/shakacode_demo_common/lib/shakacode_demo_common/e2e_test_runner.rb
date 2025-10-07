@@ -113,6 +113,15 @@ module ShakacodeDemoCommon
     MAX_STARTUP_ATTEMPTS = 60
     STARTUP_CHECK_INTERVAL = 1 # second
     INITIAL_STARTUP_DELAY = 2 # seconds - give server time to initialize before checking
+
+    # HTTP Timeout Configuration
+    # - HTTP_OPEN_TIMEOUT: Time allowed for TCP connection establishment (2s is sufficient)
+    # - HTTP_READ_TIMEOUT: Time allowed for server to send response (5s handles slow CI/asset compilation)
+    # Rationale: Servers may be slow to respond during:
+    #   - Initial asset compilation (webpack/shakapacker)
+    #   - Database migrations or seeding
+    #   - Slow CI environments with limited resources
+    # If tests fail with timeouts, consider increasing HTTP_READ_TIMEOUT to 10s
     HTTP_OPEN_TIMEOUT = 2 # seconds - timeout for opening HTTP connection
     HTTP_READ_TIMEOUT = 5 # seconds - timeout for reading HTTP response (longer for slow CI/asset compilation)
 
