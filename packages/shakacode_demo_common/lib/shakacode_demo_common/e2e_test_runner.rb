@@ -19,10 +19,14 @@ module ShakacodeDemoCommon
     end
 
     def run_all
-      @modes.each do |mode|
+      @modes.each_with_index do |mode, index|
         print_test_header(mode[:name])
         @results[mode[:name]] = run_mode(mode)
-        cleanup_between_modes
+
+        # Only cleanup between modes, not after the last one
+        next if index == @modes.length - 1
+
+        puts 'WARNING: Proceeding despite port cleanup timeout - next test may fail' unless cleanup_between_modes
       end
 
       print_summary
