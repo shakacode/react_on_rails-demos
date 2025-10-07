@@ -14,7 +14,9 @@ module DemoScripts
       new.run!
     end
 
+    # rubocop:disable Metrics/MethodLength
     def run!
+      detect_context!
       parse_options!
 
       if @restore
@@ -37,8 +39,35 @@ module DemoScripts
       warn e.backtrace.join("\n") if @verbose
       exit 1
     end
+    # rubocop:enable Metrics/MethodLength
 
     private
+
+    def detect_context!
+      @in_demo_dir = false
+      @root_config_file = nil
+      @auto_demos_dir = nil
+
+      # Check if we're in a demo directory by looking for Gemfile and presence of ../../.local-gems.yml
+      if File.exist?('Gemfile') && File.exist?('../../.local-gems.yml')
+        @in_demo_dir = true
+        @root_config_file = File.expand_path('../../.local-gems.yml')
+        @current_demo = File.basename(Dir.pwd)
+        @auto_demos_dir = File.basename(File.expand_path('..')) # 'demos' or 'demos-scratch'
+        puts "📍 Detected demo directory context: #{@current_demo}"
+        puts "   Using config: #{@root_config_file}"
+        puts '   Auto-scoped to this demo only'
+      elsif File.exist?('Gemfile') && File.exist?('../../../.local-gems.yml')
+        # Handle demos-scratch or other nested directories (3 levels deep)
+        @in_demo_dir = true
+        @root_config_file = File.expand_path('../../../.local-gems.yml')
+        @current_demo = File.basename(Dir.pwd)
+        @auto_demos_dir = File.basename(File.expand_path('..'))
+        puts "📍 Detected demo directory context: #{@current_demo}"
+        puts "   Using config: #{@root_config_file}"
+        puts '   Auto-scoped to this demo only'
+      end
+    end
 
     # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
     def parse_options!
@@ -167,13 +196,16 @@ module DemoScripts
     end
 
     def apply_from_config
-      unless File.exist?(CONFIG_FILE)
-        raise Error, "Config file not found: #{CONFIG_FILE}\n" \
-                     "Copy #{CONFIG_FILE}.example to #{CONFIG_FILE} and customize it."
+      # Use root config if in demo directory, otherwise look for local config
+      config_file = @root_config_file || CONFIG_FILE
+
+      unless File.exist?(config_file)
+        raise Error, "Config file not found: #{config_file}\n" \
+                     "Copy #{config_file}.example to #{config_file} and customize it."
       end
 
       swapper = create_swapper
-      swapper.load_config(CONFIG_FILE)
+      swapper.load_config(config_file)
       swapper.swap!
     end
 
@@ -184,11 +216,14 @@ module DemoScripts
         watch_mode: @watch_mode,
         dry_run: @dry_run,
         verbose: @verbose,
-        demos_dir: @demos_dir
+        demos_dir: @demos_dir || @auto_demos_dir # Use auto-detected demos_dir if not explicitly set
       }
 
-      if @demo_filter
-        FilteredGemSwapper.new(demo_filter: @demo_filter, **options)
+      # If in demo directory and no explicit demo filter, auto-filter to current demo
+      effective_demo_filter = @demo_filter || (@in_demo_dir ? @current_demo : nil)
+
+      if effective_demo_filter
+        FilteredGemSwapper.new(demo_filter: effective_demo_filter, **options)
       else
         GemSwapper.new(**options)
       end

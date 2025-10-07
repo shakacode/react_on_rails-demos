@@ -41,7 +41,7 @@ group :development do
   gem "web-console"
 end
 
-gem "shakapacker", path: "/Users/justin/conductor/shakapacker-1/.conductor/valletta"
+gem "shakapacker", "~> 9.0.0"
 
 gem "react_on_rails", "~> 16.1"
 
