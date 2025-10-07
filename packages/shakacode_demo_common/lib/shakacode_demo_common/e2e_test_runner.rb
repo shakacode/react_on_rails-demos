@@ -79,7 +79,12 @@ module ShakacodeDemoCommon
 
     def cleanup_between_modes
       puts 'Waiting for server to release port...'
-      port_available? || puts('Warning: Continuing despite port possibly being in use')
+      return if port_available?
+
+      # Port is still in use after timeout - fail fast in CI to prevent flaky tests
+      raise 'Port still in use after timeout. Failing to prevent flaky tests in CI.' if ENV['CI']
+
+      puts 'Warning: Continuing despite port possibly being in use'
     end
 
     # Checks if port becomes available within timeout period

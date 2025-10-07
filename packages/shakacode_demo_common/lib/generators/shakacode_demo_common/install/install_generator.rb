@@ -171,7 +171,14 @@ module ShakacodeDemoCommon
       private
 
       def gitignore_contains_our_content?
-        File.exist?('.gitignore') && File.read('.gitignore').include?('# Lefthook')
+        return false unless File.exist?('.gitignore')
+
+        content = File.read('.gitignore')
+        # Check for multiple unique markers to ensure our full content is present
+        # This prevents false positives if only partial content exists
+        content.include?('# Lefthook') &&
+          content.include?('# Testing') &&
+          content.include?('# Playwright')
       end
 
       def gem_root_path
