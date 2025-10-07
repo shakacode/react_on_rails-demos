@@ -3,6 +3,7 @@
 require 'yaml'
 require 'json'
 require 'pathname'
+require 'fileutils'
 
 module DemoScripts
   # Manages swapping between published and local gem/npm package versions
@@ -58,13 +59,15 @@ module DemoScripts
     def load_config(config_file)
       return unless File.exist?(config_file)
 
-      config = YAML.load_file(config_file)
+      config = YAML.safe_load_file(config_file, permitted_classes: [], permitted_symbols: [], aliases: false)
       @gem_paths = validate_gem_paths(config['gems'] || {})
 
       puts "📋 Loaded configuration from #{config_file}"
       gem_paths.each do |gem_name, path|
         puts "   #{gem_name}: #{path}"
       end
+    rescue Psych::DisallowedClass => e
+      raise Error, "Invalid YAML in #{config_file}: #{e.message}"
     end
 
     private
@@ -117,15 +120,24 @@ module DemoScripts
     end
 
     def swap_gem_in_gemfile(content, gem_name, local_path)
-      # Match: gem 'name', '~> 1.0' or gem "name", "~> 1.0"
-      # Replace with: gem 'name', path: '/local/path'
-      pattern = /^(\s*)gem\s+(['"])#{Regexp.escape(gem_name)}\2,\s*(['"])[^'"]*\3(.*)$/
+      # Match variations:
+      # gem 'name', '~> 1.0'
+      # gem "name", "~> 1.0", require: false
+      # gem 'name'  (no version)
+      # gem 'name', require: false  (no version, with options)
+
+      # Pattern matches: gem ["']name["'] followed by optional comma and content until end of line
+      pattern = /^(\s*)gem\s+(['"])#{Regexp.escape(gem_name)}\2(?:,\s*(?:(['"])[^'"]*\3)?)?(.*?)$/
 
       content.gsub(pattern) do |_match|
         indent = Regexp.last_match(1)
         quote = Regexp.last_match(2)
-        rest = Regexp.last_match(4)
-        "#{indent}gem #{quote}#{gem_name}#{quote}, path: #{quote}#{local_path}#{quote}#{rest}"
+        rest = Regexp.last_match(4) # Captures options like require: false, group: :test, etc.
+
+        # Build replacement: gem 'name', path: 'local_path' [, options...]
+        replacement = "#{indent}gem #{quote}#{gem_name}#{quote}, path: #{quote}#{local_path}#{quote}"
+        replacement += rest if rest && !rest.empty?
+        replacement
       end
     end
 
@@ -188,7 +200,11 @@ module DemoScripts
 
     def backup_file(file_path)
       backup_path = file_path + BACKUP_SUFFIX
-      return if File.exist?(backup_path) # Don't overwrite existing backups
+
+      if File.exist?(backup_path)
+        puts "  ⚠️  Backup already exists for #{File.basename(file_path)} - skipping new backup"
+        return
+      end
 
       if dry_run
         puts "  [DRY-RUN] Would backup #{File.basename(file_path)}"
@@ -209,18 +225,22 @@ module DemoScripts
       return if dry_run
 
       puts '  Running bundle install...'
-      Dir.chdir(demo_path) do
+      success = Dir.chdir(demo_path) do
         system('bundle install --quiet')
       end
+
+      warn '  ⚠️  Warning: bundle install failed' unless success
     end
 
     def run_npm_install(demo_path)
       return if dry_run
 
       puts '  Running npm install...'
-      Dir.chdir(demo_path) do
+      success = Dir.chdir(demo_path) do
         system('npm install --silent 2>/dev/null')
       end
+
+      warn '  ⚠️  Warning: npm install failed' unless success
     end
 
     def build_local_packages!
@@ -251,14 +271,17 @@ module DemoScripts
 
       if build_script
         puts "  Building #{gem_name}..."
-        Dir.chdir(npm_path) do
+        success = Dir.chdir(npm_path) do
           if watch_mode
             puts "  Starting watch mode for #{gem_name}..."
+            puts '  Note: Watch process will run in background. Kill manually if needed.'
             system('npm run watch &')
           else
             system('npm run build')
           end
         end
+
+        warn "  ⚠️  Warning: npm build failed for #{gem_name}" unless success || watch_mode
       else
         puts "  ⊘ No build script found for #{gem_name}"
       end
