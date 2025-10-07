@@ -63,3 +63,7 @@ spec/examples.txt
 /demos/*/config/master.key
 /demos/*/config/credentials.yml.encpr_description.md
 commit_message.txt
+
+# Local development configuration
+.local-gems.yml
+*.backup

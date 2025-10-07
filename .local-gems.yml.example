@@ -1,0 +1,38 @@
+# Local Gem Development Configuration
+#
+# Copy this file to .local-gems.yml and customize it with your local gem paths.
+# The .local-gems.yml file is git-ignored for local development.
+#
+# Usage:
+#   bin/use-local-gems --apply
+#
+# This will swap Gemfile and package.json dependencies to use local file paths
+# instead of published gem/npm package versions.
+
+gems:
+  # Path to your local shakapacker repository
+  # Gem: shakapacker (Ruby gem)
+  # NPM: shakapacker (npm package at repo root)
+  shakapacker: ~/dev/shakapacker
+
+  # Path to your local react_on_rails repository
+  # Gem: react_on_rails (Ruby gem)
+  # NPM: react-on-rails (npm package in node_package/ subdirectory)
+  react_on_rails: ~/dev/react_on_rails
+
+  # Path to your local cypress-on-rails repository
+  # Gem: cypress-on-rails (Ruby gem only, no npm package)
+  # cypress-on-rails: ~/dev/cypress-on-rails
+
+# Advanced configuration (optional)
+# These are auto-detected but can be overridden if needed
+
+# npm_paths:
+#   # Subdirectory within the gem repository where the npm package lives
+#   shakapacker: .              # npm package at repo root
+#   react_on_rails: node_package # npm package in node_package/
+
+# build_commands:
+#   # Commands to build npm packages (auto-detected from package.json scripts)
+#   react_on_rails: npm run build
+#   shakapacker: npm run compile
