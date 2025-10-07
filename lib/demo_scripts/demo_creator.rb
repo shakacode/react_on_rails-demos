@@ -543,12 +543,6 @@ module DemoScripts
       cmd_parts.join(' ')
     end
 
-    def run_automated_tests
-      # Automated testing is complex - requires background process management
-      # For now, we'll skip this and let users run tests manually
-      # Future: implement proper background server and test execution
-    end
-
     def print_completion_message
       puts ''
       puts '=' * 80

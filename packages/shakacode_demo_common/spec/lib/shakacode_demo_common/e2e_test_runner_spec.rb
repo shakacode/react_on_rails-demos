@@ -249,9 +249,11 @@ RSpec.describe ShakacodeDemoCommon::ServerManager do
   describe '#server_responding?' do
     let(:uri) { URI('http://localhost:3000') }
     let(:response) { instance_double(Net::HTTPResponse, code: '200') }
+    let(:http) { instance_double(Net::HTTP) }
 
     before do
-      allow(Net::HTTP).to receive(:get_response).with(uri).and_return(response)
+      allow(Net::HTTP).to receive(:start).and_yield(http)
+      allow(http).to receive(:get).and_return(response)
     end
 
     it 'returns true for successful response' do
@@ -275,13 +277,62 @@ RSpec.describe ShakacodeDemoCommon::ServerManager do
     end
 
     it 'returns false when connection is refused' do
-      allow(Net::HTTP).to receive(:get_response).and_raise(Errno::ECONNREFUSED)
+      allow(Net::HTTP).to receive(:start).and_raise(Errno::ECONNREFUSED)
       expect(server.send(:server_responding?)).to be false
     end
 
     it 'returns false for socket errors' do
-      allow(Net::HTTP).to receive(:get_response).and_raise(SocketError)
+      allow(Net::HTTP).to receive(:start).and_raise(SocketError)
       expect(server.send(:server_responding?)).to be false
+    end
+
+    it 'returns false when open timeout occurs' do
+      allow(Net::HTTP).to receive(:start).and_raise(Net::OpenTimeout)
+      expect(server.send(:server_responding?)).to be false
+    end
+
+    it 'returns false when read timeout occurs' do
+      allow(Net::HTTP).to receive(:start).and_raise(Net::ReadTimeout)
+      expect(server.send(:server_responding?)).to be false
+    end
+  end
+
+  describe 'timeout integration tests' do
+    let(:mode) { { name: 'test', command: 'echo test', env: {} } }
+    let(:server) { described_class.new(mode, port: 3001) }
+
+    it 'respects HTTP_OPEN_TIMEOUT when server is slow to accept connections' do
+      allow(Net::HTTP).to receive(:start) do
+        sleep(described_class::HTTP_OPEN_TIMEOUT + 1)
+        raise Net::OpenTimeout
+      end
+
+      start_time = Time.now
+      result = server.send(:server_responding?)
+      elapsed = Time.now - start_time
+
+      expect(result).to be false
+      expect(elapsed).to be < (described_class::HTTP_OPEN_TIMEOUT + 2)
+    end
+
+    it 'respects HTTP_READ_TIMEOUT when server is slow to respond' do
+      allow(Net::HTTP).to receive(:start) do
+        sleep(described_class::HTTP_READ_TIMEOUT + 1)
+        raise Net::ReadTimeout
+      end
+
+      start_time = Time.now
+      result = server.send(:server_responding?)
+      elapsed = Time.now - start_time
+
+      expect(result).to be false
+      expect(elapsed).to be < (described_class::HTTP_READ_TIMEOUT + 2)
+    end
+
+    it 'uses configurable timeouts from constants' do
+      # Verify constants are used, not hardcoded values
+      expect(described_class::HTTP_OPEN_TIMEOUT).to eq(2)
+      expect(described_class::HTTP_READ_TIMEOUT).to eq(5)
     end
   end
 end

@@ -1,6 +1,6 @@
 # RuboCop configuration for React on Rails Demos monorepo
 
-require:
+plugins:
   - rubocop-performance
 
 AllCops:
