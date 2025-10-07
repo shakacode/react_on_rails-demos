@@ -41,34 +41,43 @@ pre-push:
       run: |
         echo "🔍 Checking for local gem paths in Gemfiles and package.json files..."
 
-        # Check for local gem paths in Gemfiles
-        if git diff --name-only origin/main...HEAD | grep -E 'Gemfile$' | xargs -I {} git diff origin/main...HEAD -- {} | grep -E '^\+.*gem.*path:'; then
-          echo ""
-          echo "❌ ERROR: Found local gem paths in Gemfile(s)"
-          echo ""
-          echo "You're trying to push changes with local gem paths (path: '...')."
-          echo "This usually means you forgot to restore after using bin/use-local-gems."
-          echo ""
-          echo "To fix:"
-          echo "  1. Run: bin/use-local-gems --restore"
-          echo "  2. Or manually edit the Gemfile(s) to use version constraints"
-          echo ""
-          exit 1
+        # Simple approach: check uncommitted/staged changes and recent commits on current branch
+        # Compare current branch with its remote tracking branch, or origin/main if no tracking branch
+        current_branch=$(git rev-parse --abbrev-ref HEAD)
+        remote_branch=$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null || echo "origin/main")
+
+        # Check for local gem paths in Gemfiles (in commits being pushed)
+        if git diff --name-only "$remote_branch"...HEAD 2>/dev/null | grep -qE 'Gemfile$'; then
+          if git diff "$remote_branch"...HEAD -- '*/Gemfile' 'Gemfile' 2>/dev/null | grep -qE '^\+.*gem.*path:'; then
+            echo ""
+            echo "❌ ERROR: Found local gem paths in Gemfile(s)"
+            echo ""
+            echo "You're trying to push changes with local gem paths (path: '...')."
+            echo "This usually means you forgot to restore after using bin/use-local-gems."
+            echo ""
+            echo "To fix:"
+            echo "  1. Run: bin/use-local-gems --restore"
+            echo "  2. Or manually edit the Gemfile(s) to use version constraints"
+            echo ""
+            exit 1
+          fi
         fi
 
-        # Check for file: protocol in package.json files
-        if git diff --name-only origin/main...HEAD | grep -E 'package\.json$' | xargs -I {} git diff origin/main...HEAD -- {} | grep -E '^\+.*"file:'; then
-          echo ""
-          echo "❌ ERROR: Found local file: paths in package.json file(s)"
-          echo ""
-          echo "You're trying to push changes with local npm package paths (file:...)."
-          echo "This usually means you forgot to restore after using bin/use-local-gems."
-          echo ""
-          echo "To fix:"
-          echo "  1. Run: bin/use-local-gems --restore"
-          echo "  2. Or manually edit the package.json file(s) to use version constraints"
-          echo ""
-          exit 1
+        # Check for file: protocol in package.json files (in commits being pushed)
+        if git diff --name-only "$remote_branch"...HEAD 2>/dev/null | grep -qE 'package\.json$'; then
+          if git diff "$remote_branch"...HEAD -- '*/package.json' 'package.json' 2>/dev/null | grep -qE '^\+.*"file:'; then
+            echo ""
+            echo "❌ ERROR: Found local file: paths in package.json file(s)"
+            echo ""
+            echo "You're trying to push changes with local npm package paths (file:...)."
+            echo "This usually means you forgot to restore after using bin/use-local-gems."
+            echo ""
+            echo "To fix:"
+            echo "  1. Run: bin/use-local-gems --restore"
+            echo "  2. Or manually edit the package.json file(s) to use version constraints"
+            echo ""
+            exit 1
+          fi
         fi
 
         echo "✅ No local gem paths found"
