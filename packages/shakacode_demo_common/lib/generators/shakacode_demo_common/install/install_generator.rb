@@ -107,9 +107,18 @@ module ShakacodeDemoCommon
           .idea/
         IGNORE
 
-        return if File.exist?('.gitignore') && File.read('.gitignore').include?('# Lefthook')
+        # Skip if content already exists to prevent duplicates
+        if gitignore_contains_our_content?
+          say 'Skipping .gitignore update (content already present)', :skip
+          return
+        end
 
+        # Create .gitignore if it doesn't exist, or append to existing file
         append_to_file '.gitignore', gitignore_content, force: true
+      end
+
+      def gitignore_contains_our_content?
+        File.exist?('.gitignore') && File.read('.gitignore').include?('# Lefthook')
       end
 
       def install_cypress_on_rails_with_playwright

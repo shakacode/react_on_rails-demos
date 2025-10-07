@@ -79,12 +79,13 @@ module ShakacodeDemoCommon
 
     def cleanup_between_modes
       puts 'Waiting for server to release port...'
-      wait_for_port_to_be_available
+      port_available? || puts('Warning: Continuing despite port possibly being in use')
     end
 
-    # rubocop:disable Naming/PredicateMethod
-    def wait_for_port_to_be_available(port = DEFAULT_PORT, max_attempts = PORT_CHECK_MAX_ATTEMPTS,
-                                      check_interval = PORT_CHECK_INTERVAL)
+    # Checks if port becomes available within timeout period
+    # Returns true if port becomes available, false if timeout reached
+    def port_available?(port = DEFAULT_PORT, max_attempts = PORT_CHECK_MAX_ATTEMPTS,
+                        check_interval = PORT_CHECK_INTERVAL)
       max_attempts.times do
         return true unless port_in_use?(port)
 
@@ -95,7 +96,6 @@ module ShakacodeDemoCommon
       puts "Warning: Port #{port} may still be in use after #{max_attempts * check_interval} seconds"
       false
     end
-    # rubocop:enable Naming/PredicateMethod
 
     def port_in_use?(port)
       require 'socket'
