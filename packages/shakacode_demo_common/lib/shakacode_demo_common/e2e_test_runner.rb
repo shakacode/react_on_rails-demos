@@ -2,10 +2,15 @@
 
 require 'net/http'
 require 'uri'
+require 'socket'
 
 module ShakacodeDemoCommon
   # Manages end-to-end test execution across different server modes
   class E2eTestRunner
+    MAX_PORT_CLEANUP_ATTEMPTS = 10
+    PORT_CLEANUP_CHECK_INTERVAL = 0.5 # seconds
+    PORT_CONNECTION_TIMEOUT = 0.1 # seconds - fast check for port availability
+
     attr_reader :results
 
     def initialize(modes)
@@ -53,26 +58,26 @@ module ShakacodeDemoCommon
     # rubocop:disable Naming/PredicateMethod
     def cleanup_between_modes
       puts 'Waiting for server to release port...'
-      max_attempts = 10
-      max_attempts.times do
+      MAX_PORT_CLEANUP_ATTEMPTS.times do
         return true unless port_in_use?(ServerManager::DEFAULT_PORT)
 
-        sleep 0.5
+        sleep PORT_CLEANUP_CHECK_INTERVAL
       end
       puts "Warning: Port #{ServerManager::DEFAULT_PORT} may still be in use"
       false
     end
     # rubocop:enable Naming/PredicateMethod
 
-    # Best-effort check for port availability
-    # Note: Creates and immediately closes a TCPServer, which has a theoretical race condition
-    # where another process could grab the port between close and the caller's use.
-    # This is acceptable for our use case as a cleanup verification check.
+    # Check if a port is in use by attempting to connect to it
+    # Returns true if something is listening on the port, false if port is free
+    # Uses Socket.tcp for a lighter check than creating a TCPServer
     def port_in_use?(port)
-      TCPServer.new('localhost', port).close
-      false
+      Socket.tcp('localhost', port, connect_timeout: PORT_CONNECTION_TIMEOUT).close
+      true # If connection succeeds, something is listening
+    rescue Errno::ECONNREFUSED, Errno::ETIMEDOUT
+      false # Port is free
     rescue Errno::EADDRINUSE
-      true
+      true # Port is in use
     end
 
     def print_test_header(mode_name)
@@ -104,6 +109,8 @@ module ShakacodeDemoCommon
     MAX_STARTUP_ATTEMPTS = 60
     STARTUP_CHECK_INTERVAL = 1 # second
     INITIAL_STARTUP_DELAY = 2 # seconds - give server time to initialize before checking
+    HTTP_OPEN_TIMEOUT = 2 # seconds - timeout for opening HTTP connection
+    HTTP_READ_TIMEOUT = 5 # seconds - timeout for reading HTTP response (longer for slow CI/asset compilation)
 
     attr_reader :mode
 
@@ -166,8 +173,8 @@ module ShakacodeDemoCommon
     def server_responding?
       url = URI("http://localhost:#{@port}")
       response = Net::HTTP.start(url.host, url.port,
-                                 open_timeout: 2,
-                                 read_timeout: 2) do |http|
+                                 open_timeout: HTTP_OPEN_TIMEOUT,
+                                 read_timeout: HTTP_READ_TIMEOUT) do |http|
         http.get(url.path.empty? ? '/' : url.path)
       end
       # Accept 200-399 (success and redirects), reject 404 and 5xx
