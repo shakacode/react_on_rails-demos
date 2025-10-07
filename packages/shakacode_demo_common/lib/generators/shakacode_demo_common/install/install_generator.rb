@@ -117,10 +117,6 @@ module ShakacodeDemoCommon
         append_to_file '.gitignore', gitignore_content, force: true
       end
 
-      def gitignore_contains_our_content?
-        File.exist?('.gitignore') && File.read('.gitignore').include?('# Lefthook')
-      end
-
       def install_cypress_on_rails_with_playwright
         say 'Installing cypress-on-rails with Playwright framework'
         command = 'bin/rails generate cypress_on_rails:install --framework playwright ' \
@@ -170,6 +166,10 @@ module ShakacodeDemoCommon
       end
 
       private
+
+      def gitignore_contains_our_content?
+        File.exist?('.gitignore') && File.read('.gitignore').include?('# Lefthook')
+      end
 
       def gem_root_path
         ShakacodeDemoCommon.root
