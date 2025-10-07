@@ -106,8 +106,10 @@ module ShakacodeDemoCommon
       rescue Errno::EADDRINUSE
         true # Port is in use
       rescue StandardError => e
+        # On unexpected errors (permissions, etc.), assume port is in use to be safe
         puts "Warning: Error checking port availability: #{e.message}"
-        false # Assume available on error
+        puts 'Assuming port is in use to be safe'
+        true
       ensure
         server&.close
       end

@@ -113,8 +113,11 @@ module ShakacodeDemoCommon
           return
         end
 
-        # Create .gitignore if it doesn't exist, or append to existing file
-        append_to_file '.gitignore', gitignore_content, force: true
+        # Ensure .gitignore exists (Rails apps should have it, but create if missing)
+        create_file '.gitignore', '', force: false unless File.exist?('.gitignore')
+
+        # Append our content to .gitignore
+        append_to_file '.gitignore', gitignore_content
       end
 
       def install_cypress_on_rails_with_playwright
