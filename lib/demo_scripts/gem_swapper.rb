@@ -125,18 +125,26 @@ module DemoScripts
       # gem "name", "~> 1.0", require: false
       # gem 'name'  (no version)
       # gem 'name', require: false  (no version, with options)
+      # BUT NOT: gem 'name', path: '...' (already swapped - skip these)
 
-      # Pattern matches: gem ["']name["'] followed by optional comma and content until end of line
-      pattern = /^(\s*)gem\s+(['"])#{Regexp.escape(gem_name)}\2(?:,\s*(?:(['"])[^'"]*\3)?)?(.*?)$/
+      # Simple pattern: match gem lines for this gem name
+      pattern = /^(\s*)gem\s+(['"])#{Regexp.escape(gem_name)}\2(.*)$/
 
-      content.gsub(pattern) do |_match|
+      content.gsub(pattern) do |match|
+        # Skip if line already contains 'path:' - already swapped
+        next match if match.include?('path:')
+
         indent = Regexp.last_match(1)
         quote = Regexp.last_match(2)
-        rest = Regexp.last_match(4) # Captures options like require: false, group: :test, etc.
+        rest = Regexp.last_match(3)
+
+        # Extract options after version (if any)
+        # Match: , 'version', options OR , options OR nothing
+        options = rest.sub(/^\s*,\s*(['"])[^'"]*\1/, '') # Remove version if present
 
         # Build replacement: gem 'name', path: 'local_path' [, options...]
         replacement = "#{indent}gem #{quote}#{gem_name}#{quote}, path: #{quote}#{local_path}#{quote}"
-        replacement += rest if rest && !rest.empty?
+        replacement += options unless options.strip.empty?
         replacement
       end
     end
