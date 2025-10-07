@@ -71,13 +71,18 @@ module ShakacodeDemoCommon
 
     def port_in_use?(port)
       require 'socket'
-      TCPServer.new('127.0.0.1', port).close
-      false
-    rescue Errno::EADDRINUSE
-      true
-    rescue StandardError => e
-      puts "Warning: Error checking port availability: #{e.message}"
-      false
+      server = nil
+      begin
+        server = TCPServer.new('127.0.0.1', port)
+        false # Port is available
+      rescue Errno::EADDRINUSE
+        true # Port is in use
+      rescue StandardError => e
+        puts "Warning: Error checking port availability: #{e.message}"
+        false # Assume available on error
+      ensure
+        server&.close
+      end
     end
 
     def print_test_header(mode_name)
