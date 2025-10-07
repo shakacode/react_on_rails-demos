@@ -50,6 +50,7 @@ module ShakacodeDemoCommon
       system(test_env, 'npx playwright test')
     end
 
+    # rubocop:disable Naming/PredicateMethod
     def cleanup_between_modes
       puts 'Waiting for server to release port...'
       max_attempts = 10
@@ -59,8 +60,14 @@ module ShakacodeDemoCommon
         sleep 0.5
       end
       puts "Warning: Port #{ServerManager::DEFAULT_PORT} may still be in use"
+      false
     end
+    # rubocop:enable Naming/PredicateMethod
 
+    # Best-effort check for port availability
+    # Note: Creates and immediately closes a TCPServer, which has a theoretical race condition
+    # where another process could grab the port between close and the caller's use.
+    # This is acceptable for our use case as a cleanup verification check.
     def port_in_use?(port)
       TCPServer.new('localhost', port).close
       false
