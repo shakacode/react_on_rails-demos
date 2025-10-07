@@ -6,6 +6,11 @@ require 'uri'
 module ShakacodeDemoCommon
   # Manages end-to-end test execution across different server modes
   class E2eTestRunner
+    # Port availability polling configuration
+    DEFAULT_PORT = 3000
+    PORT_CHECK_MAX_ATTEMPTS = 10
+    PORT_CHECK_INTERVAL = 0.5 # seconds
+
     attr_reader :results
 
     def initialize(modes)
@@ -22,6 +27,28 @@ module ShakacodeDemoCommon
 
       print_summary
       exit_with_status
+    end
+
+    def print_test_header(mode_name)
+      puts "\n#{'=' * 80}"
+      puts "Testing: #{mode_name}"
+      puts '=' * 80
+    end
+
+    def print_summary
+      puts "\n#{'=' * 80}"
+      puts 'TEST SUMMARY'
+      puts '=' * 80
+
+      @results.each do |mode_name, result|
+        status = result[:success] ? '✅ PASSED' : '❌ FAILED'
+        puts "#{status} - #{mode_name}"
+        puts "  Error: #{result[:error]}" if result[:error]
+      end
+    end
+
+    def exit_with_status
+      exit 1 unless @results.values.all? { |r| r[:success] }
     end
 
     private
@@ -56,7 +83,8 @@ module ShakacodeDemoCommon
     end
 
     # rubocop:disable Naming/PredicateMethod
-    def wait_for_port_to_be_available(port = 3000, max_attempts = 10, check_interval = 0.5)
+    def wait_for_port_to_be_available(port = DEFAULT_PORT, max_attempts = PORT_CHECK_MAX_ATTEMPTS,
+                                      check_interval = PORT_CHECK_INTERVAL)
       max_attempts.times do
         return true unless port_in_use?(port)
 
@@ -84,28 +112,6 @@ module ShakacodeDemoCommon
         server&.close
       end
     end
-
-    def print_test_header(mode_name)
-      puts "\n#{'=' * 80}"
-      puts "Testing: #{mode_name}"
-      puts '=' * 80
-    end
-
-    def print_summary
-      puts "\n#{'=' * 80}"
-      puts 'TEST SUMMARY'
-      puts '=' * 80
-
-      @results.each do |mode_name, result|
-        status = result[:success] ? '✅ PASSED' : '❌ FAILED'
-        puts "#{status} - #{mode_name}"
-        puts "  Error: #{result[:error]}" if result[:error]
-      end
-    end
-
-    def exit_with_status
-      exit 1 unless @results.values.all? { |r| r[:success] }
-    end
   end
 
   # Manages server lifecycle for e2e testing
@@ -114,6 +120,8 @@ module ShakacodeDemoCommon
     MAX_STARTUP_ATTEMPTS = 60
     STARTUP_CHECK_INTERVAL = 1 # second
     INITIAL_STARTUP_DELAY = 2 # seconds - give server time to initialize before checking
+    HTTP_OPEN_TIMEOUT = 2 # seconds
+    HTTP_READ_TIMEOUT = 2 # seconds
 
     attr_reader :mode
 
@@ -176,7 +184,9 @@ module ShakacodeDemoCommon
     def server_responding?
       url = "http://localhost:#{@port}"
       uri = URI(url)
-      response = Net::HTTP.start(uri.host, uri.port, open_timeout: 2, read_timeout: 2) do |http|
+      response = Net::HTTP.start(uri.host, uri.port,
+                                 open_timeout: HTTP_OPEN_TIMEOUT,
+                                 read_timeout: HTTP_READ_TIMEOUT) do |http|
         http.get(uri.path.empty? ? '/' : uri.path)
       end
       # Accept 200-399 (success and redirects), reject 404 and 5xx
