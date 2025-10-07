@@ -34,3 +34,41 @@ commit-msg:
           echo "❌ Commit message cannot be empty"
           exit 1
         fi
+
+pre-push:
+  commands:
+    check-local-gems:
+      run: |
+        echo "🔍 Checking for local gem paths in Gemfiles and package.json files..."
+
+        # Check for local gem paths in Gemfiles
+        if git diff --name-only origin/main...HEAD | grep -E 'Gemfile$' | xargs -I {} git diff origin/main...HEAD -- {} | grep -E '^\+.*gem.*path:'; then
+          echo ""
+          echo "❌ ERROR: Found local gem paths in Gemfile(s)"
+          echo ""
+          echo "You're trying to push changes with local gem paths (path: '...')."
+          echo "This usually means you forgot to restore after using bin/use-local-gems."
+          echo ""
+          echo "To fix:"
+          echo "  1. Run: bin/use-local-gems --restore"
+          echo "  2. Or manually edit the Gemfile(s) to use version constraints"
+          echo ""
+          exit 1
+        fi
+
+        # Check for file: protocol in package.json files
+        if git diff --name-only origin/main...HEAD | grep -E 'package\.json$' | xargs -I {} git diff origin/main...HEAD -- {} | grep -E '^\+.*"file:'; then
+          echo ""
+          echo "❌ ERROR: Found local file: paths in package.json file(s)"
+          echo ""
+          echo "You're trying to push changes with local npm package paths (file:...)."
+          echo "This usually means you forgot to restore after using bin/use-local-gems."
+          echo ""
+          echo "To fix:"
+          echo "  1. Run: bin/use-local-gems --restore"
+          echo "  2. Or manually edit the package.json file(s) to use version constraints"
+          echo ""
+          exit 1
+        fi
+
+        echo "✅ No local gem paths found"

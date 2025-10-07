@@ -7,24 +7,26 @@ module DemoScripts
   class DemoManager
     include CommandExecutor
 
-    attr_reader :dry_run, :verbose
+    attr_reader :dry_run, :verbose, :demos_dir
 
-    def initialize(dry_run: false, verbose: false)
+    def initialize(dry_run: false, verbose: false, demos_dir: nil)
       @dry_run = dry_run
       @verbose = verbose
+      @custom_demos_dir = demos_dir
       setup_paths
     end
 
-    def each_demo(&block)
+    def each_demo(&)
       return enum_for(:each_demo) unless block_given?
 
       demos = find_demos
       if demos.empty?
-        puts 'ℹ️  No demos found in demos/ directory'
+        dir_name = File.basename(@demos_dir)
+        puts "ℹ️  No demos found in #{dir_name}/ directory"
         return
       end
 
-      demos.each(&block)
+      demos.each(&)
     end
 
     def demo_name(path)
@@ -36,7 +38,11 @@ module DemoScripts
     def setup_paths
       @root_dir = File.expand_path('../..', __dir__)
       @shakacode_demo_common_path = File.join(@root_dir, 'packages', 'shakacode_demo_common')
-      @demos_dir = File.join(@root_dir, 'demos')
+      @demos_dir = if @custom_demos_dir
+                     File.join(@root_dir, @custom_demos_dir)
+                   else
+                     File.join(@root_dir, 'demos')
+                   end
     end
 
     def find_demos

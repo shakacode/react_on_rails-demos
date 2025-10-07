@@ -11,7 +11,10 @@ When developing changes to shakapacker, react_on_rails, or cypress-on-rails, you
 3. **Building packages** - Automatically builds local npm packages after swapping
 4. **Easy restoration** - Simple command to restore original versions
 
-**Important:** By default, the utility swaps **ALL demos** in the repository. Use `--demo` flag to target a specific demo.
+**Important:**
+- By default, the utility swaps **ALL demos** in the `demos/` directory
+- Use `--demo` flag to target a specific demo
+- Use `--demos-dir` flag to target a different directory (e.g., `demos-scratch`)
 
 ## Quick Start
 
@@ -81,6 +84,23 @@ Test against a **single demo** instead of all demos:
 bin/use-local-gems --demo basic-v16-rspack \
                    --react-on-rails ~/dev/react_on_rails
 ```
+
+### Apply to Different Demo Directory
+
+Swap gems in the `demos-scratch/` directory instead of `demos/`:
+
+```bash
+# Swap ALL demos in demos-scratch/
+bin/use-local-gems --demos-dir demos-scratch \
+                   --react-on-rails ~/dev/react_on_rails
+
+# Swap specific demo in demos-scratch/
+bin/use-local-gems --demos-dir demos-scratch \
+                   --demo my-experiment \
+                   --react-on-rails ~/dev/react_on_rails
+```
+
+**Note:** The `demos-scratch/` directory is for experimental/temporary demos and is git-ignored.
 
 ### Build Options
 
@@ -326,6 +346,27 @@ bin/use-local-gems --shakapacker ~/dev/shakapacker \
 3. **Test before publishing** - Always test local changes with demos before publishing new gem versions
 4. **Restore when done** - Restore to published versions before committing demo app changes
 5. **Watch for .backup files** - Don't commit `.backup` files (they're gitignored)
+6. **Pre-push protection** - A git hook automatically prevents pushing local gem paths (see below)
+
+## Pre-Push Hook Protection
+
+A `pre-push` hook automatically checks for local gem paths before pushing:
+
+```bash
+# This will be blocked by the pre-push hook:
+git push  # if you have local gem paths
+
+# Error message will show:
+# ❌ ERROR: Found local gem paths in Gemfile(s)
+# To fix:
+#   1. Run: bin/use-local-gems --restore
+```
+
+The hook checks for:
+- `path:` in Gemfile gem declarations
+- `"file:` in package.json dependencies
+
+This prevents accidentally pushing local development paths to the repository.
 
 ## Integration with Development Workflow
 

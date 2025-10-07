@@ -50,6 +50,7 @@ module DemoScripts
       @skip_build = false
       @watch_mode = false
       @demo_filter = nil
+      @demos_dir = nil
 
       parser = OptionParser.new do |opts|
         opts.banner = 'Usage: bin/use-local-gems [options]'
@@ -86,6 +87,10 @@ module DemoScripts
 
         opts.on('--demo NAME', 'Apply to specific demo only (default: all demos)') do |name|
           @demo_filter = name
+        end
+
+        opts.on('--demos-dir PATH', 'Demos directory to process (e.g., "demos" or "demos-scratch")') do |path|
+          @demos_dir = path
         end
 
         opts.separator ''
@@ -127,6 +132,9 @@ module DemoScripts
           puts ''
           puts '  # Apply to specific demo only'
           puts '  bin/use-local-gems --demo basic-v16-rspack --react-on-rails ~/dev/react_on_rails'
+          puts ''
+          puts '  # Apply to demos-scratch directory'
+          puts '  bin/use-local-gems --demos-dir demos-scratch --react-on-rails ~/dev/react_on_rails'
           puts ''
           puts '  # Use config file'
           puts '  bin/use-local-gems --apply'
@@ -175,7 +183,8 @@ module DemoScripts
         skip_build: @skip_build,
         watch_mode: @watch_mode,
         dry_run: @dry_run,
-        verbose: @verbose
+        verbose: @verbose,
+        demos_dir: @demos_dir
       }
 
       if @demo_filter
