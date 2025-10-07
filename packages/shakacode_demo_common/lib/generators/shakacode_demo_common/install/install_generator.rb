@@ -107,11 +107,17 @@ module ShakacodeDemoCommon
           .idea/
         IGNORE
 
-        if File.exist?('.gitignore')
-          append_to_file '.gitignore', gitignore_content
-        else
-          create_file '.gitignore', gitignore_content
+        # Skip if content already exists to prevent duplicates
+        if gitignore_contains_our_content?
+          say 'Skipping .gitignore update (content already present)', :skip
+          return
         end
+
+        # Ensure .gitignore exists (Rails apps should have it, but create if missing)
+        create_file '.gitignore', '', force: false unless File.exist?('.gitignore')
+
+        # Append our content to .gitignore
+        append_to_file '.gitignore', gitignore_content
       end
 
       def install_cypress_on_rails_with_playwright
@@ -163,6 +169,17 @@ module ShakacodeDemoCommon
       end
 
       private
+
+      def gitignore_contains_our_content?
+        return false unless File.exist?('.gitignore')
+
+        content = File.read('.gitignore')
+        # Check for multiple unique markers to ensure our full content is present
+        # This prevents false positives if only partial content exists
+        content.include?('# Lefthook') &&
+          content.include?('# Testing') &&
+          content.include?('# Playwright')
+      end
 
       def gem_root_path
         ShakacodeDemoCommon.root
