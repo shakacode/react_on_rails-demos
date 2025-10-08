@@ -191,6 +191,24 @@ All demos share common configuration files from `packages/shakacode_demo_common/
 - **ESLint** configuration for JavaScript/TypeScript
 - Common Ruby gems and npm packages
 
+## Local Development
+
+Testing local versions of shakapacker, react_on_rails, or cypress-on-rails with the demo applications:
+
+```bash
+# Quick setup
+cp .swap-deps.yml.example .swap-deps.yml
+# Edit .swap-deps.yml with your local gem paths
+
+# Swap to local versions
+bin/swap-deps --apply
+
+# Restore to published versions
+bin/swap-deps --restore
+```
+
+See the [Local Development Guide](./docs/LOCAL_DEVELOPMENT.md) for comprehensive documentation.
+
 ## Contributing
 
 Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines on contributing to this repository.
