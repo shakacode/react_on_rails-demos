@@ -96,8 +96,9 @@ module DemoScripts
 
       repos.transform_values do |value|
         if value.is_a?(String)
-          # Simple string format: just repo name
-          { repo: value, branch: 'main' }
+          # String format: supports 'user/repo' or 'user/repo@branch'
+          repo, branch = value.split('@', 2)
+          { repo: repo, branch: branch || 'main' }
         elsif value.is_a?(Hash)
           # Hash format with repo and optional branch
           { repo: value['repo'] || value[:repo], branch: value['branch'] || value[:branch] || 'main' }
