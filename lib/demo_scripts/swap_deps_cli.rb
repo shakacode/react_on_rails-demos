@@ -8,7 +8,7 @@ module DemoScripts
     CONFIG_FILE = '.swap-deps.yml'
 
     attr_reader :gem_paths, :github_repos, :dry_run, :verbose, :restore, :apply_config,
-                :skip_build, :watch_mode, :demo_filter, :demos_dir
+                :skip_build, :watch_mode, :demo_filter, :demos_dir, :clean_cache, :cache_info
 
     def initialize
       @gem_paths = {}
@@ -24,6 +24,8 @@ module DemoScripts
       @in_demo_dir = false
       @root_config_file = nil
       @auto_demos_dir = nil
+      @clean_cache = false
+      @cache_info = false
     end
 
     # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
@@ -34,7 +36,11 @@ module DemoScripts
       # Require bundler/setup only when actually running commands (not for --help)
       require 'bundler/setup'
 
-      if @restore
+      if @cache_info
+        show_cache_info
+      elsif @clean_cache
+        clean_github_cache
+      elsif @restore
         restore_gems
       elsif @apply_config
         apply_from_config
@@ -133,6 +139,17 @@ module DemoScripts
         end
 
         opts.separator ''
+        opts.separator 'Cache management:'
+
+        opts.on('--clean-cache', 'Remove cached GitHub repositories') do
+          @clean_cache = true
+        end
+
+        opts.on('--cache-info', 'Show cache directory size and contents') do
+          @cache_info = true
+        end
+
+        opts.separator ''
         opts.separator 'Demo filtering:'
 
         opts.on('--demo NAME', 'Apply to specific demo only (default: all demos)') do |name|
@@ -209,6 +226,15 @@ module DemoScripts
           puts '  # Preview without making changes'
           puts '  bin/swap-deps --dry-run --react-on-rails ~/dev/react_on_rails'
           puts ''
+          puts '  # Show cache information'
+          puts '  bin/swap-deps --cache-info'
+          puts ''
+          puts '  # Clean all cached repositories'
+          puts '  bin/swap-deps --clean-cache'
+          puts ''
+          puts '  # Clean cache for specific gem'
+          puts '  bin/swap-deps --clean-cache --shakapacker'
+          puts ''
           puts 'Configuration file:'
           puts "  Create #{CONFIG_FILE} (see #{CONFIG_FILE}.example) with your dependency paths."
           puts '  This file is git-ignored for local development.'
@@ -228,6 +254,23 @@ module DemoScripts
     def restore_gems
       swapper = create_swapper
       swapper.restore!
+    end
+
+    def show_cache_info
+      swapper = create_swapper
+      swapper.show_cache_info
+    end
+
+    def clean_github_cache
+      swapper = create_swapper
+      # Determine which gems to clean based on provided gem paths
+      if gem_paths.empty?
+        swapper.clean_cache
+      else
+        gem_paths.each_key do |gem_name|
+          swapper.clean_cache(gem_name: gem_name)
+        end
+      end
     end
 
     def apply_from_config

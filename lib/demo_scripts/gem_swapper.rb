@@ -60,6 +60,84 @@ module DemoScripts
       end
     end
 
+    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+    def show_cache_info
+      unless File.directory?(CACHE_DIR)
+        puts 'ℹ️  Cache directory does not exist'
+        puts "   Location: #{CACHE_DIR}"
+        return
+      end
+
+      cached_repos = Dir.glob(File.join(CACHE_DIR, '*')).select { |path| File.directory?(path) }
+
+      if cached_repos.empty?
+        puts 'ℹ️  Cache is empty'
+        puts "   Location: #{CACHE_DIR}"
+        return
+      end
+
+      # Calculate total size using du command
+      total_kb = `du -sk #{CACHE_DIR}`.split.first.to_i
+      total_mb = (total_kb / 1024.0).round(2)
+
+      puts '📊 Cache Information'
+      puts "   Location: #{CACHE_DIR}"
+      puts "   Total size: #{total_mb} MB"
+      puts "   Cached repositories: #{cached_repos.count}"
+      puts ''
+      puts 'Cached repos:'
+      cached_repos.sort.each do |repo_path|
+        repo_name = File.basename(repo_path)
+        puts "   - #{repo_name}"
+      end
+    end
+    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
+
+    # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/MethodLength
+    def clean_cache(gem_name: nil)
+      unless File.directory?(CACHE_DIR)
+        puts 'ℹ️  Cache directory does not exist - nothing to clean'
+        return
+      end
+
+      if gem_name
+        # Clean cache for specific gem
+        # Match pattern: *-gem_name-* (converting underscores to hyphens)
+        pattern = File.join(CACHE_DIR, "*#{gem_name.tr('_', '-')}*")
+        matching_dirs = Dir.glob(pattern).select { |path| File.directory?(path) }
+
+        if matching_dirs.empty?
+          puts "ℹ️  No cached repositories found for #{gem_name}"
+          return
+        end
+
+        puts "🗑️  Removing cached repositories for #{gem_name}..."
+        matching_dirs.each do |dir|
+          puts "   Removing #{File.basename(dir)}"
+          FileUtils.rm_rf(dir) unless dry_run
+        end
+        puts "✅ Cleaned #{matching_dirs.count} cached repository(ies)" unless dry_run
+      else
+        # Clean entire cache
+        puts '🗑️  Removing all cached repositories...'
+        cached_repos = Dir.glob(File.join(CACHE_DIR, '*')).select { |path| File.directory?(path) }
+
+        if cached_repos.empty?
+          puts 'ℹ️  Cache is already empty'
+          return
+        end
+
+        puts "   Found #{cached_repos.count} cached repository(ies)"
+        if dry_run
+          puts '   [DRY-RUN] Would remove entire cache directory'
+        else
+          FileUtils.rm_rf(CACHE_DIR)
+          puts '✅ Cache cleaned successfully'
+        end
+      end
+    end
+    # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/MethodLength
+
     def load_config(config_file)
       return unless File.exist?(config_file)
 
