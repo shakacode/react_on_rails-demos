@@ -7,8 +7,9 @@
 #   bin/use-local-gems --apply
 #
 # This will swap Gemfile and package.json dependencies to use local file paths
-# instead of published gem/npm package versions.
+# or GitHub repositories instead of published gem/npm package versions.
 
+# Option 1: Local file paths
 gems:
   # Path to your local shakapacker repository
   # Gem: shakapacker (Ruby gem)
@@ -23,6 +24,21 @@ gems:
   # Path to your local cypress-on-rails repository
   # Gem: cypress-on-rails (Ruby gem only, no npm package)
   # cypress-on-rails: ~/dev/cypress-on-rails
+
+# Option 2: GitHub repositories (alternative to local paths)
+# Useful for testing unreleased changes from forks or feature branches
+# Repos are cloned to ~/.cache/local-gems/ and built automatically
+github:
+  # Simple format (uses 'main' branch by default)
+  # shakapacker: shakacode/shakapacker
+
+  # Full format with custom branch
+  # react_on_rails:
+  #   repo: shakacode/react_on_rails
+  #   branch: feature-branch-name
+
+  # You can mix local paths (gems:) and GitHub repos (github:)
+  # GitHub repos are cloned, built, and treated like local paths
 
 # Advanced configuration (optional)
 # These are auto-detected but can be overridden if needed

@@ -6,10 +6,11 @@ This guide explains how to test local versions of gems (shakapacker, react_on_ra
 
 When developing changes to shakapacker, react_on_rails, or cypress-on-rails, you often need to test those changes against real applications. The `bin/use-local-gems` utility makes this process seamless by:
 
-1. **Swapping gem versions** - Replaces published gem versions with local file paths in Gemfiles
+1. **Swapping gem versions** - Replaces published gem versions with local file paths OR GitHub repos in Gemfiles
 2. **Swapping npm packages** - Replaces published npm packages with local file paths in package.json (using `file:` protocol)
-3. **Building packages** - Automatically builds local npm packages after swapping
-4. **Easy restoration** - Simple command to restore original versions
+3. **GitHub repo support** - Clones and builds GitHub repos to `~/.cache/local-gems/` for testing unreleased changes
+4. **Building packages** - Automatically builds local npm packages after swapping
+5. **Easy restoration** - Simple command to restore original versions
 
 **Important:**
 - By default, the utility swaps **ALL demos** in the `demos/` directory
@@ -101,6 +102,37 @@ bin/use-local-gems --demos-dir demos-scratch \
 ```
 
 **Note:** The `demos-scratch/` directory is for experimental/temporary demos and is git-ignored.
+
+### Use GitHub Repositories
+
+Test changes from a GitHub repository (e.g., a fork or feature branch) without cloning it manually:
+
+```bash
+# Test a specific branch from a GitHub repo
+bin/use-local-gems --github shakacode/shakapacker --branch fix-hmr
+
+# Mix local paths and GitHub repos
+bin/use-local-gems --shakapacker ~/dev/shakapacker \
+                   --github shakacode/react_on_rails --branch feature-x
+```
+
+**How it works:**
+- The repo is cloned to `~/.cache/local-gems/` with the pattern `{user}-{repo}-{branch}/`
+- The clone is automatically built (if it has npm packages)
+- Subsequent runs update the existing clone instead of re-cloning
+- For Gemfiles: Uses `github: 'user/repo', branch: 'branch-name'` syntax
+- For package.json: Uses `file:` protocol pointing to the cached clone
+
+**Benefits:**
+- Test PRs from forks without manual setup
+- Share reproducible configs with team members
+- Cache persists across swaps for faster iterations
+
+**Cleanup:**
+```bash
+# Remove all cached GitHub repos
+rm -rf ~/.cache/local-gems/
+```
 
 ### Build Options
 

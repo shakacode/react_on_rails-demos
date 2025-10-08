@@ -17,18 +17,21 @@ module DemoScripts
 
     SUPPORTED_GEMS = NPM_PACKAGE_PATHS.keys.freeze
     BACKUP_SUFFIX = '.backup'
+    CACHE_DIR = File.expand_path('~/.cache/local-gems')
 
-    attr_reader :gem_paths, :skip_build, :watch_mode
+    attr_reader :gem_paths, :github_repos, :skip_build, :watch_mode
 
-    def initialize(gem_paths: {}, skip_build: false, watch_mode: false, **options)
+    def initialize(gem_paths: {}, github_repos: {}, skip_build: false, watch_mode: false, **options)
       super(**options)
       @gem_paths = validate_gem_paths(gem_paths)
+      @github_repos = validate_github_repos(github_repos)
       @skip_build = skip_build
       @watch_mode = watch_mode
     end
 
     def swap!
       validate_local_paths!
+      clone_github_repos! if github_repos.any?
 
       puts '🔄 Swapping to local gem versions...'
       each_demo do |demo_path|
@@ -60,11 +63,19 @@ module DemoScripts
       return unless File.exist?(config_file)
 
       config = YAML.safe_load_file(config_file, permitted_classes: [], permitted_symbols: [], aliases: false)
-      @gem_paths = validate_gem_paths(config['gems'] || {})
+
+      # Load path-based gems
+      @gem_paths = validate_gem_paths(config['gems']) if config['gems'].is_a?(Hash)
+
+      # Load GitHub-based gems
+      @github_repos = validate_github_repos(config['github']) if config['github'].is_a?(Hash)
 
       puts "📋 Loaded configuration from #{config_file}"
       gem_paths.each do |gem_name, path|
         puts "   #{gem_name}: #{path}"
+      end
+      github_repos.each do |gem_name, info|
+        puts "   #{gem_name}: #{info[:repo]} (branch: #{info[:branch]})"
       end
     rescue Psych::DisallowedClass => e
       raise Error, "Invalid YAML in #{config_file}: #{e.message}"
@@ -79,11 +90,71 @@ module DemoScripts
       paths.transform_values { |path| File.expand_path(path) }
     end
 
+    def validate_github_repos(repos)
+      invalid = repos.keys - SUPPORTED_GEMS
+      raise Error, "Unsupported gems: #{invalid.join(', ')}" if invalid.any?
+
+      repos.transform_values do |value|
+        if value.is_a?(String)
+          # Simple string format: just repo name
+          { repo: value, branch: 'main' }
+        elsif value.is_a?(Hash)
+          # Hash format with repo and optional branch
+          { repo: value['repo'] || value[:repo], branch: value['branch'] || value[:branch] || 'main' }
+        else
+          raise Error, "Invalid GitHub repo format for #{value}"
+        end
+      end
+    end
+
     def validate_local_paths!
       gem_paths.each do |gem_name, path|
         next if File.directory?(path)
 
         raise Error, "Local path for #{gem_name} does not exist: #{path}"
+      end
+    end
+
+    def clone_github_repos!
+      return if github_repos.empty?
+
+      puts "\n📥 Cloning GitHub repositories to cache..."
+      FileUtils.mkdir_p(CACHE_DIR) unless File.directory?(CACHE_DIR)
+
+      github_repos.each do |gem_name, info|
+        cache_path = github_cache_path(gem_name, info)
+
+        if File.directory?(cache_path)
+          puts "  Updating #{gem_name} (#{info[:repo]}@#{info[:branch]})..."
+          update_github_repo(cache_path, info)
+        else
+          puts "  Cloning #{gem_name} (#{info[:repo]}@#{info[:branch]})..."
+          clone_github_repo(cache_path, info)
+        end
+
+        # Add to gem_paths so the rest of the swap logic treats it like a local path
+        @gem_paths[gem_name] = cache_path
+      end
+    end
+
+    def github_cache_path(_gem_name, info)
+      # Create a unique directory name based on repo and branch
+      # e.g., ~/.cache/local-gems/shakacode-shakapacker-main
+      repo_slug = info[:repo].tr('/', '-')
+      branch_slug = info[:branch].tr('/', '-')
+      File.join(CACHE_DIR, "#{repo_slug}-#{branch_slug}")
+    end
+
+    def clone_github_repo(cache_path, info)
+      repo_url = "https://github.com/#{info[:repo]}.git"
+      success = system("git clone --depth 1 --branch #{info[:branch]} #{repo_url} #{cache_path} 2>&1")
+      raise Error, "Failed to clone #{info[:repo]}@#{info[:branch]}" unless success
+    end
+
+    def update_github_repo(cache_path, info)
+      Dir.chdir(cache_path) do
+        system("git fetch origin #{info[:branch]} 2>&1")
+        system("git reset --hard origin/#{info[:branch]} 2>&1")
       end
     end
 
@@ -101,14 +172,23 @@ module DemoScripts
     end
 
     def swap_gemfile(gemfile_path)
-      return if gem_paths.empty?
+      return if gem_paths.empty? && github_repos.empty?
 
       backup_file(gemfile_path)
       content = File.read(gemfile_path)
       original_content = content.dup
 
+      # Swap path-based gems
       gem_paths.each do |gem_name, local_path|
+        # Skip if this gem came from GitHub (already in gem_paths via clone_github_repos!)
+        next if github_repos.key?(gem_name)
+
         content = swap_gem_in_gemfile(content, gem_name, local_path)
+      end
+
+      # Swap GitHub-based gems
+      github_repos.each do |gem_name, info|
+        content = swap_gem_to_github(content, gem_name, info)
       end
 
       if content == original_content
@@ -131,8 +211,8 @@ module DemoScripts
       pattern = /^(\s*)gem\s+(['"])#{Regexp.escape(gem_name)}\2(.*)$/
 
       content.gsub(pattern) do |match|
-        # Skip if line already contains 'path:' - already swapped
-        next match if match.include?('path:')
+        # Skip if line already contains 'path:' or 'github:' - already swapped
+        next match if match.include?('path:') || match.include?('github:')
 
         indent = Regexp.last_match(1)
         quote = Regexp.last_match(2)
@@ -144,6 +224,29 @@ module DemoScripts
 
         # Build replacement: gem 'name', path: 'local_path' [, options...]
         replacement = "#{indent}gem #{quote}#{gem_name}#{quote}, path: #{quote}#{local_path}#{quote}"
+        replacement += options unless options.strip.empty?
+        replacement
+      end
+    end
+
+    def swap_gem_to_github(content, gem_name, info)
+      # Match gem lines for this gem name
+      pattern = /^(\s*)gem\s+(['"])#{Regexp.escape(gem_name)}\2(.*)$/
+
+      content.gsub(pattern) do |match|
+        # Skip if line already contains 'path:' or 'github:' - already swapped
+        next match if match.include?('path:') || match.include?('github:')
+
+        indent = Regexp.last_match(1)
+        quote = Regexp.last_match(2)
+        rest = Regexp.last_match(3)
+
+        # Extract options after version (if any)
+        options = rest.sub(/^\s*,\s*(['"])[^'"]*\1/, '') # Remove version if present
+
+        # Build replacement: gem 'name', github: 'user/repo', branch: 'branch-name' [, options...]
+        replacement = "#{indent}gem #{quote}#{gem_name}#{quote}, github: #{quote}#{info[:repo]}#{quote}"
+        replacement += ", branch: #{quote}#{info[:branch]}#{quote}" if info[:branch] != 'main'
         replacement += options unless options.strip.empty?
         replacement
       end

@@ -7,11 +7,14 @@ module DemoScripts
   class LocalGemsCLI
     CONFIG_FILE = '.local-gems.yml'
 
-    attr_reader :gem_paths, :dry_run, :verbose, :restore, :apply_config,
+    attr_reader :gem_paths, :github_repos, :dry_run, :verbose, :restore, :apply_config,
                 :skip_build, :watch_mode, :demo_filter, :demos_dir
 
     def initialize
       @gem_paths = {}
+      @github_repos = {}
+      @current_github_gem = nil
+      @current_github_branch = 'main'
       @dry_run = false
       @verbose = false
       @restore = false
@@ -25,7 +28,7 @@ module DemoScripts
       @auto_demos_dir = nil
     end
 
-    # rubocop:disable Metrics/MethodLength
+    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
     def run!
       detect_context!
       parse_options!
@@ -37,8 +40,8 @@ module DemoScripts
         restore_gems
       elsif @apply_config
         apply_from_config
-      elsif gem_paths.empty?
-        puts 'Error: No gems specified. Use --shakapacker, --react-on-rails, or --cypress-on-rails'
+      elsif gem_paths.empty? && github_repos.empty?
+        puts 'Error: No gems specified. Use --shakapacker, --react-on-rails, --cypress-on-rails, or --github'
         puts 'Or use --apply to load from .local-gems.yml'
         puts 'Run with --help for more information'
         exit 1
@@ -53,7 +56,7 @@ module DemoScripts
       warn e.backtrace.join("\n") if verbose
       exit 1
     end
-    # rubocop:enable Metrics/MethodLength
+    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
     private
 
@@ -98,6 +101,20 @@ module DemoScripts
 
         opts.on('--cypress-on-rails PATH', 'Path to local cypress-on-rails repository') do |path|
           @gem_paths['cypress-on-rails'] = path
+        end
+
+        opts.separator ''
+        opts.separator 'GitHub options:'
+
+        opts.on('--github REPO', 'GitHub repository (e.g., user/repo) to use instead of local path') do |repo|
+          @current_github_gem = infer_gem_from_repo(repo)
+          @github_repos[@current_github_gem] = { repo: repo, branch: @current_github_branch }
+        end
+
+        opts.on('--branch BRANCH', 'Branch to use with --github (default: main)') do |branch|
+          @current_github_branch = branch
+          # Update the current github gem if it exists
+          @github_repos[@current_github_gem][:branch] = branch if @current_github_gem
         end
 
         opts.separator ''
@@ -165,6 +182,13 @@ module DemoScripts
           puts '  # Apply to demos-scratch directory'
           puts '  bin/use-local-gems --demos-dir demos-scratch --react-on-rails ~/dev/react_on_rails'
           puts ''
+          puts '  # Use a GitHub repository instead of local path'
+          puts '  bin/use-local-gems --github shakacode/shakapacker --branch fix-hmr'
+          puts ''
+          puts '  # Mix local paths and GitHub repos'
+          puts '  bin/use-local-gems --shakapacker ~/dev/shakapacker \\'
+          puts '                      --github shakacode/react_on_rails --branch feature-x'
+          puts ''
           puts '  # Use config file'
           puts '  bin/use-local-gems --apply'
           puts ''
@@ -212,6 +236,7 @@ module DemoScripts
     def create_swapper
       options = {
         gem_paths: gem_paths,
+        github_repos: github_repos,
         skip_build: skip_build,
         watch_mode: watch_mode,
         dry_run: dry_run,
@@ -226,6 +251,24 @@ module DemoScripts
         FilteredGemSwapper.new(demo_filter: effective_demo_filter, **options)
       else
         GemSwapper.new(**options)
+      end
+    end
+
+    def infer_gem_from_repo(repo)
+      # Extract gem name from repo name (e.g., 'shakacode/shakapacker' -> 'shakapacker')
+      gem_name = repo.split('/').last.downcase
+
+      # Map common repo names to gem names
+      case gem_name
+      when 'shakapacker'
+        'shakapacker'
+      when 'react_on_rails', 'react-on-rails'
+        'react_on_rails'
+      when 'cypress-on-rails', 'cypress_on_rails'
+        'cypress-on-rails'
+      else
+        raise Error, "Cannot infer gem name from repo: #{repo}. " \
+                     'Please use --shakapacker, --react-on-rails, or --cypress-on-rails flags explicitly.'
       end
     end
   end
