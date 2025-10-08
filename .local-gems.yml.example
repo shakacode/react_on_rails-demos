@@ -33,8 +33,8 @@ github:
   shakapacker: shakacode/shakapacker
 
   # With custom branch - use either format:
-  # Format 1: String with @branch
-  # react_on_rails: shakacode/react_on_rails@feature-branch
+  # Format 1: String with #branch (npm-style)
+  # react_on_rails: shakacode/react_on_rails#feature-branch
 
   # Format 2: Hash with repo and branch
   # react_on_rails:
@@ -42,9 +42,9 @@ github:
   #   branch: feature-branch-name
 
   # Examples:
-  # - Test a PR branch: shakacode/shakapacker@fix-hmr
-  # - Test from a fork: yourname/react_on_rails@experimental
-  # - Use stable branch: shakacode/shakapacker@v8-stable
+  # - Test a PR branch: shakacode/shakapacker#fix-hmr
+  # - Test from a fork: yourname/react_on_rails#experimental
+  # - Use stable branch: shakacode/shakapacker#v8-stable
 
   # You can mix local paths (gems:) and GitHub repos (github:)
   # GitHub repos are cloned, built, and treated like local paths

@@ -104,8 +104,8 @@ module DemoScripts
         opts.separator ''
         opts.separator 'GitHub options:'
 
-        opts.on('--github REPO[@BRANCH]', 'GitHub repository to use (e.g., user/repo or user/repo@branch)') do |value|
-          repo, branch = value.split('@', 2)
+        opts.on('--github REPO[#BRANCH]', 'GitHub repository to use (e.g., user/repo or user/repo#branch)') do |value|
+          repo, branch = value.split('#', 2)
           branch ||= 'main'
           gem_name = infer_gem_from_repo(repo)
           @github_repos[gem_name] = { repo: repo, branch: branch }
@@ -177,15 +177,15 @@ module DemoScripts
           puts '  bin/use-local-gems --demos-dir demos-scratch --react-on-rails ~/dev/react_on_rails'
           puts ''
           puts '  # Use a GitHub repository with a specific branch'
-          puts '  bin/use-local-gems --github shakacode/shakapacker@fix-hmr'
+          puts '  bin/use-local-gems --github shakacode/shakapacker#fix-hmr'
           puts ''
           puts '  # Use multiple GitHub repos with different branches'
-          puts '  bin/use-local-gems --github shakacode/shakapacker@v8-stable \\'
-          puts '                      --github shakacode/react_on_rails@feature-x'
+          puts '  bin/use-local-gems --github shakacode/shakapacker#v8-stable \\'
+          puts '                      --github shakacode/react_on_rails#feature-x'
           puts ''
           puts '  # Mix local paths and GitHub repos'
           puts '  bin/use-local-gems --shakapacker ~/dev/shakapacker \\'
-          puts '                      --github shakacode/react_on_rails@feature-x'
+          puts '                      --github shakacode/react_on_rails#feature-x'
           puts ''
           puts '  # Use config file'
           puts '  bin/use-local-gems --apply'
