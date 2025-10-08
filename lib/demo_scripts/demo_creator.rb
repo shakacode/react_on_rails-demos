@@ -95,9 +95,7 @@ module DemoScripts
 
     def validate_demo_name!(name)
       raise ArgumentError, 'Demo name cannot be empty' if name.nil? || name.strip.empty?
-
       raise ArgumentError, 'Demo name cannot contain slashes' if name.include?('/')
-
       raise ArgumentError, 'Demo name cannot start with . or _' if name.start_with?('.', '_')
 
       return if name.match?(/^[a-zA-Z0-9_-]+$/)
@@ -219,8 +217,12 @@ module DemoScripts
     end
 
     def using_github_sources?
-      @config.shakapacker_version.start_with?('github:') ||
-        @config.react_on_rails_version.start_with?('github:')
+      prerelease_version?(@config.shakapacker_version) ||
+        prerelease_version?(@config.react_on_rails_version)
+    end
+
+    def prerelease_version?(version)
+      version&.start_with?('github:') || false
     end
 
     def build_github_npm_packages
@@ -235,11 +237,11 @@ module DemoScripts
       @runner.run!('npm install --legacy-peer-deps', dir: @demo_dir)
 
       # Build packages that need compilation
-      if @config.shakapacker_version.start_with?('github:')
+      if prerelease_version?(@config.shakapacker_version)
         build_github_npm_package('shakapacker',
                                  @config.shakapacker_version)
       end
-      return unless @config.react_on_rails_version.start_with?('github:')
+      return unless prerelease_version?(@config.react_on_rails_version)
 
       build_github_npm_package('react_on_rails',
                                @config.react_on_rails_version)
@@ -261,7 +263,7 @@ module DemoScripts
     end
 
     def update_package_dependency(package_json, package_name, version_spec)
-      return unless version_spec.start_with?('github:')
+      return unless prerelease_version?(version_spec)
 
       github_url = convert_to_npm_github_url(version_spec)
       package_json['dependencies'][package_name] = github_url
@@ -504,8 +506,8 @@ module DemoScripts
         'options' => {
           'rails_args' => @rails_args,
           'react_on_rails_args' => @react_on_rails_args,
-          'shakapacker_prerelease' => @config.shakapacker_version&.start_with?('github:'),
-          'react_on_rails_prerelease' => @config.react_on_rails_version&.start_with?('github:')
+          'shakapacker_prerelease' => prerelease_version?(@config.shakapacker_version),
+          'react_on_rails_prerelease' => prerelease_version?(@config.react_on_rails_version)
         }.compact,
         'command' => reconstruct_command,
         'ruby_version' => RUBY_VERSION,

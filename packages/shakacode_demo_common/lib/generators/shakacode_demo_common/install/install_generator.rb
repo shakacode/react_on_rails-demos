@@ -7,6 +7,10 @@ module ShakacodeDemoCommon
     class InstallGenerator < Rails::Generators::Base
       source_root File.expand_path('templates', __dir__)
 
+      # Markers used to detect if our .gitignore content is already present
+      # We check for multiple markers to ensure complete content, not just partial
+      GITIGNORE_MARKERS = ['# Lefthook', '# Testing', '# Playwright'].freeze
+
       desc 'Install React on Rails Demo Common configurations'
 
       def add_npm_package
@@ -107,11 +111,17 @@ module ShakacodeDemoCommon
           .idea/
         IGNORE
 
-        if File.exist?('.gitignore')
-          append_to_file '.gitignore', gitignore_content
-        else
-          create_file '.gitignore', gitignore_content
+        # Skip if content already exists to prevent duplicates
+        if gitignore_contains_our_content?
+          say 'Skipping .gitignore update (content already present)', :skip
+          return
         end
+
+        # Ensure .gitignore exists (Rails apps should have it, but create if missing)
+        create_file '.gitignore', '', force: false unless File.exist?('.gitignore')
+
+        # Append our content to .gitignore
+        append_to_file '.gitignore', gitignore_content
       end
 
       def install_cypress_on_rails_with_playwright
@@ -163,6 +173,16 @@ module ShakacodeDemoCommon
       end
 
       private
+
+      # Checks if our .gitignore content is already present
+      # Uses marker-based detection (checking for comment headers) rather than
+      # full content matching for performance and flexibility
+      def gitignore_contains_our_content?
+        return false unless File.exist?('.gitignore')
+
+        content = File.read('.gitignore')
+        GITIGNORE_MARKERS.all? { |marker| content.include?(marker) }
+      end
 
       def gem_root_path
         ShakacodeDemoCommon.root
