@@ -7,6 +7,10 @@ module ShakacodeDemoCommon
     class InstallGenerator < Rails::Generators::Base
       source_root File.expand_path('templates', __dir__)
 
+      # Markers used to detect if our .gitignore content is already present
+      # We check for multiple markers to ensure complete content, not just partial
+      GITIGNORE_MARKERS = ['# Lefthook', '# Testing', '# Playwright'].freeze
+
       desc 'Install React on Rails Demo Common configurations'
 
       def add_npm_package
@@ -170,15 +174,14 @@ module ShakacodeDemoCommon
 
       private
 
+      # Checks if our .gitignore content is already present
+      # Uses marker-based detection (checking for comment headers) rather than
+      # full content matching for performance and flexibility
       def gitignore_contains_our_content?
         return false unless File.exist?('.gitignore')
 
         content = File.read('.gitignore')
-        # Check for multiple unique markers to ensure our full content is present
-        # This prevents false positives if only partial content exists
-        content.include?('# Lefthook') &&
-          content.include?('# Testing') &&
-          content.include?('# Playwright')
+        GITIGNORE_MARKERS.all? { |marker| content.include?(marker) }
       end
 
       def gem_root_path

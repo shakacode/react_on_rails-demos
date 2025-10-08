@@ -450,6 +450,30 @@ RSpec.describe DemoScripts::DemoCreator do
         expect(cmd).to include('branch-name')
       end
     end
+
+    describe '#prerelease_version?' do
+      it 'returns true for github: prefix' do
+        expect(creator.send(:prerelease_version?, 'github:org/repo')).to be true
+      end
+
+      it 'returns true for github: prefix with branch' do
+        expect(creator.send(:prerelease_version?, 'github:org/repo@branch')).to be true
+      end
+
+      it 'returns false for regular version specs' do
+        expect(creator.send(:prerelease_version?, '~> 8.0')).to be false
+        expect(creator.send(:prerelease_version?, '>= 16.0.0')).to be false
+        expect(creator.send(:prerelease_version?, '1.2.3')).to be false
+      end
+
+      it 'returns false for nil' do
+        expect(creator.send(:prerelease_version?, nil)).to be false
+      end
+
+      it 'returns false for empty string' do
+        expect(creator.send(:prerelease_version?, '')).to be false
+      end
+    end
   end
 
   describe 'GitHub npm package building' do

@@ -222,7 +222,7 @@ module DemoScripts
     end
 
     def prerelease_version?(version)
-      version&.start_with?('github:')
+      version&.start_with?('github:') || false
     end
 
     def build_github_npm_packages
