@@ -165,6 +165,16 @@ RSpec.describe DemoScripts::DependencySwapper do
         expect(result).to eq("gem 'shakapacker', github: 'shakacode/shakapacker', branch: 'develop', require: false\n")
       end
     end
+
+    context 'with tag instead of branch' do
+      let(:gemfile_content) { "gem 'shakapacker', '~> 9.0.0'\n" }
+      let(:github_info) { { repo: 'shakacode/shakapacker', branch: 'v1.0.0', ref_type: :tag } }
+
+      it 'uses tag parameter instead of branch' do
+        result = swapper.send(:swap_gem_to_github, gemfile_content, 'shakapacker', github_info)
+        expect(result).to eq("gem 'shakapacker', github: 'shakacode/shakapacker', tag: 'v1.0.0'\n")
+      end
+    end
   end
 
   describe '#swap_package_json' do
