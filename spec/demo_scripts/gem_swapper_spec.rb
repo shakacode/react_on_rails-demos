@@ -175,6 +175,36 @@ RSpec.describe DemoScripts::DependencySwapper do
         expect(result).to eq("gem 'shakapacker', github: 'shakacode/shakapacker', tag: 'v1.0.0'\n")
       end
     end
+
+    context 'with explicit branch ref_type' do
+      let(:gemfile_content) { "gem 'shakapacker', '~> 9.0.0'\n" }
+      let(:github_info) { { repo: 'shakacode/shakapacker', branch: 'develop', ref_type: :branch } }
+
+      it 'uses branch parameter' do
+        result = swapper.send(:swap_gem_to_github, gemfile_content, 'shakapacker', github_info)
+        expect(result).to eq("gem 'shakapacker', github: 'shakacode/shakapacker', branch: 'develop'\n")
+      end
+    end
+
+    context 'with tag named main' do
+      let(:gemfile_content) { "gem 'shakapacker', '~> 9.0.0'\n" }
+      let(:github_info) { { repo: 'shakacode/shakapacker', branch: 'main', ref_type: :tag } }
+
+      it 'includes tag parameter even though it is named main' do
+        result = swapper.send(:swap_gem_to_github, gemfile_content, 'shakapacker', github_info)
+        expect(result).to eq("gem 'shakapacker', github: 'shakacode/shakapacker', tag: 'main'\n")
+      end
+    end
+
+    context 'with master branch' do
+      let(:gemfile_content) { "gem 'shakapacker', '~> 9.0.0'\n" }
+      let(:github_info) { { repo: 'shakacode/shakapacker', branch: 'master', ref_type: :branch } }
+
+      it 'omits branch parameter for master (like main)' do
+        result = swapper.send(:swap_gem_to_github, gemfile_content, 'shakapacker', github_info)
+        expect(result).to eq("gem 'shakapacker', github: 'shakacode/shakapacker'\n")
+      end
+    end
   end
 
   describe '#swap_package_json' do

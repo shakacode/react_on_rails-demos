@@ -278,12 +278,17 @@ module DemoScripts
         # Extract options after version (if any)
         options = rest.sub(/^\s*,\s*(['"])[^'"]*\1/, '') # Remove version if present
 
-        # Use tag: for tags, branch: for branches
-        param_name = info[:ref_type] == :tag ? 'tag' : 'branch'
+        # Use tag: for tags, branch: for branches (default to :branch if not specified)
+        ref_type = info[:ref_type] || :branch
+        param_name = ref_type == :tag ? 'tag' : 'branch'
+
+        # Only omit ref when it's a branch (not tag) and the branch is 'main' or 'master'
+        # Tags must always be explicit, even if named 'main' or 'master'
+        should_omit_ref = ref_type == :branch && %w[main master].include?(info[:branch])
 
         # Build replacement: gem 'name', github: 'user/repo', branch/tag: 'ref-name' [, options...]
         replacement = "#{indent}gem #{quote}#{gem_name}#{quote}, github: #{quote}#{info[:repo]}#{quote}"
-        replacement += ", #{param_name}: #{quote}#{info[:branch]}#{quote}" if info[:branch] != 'main'
+        replacement += ", #{param_name}: #{quote}#{info[:branch]}#{quote}" unless should_omit_ref
         replacement += options unless options.strip.empty?
         replacement
       end
