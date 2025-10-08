@@ -1,13 +1,13 @@
-# Local Gem Development Configuration
+# Dependency Swapping Configuration
 #
-# Copy this file to .local-gems.yml and customize it with your local gem paths.
-# The .local-gems.yml file is git-ignored for local development.
+# Copy this file to .swap-deps.yml and customize it with your dependency sources.
+# The .swap-deps.yml file is git-ignored for local development.
 #
 # Usage:
-#   bin/use-local-gems --apply
+#   bin/swap-deps --apply
 #
 # This will swap Gemfile and package.json dependencies to use local file paths
-# or GitHub repositories instead of published gem/npm package versions.
+# or GitHub repositories instead of production versions.
 
 # Option 1: Local file paths
 gems:
@@ -27,7 +27,7 @@ gems:
 
 # Option 2: GitHub repositories (alternative to local paths)
 # Useful for testing unreleased changes from forks or feature branches
-# Repos are cloned to ~/.cache/local-gems/ and built automatically
+# Repos are cloned to ~/.cache/swap-deps/ and built automatically
 github:
   # Simple format (uses 'main' branch by default)
   shakapacker: shakacode/shakapacker

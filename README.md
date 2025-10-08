@@ -197,14 +197,14 @@ Testing local versions of shakapacker, react_on_rails, or cypress-on-rails with 
 
 ```bash
 # Quick setup
-cp .local-gems.yml.example .local-gems.yml
-# Edit .local-gems.yml with your local gem paths
+cp .swap-deps.yml.example .swap-deps.yml
+# Edit .swap-deps.yml with your local gem paths
 
 # Swap to local versions
-bin/use-local-gems --apply
+bin/swap-deps --apply
 
 # Restore to published versions
-bin/use-local-gems --restore
+bin/swap-deps --restore
 ```
 
 See the [Local Development Guide](./docs/LOCAL_DEVELOPMENT.md) for comprehensive documentation.

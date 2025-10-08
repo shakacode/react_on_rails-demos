@@ -5,7 +5,7 @@ require 'demo_scripts/gem_swapper'
 require 'tempfile'
 require 'tmpdir'
 
-RSpec.describe DemoScripts::GemSwapper do
+RSpec.describe DemoScripts::DependencySwapper do
   let(:gem_paths) { { 'shakapacker' => '/Users/test/dev/shakapacker' } }
   let(:github_repos) { {} }
   let(:swapper) do
@@ -224,7 +224,7 @@ RSpec.describe DemoScripts::GemSwapper do
 
       it 'normalizes to hash format with default branch' do
         result = swapper.send(:validate_github_repos, repos)
-        expect(result['shakapacker']).to eq(repo: 'shakacode/shakapacker', branch: 'main')
+        expect(result['shakapacker']).to eq(repo: 'shakacode/shakapacker', branch: 'main', ref_type: :branch)
       end
     end
 
@@ -240,7 +240,7 @@ RSpec.describe DemoScripts::GemSwapper do
 
       it 'preserves custom branch' do
         result = swapper.send(:validate_github_repos, repos)
-        expect(result['shakapacker']).to eq(repo: 'shakacode/shakapacker', branch: 'develop')
+        expect(result['shakapacker']).to eq(repo: 'shakacode/shakapacker', branch: 'develop', ref_type: :branch)
       end
     end
 
@@ -253,6 +253,35 @@ RSpec.describe DemoScripts::GemSwapper do
         end.to raise_error(DemoScripts::Error, /Unsupported gems: invalid_gem/)
       end
     end
+
+    context 'with invalid repo format' do
+      let(:repos) { { 'shakapacker' => '../../../etc/passwd' } }
+
+      it 'raises error for path traversal attempt' do
+        expect do
+          swapper.send(:validate_github_repos, repos)
+        end.to raise_error(DemoScripts::Error, /Invalid GitHub repo format/)
+      end
+    end
+
+    context 'with invalid branch name' do
+      let(:repos) { { 'shakapacker' => 'shakacode/shakapacker#$(malicious)' } }
+
+      it 'raises error for unsafe characters' do
+        expect do
+          swapper.send(:validate_github_repos, repos)
+        end.to raise_error(DemoScripts::Error, %r{Invalid branch/tag name.*contains unsafe characters})
+      end
+    end
+
+    context 'with valid branch containing slashes' do
+      let(:repos) { { 'shakapacker' => 'shakacode/shakapacker#feature/new-thing' } }
+
+      it 'accepts branch names with slashes' do
+        result = swapper.send(:validate_github_repos, repos)
+        expect(result['shakapacker'][:branch]).to eq('feature/new-thing')
+      end
+    end
   end
 
   describe '#github_cache_path' do
@@ -260,7 +289,7 @@ RSpec.describe DemoScripts::GemSwapper do
 
     it 'creates a unique path based on repo and branch' do
       result = swapper.send(:github_cache_path, 'shakapacker', github_info)
-      expect(result).to include('.cache/local-gems')
+      expect(result).to include('.cache/swap-deps')
       expect(result).to end_with('shakacode-shakapacker-fix-hmr')
     end
 
@@ -285,7 +314,7 @@ RSpec.describe DemoScripts::GemSwapper do
 
     it 'loads both path-based and github-based gems' do
       Dir.mktmpdir do |dir|
-        config_file = File.join(dir, '.local-gems.yml')
+        config_file = File.join(dir, '.swap-deps.yml')
         File.write(config_file, config_content)
 
         allow(File).to receive(:expand_path).with('~/dev/shakapacker').and_return('/Users/test/dev/shakapacker')
@@ -302,7 +331,7 @@ RSpec.describe DemoScripts::GemSwapper do
 
     it 'raises error for disallowed YAML classes' do
       Dir.mktmpdir do |dir|
-        config_file = File.join(dir, '.local-gems.yml')
+        config_file = File.join(dir, '.swap-deps.yml')
         # This would trigger DisallowedClass if not safely loaded
         File.write(config_file, 'gems: !ruby/object:Object {}')
 

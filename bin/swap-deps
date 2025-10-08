@@ -4,4 +4,4 @@
 require_relative '../lib/demo_scripts'
 
 # Main execution
-DemoScripts::LocalGemsCLI.new.run!
+DemoScripts::SwapDepsCLI.new.run!

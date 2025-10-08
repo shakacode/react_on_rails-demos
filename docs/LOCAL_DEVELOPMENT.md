@@ -4,7 +4,7 @@ This guide explains how to test local versions of gems (shakapacker, react_on_ra
 
 ## Overview
 
-When developing changes to shakapacker, react_on_rails, or cypress-on-rails, you often need to test those changes against real applications. The `bin/use-local-gems` utility makes this process seamless by:
+When developing changes to shakapacker, react_on_rails, or cypress-on-rails, you often need to test those changes against real applications. The `bin/swap-deps` utility makes this process seamless by:
 
 1. **Swapping gem versions** - Replaces published gem versions with local file paths OR GitHub repos in Gemfiles
 2. **Swapping npm packages** - Replaces published npm packages with local file paths in package.json (using `file:` protocol)
@@ -23,17 +23,17 @@ When developing changes to shakapacker, react_on_rails, or cypress-on-rails, you
 
 1. **Copy the example configuration file:**
    ```bash
-   cp .local-gems.yml.example .local-gems.yml
+   cp .swap-deps.yml.example .swap-deps.yml
    ```
 
-2. **Edit `.local-gems.yml` with your local gem paths or GitHub repos:**
+2. **Edit `.swap-deps.yml` with your local gem paths or GitHub repos:**
    ```yaml
    # Option 1: Local file paths
    gems:
      shakapacker: ~/dev/shakapacker
      react_on_rails: ~/dev/react_on_rails
 
-   # Option 2: GitHub repositories (cloned to ~/.cache/local-gems/)
+   # Option 2: GitHub repositories (cloned to ~/.cache/swap-deps/)
    github:
      shakapacker: shakacode/shakapacker#fix-hmr  # branch
      react_on_rails: shakacode/react_on_rails@v16.1.0  # tag
@@ -43,14 +43,14 @@ When developing changes to shakapacker, react_on_rails, or cypress-on-rails, you
 
 3. **Apply the configuration:**
    ```bash
-   bin/use-local-gems --apply
+   bin/swap-deps --apply
    ```
 
 ### Daily Workflow
 
 ```bash
 # Swap ALL demos to local gems
-bin/use-local-gems --apply
+bin/swap-deps --apply
 
 # Make changes in your local gem repositories
 # For packages that compile (react_on_rails), rebuild:
@@ -62,7 +62,7 @@ cd path/to/react_on_rails-demos/demos/basic-v16-rspack
 ./bin/dev
 
 # Restore ALL demos to published versions when done
-bin/use-local-gems --restore
+bin/swap-deps --restore
 ```
 
 ## Usage Examples
@@ -73,14 +73,14 @@ Swap just one gem without using a config file (**swaps ALL demos by default**):
 
 ```bash
 # This swaps react_on_rails in ALL demos
-bin/use-local-gems --react-on-rails ~/dev/react_on_rails
+bin/swap-deps --react-on-rails ~/dev/react_on_rails
 ```
 
 Swap multiple gems (**swaps ALL demos by default**):
 
 ```bash
 # This swaps both gems in ALL demos
-bin/use-local-gems --shakapacker ~/dev/shakapacker \
+bin/swap-deps --shakapacker ~/dev/shakapacker \
                    --react-on-rails ~/dev/react_on_rails
 ```
 
@@ -89,7 +89,7 @@ bin/use-local-gems --shakapacker ~/dev/shakapacker \
 Test against a **single demo** instead of all demos:
 
 ```bash
-bin/use-local-gems --demo basic-v16-rspack \
+bin/swap-deps --demo basic-v16-rspack \
                    --react-on-rails ~/dev/react_on_rails
 ```
 
@@ -99,11 +99,11 @@ Swap gems in the `demos-scratch/` directory instead of `demos/`:
 
 ```bash
 # Swap ALL demos in demos-scratch/
-bin/use-local-gems --demos-dir demos-scratch \
+bin/swap-deps --demos-dir demos-scratch \
                    --react-on-rails ~/dev/react_on_rails
 
 # Swap specific demo in demos-scratch/
-bin/use-local-gems --demos-dir demos-scratch \
+bin/swap-deps --demos-dir demos-scratch \
                    --demo my-experiment \
                    --react-on-rails ~/dev/react_on_rails
 ```
@@ -116,24 +116,24 @@ Test changes from a GitHub repository (e.g., a fork or feature branch) without c
 
 ```bash
 # Test a branch from a GitHub repo (# for branches)
-bin/use-local-gems --github shakacode/shakapacker#fix-hmr
+bin/swap-deps --github shakacode/shakapacker#fix-hmr
 
 # Test a release tag (@ for tags)
-bin/use-local-gems --github shakacode/shakapacker@v9.0.0
+bin/swap-deps --github shakacode/shakapacker@v9.0.0
 
 # Mix branches and tags
-bin/use-local-gems --github shakacode/shakapacker#v8-stable \
+bin/swap-deps --github shakacode/shakapacker#v8-stable \
                    --github shakacode/react_on_rails@v16.1.0
 
 # Mix local paths and GitHub repos
-bin/use-local-gems --shakapacker ~/dev/shakapacker \
+bin/swap-deps --shakapacker ~/dev/shakapacker \
                    --github shakacode/react_on_rails#feature-x
 
 # Test from a fork
-bin/use-local-gems --github yourname/shakapacker#experimental
+bin/swap-deps --github yourname/shakapacker#experimental
 
 # Use default branch (main)
-bin/use-local-gems --github shakacode/shakapacker
+bin/swap-deps --github shakacode/shakapacker
 ```
 
 **How it works:**
@@ -160,10 +160,10 @@ By default, local npm packages are built automatically. Control this behavior:
 
 ```bash
 # Skip build step (if you're managing builds manually)
-bin/use-local-gems --apply --skip-build
+bin/swap-deps --apply --skip-build
 
 # Enable watch mode for auto-rebuild on changes
-bin/use-local-gems --apply --watch
+bin/swap-deps --apply --watch
 ```
 
 ### Preview Changes
@@ -171,7 +171,7 @@ bin/use-local-gems --apply --watch
 See what would happen without making any changes:
 
 ```bash
-bin/use-local-gems --dry-run --react-on-rails ~/dev/react_on_rails
+bin/swap-deps --dry-run --react-on-rails ~/dev/react_on_rails
 ```
 
 ### Restore Original Versions
@@ -179,7 +179,7 @@ bin/use-local-gems --dry-run --react-on-rails ~/dev/react_on_rails
 Restore all demos to use published gem versions:
 
 ```bash
-bin/use-local-gems --restore
+bin/swap-deps --restore
 ```
 
 ## How It Works
@@ -220,7 +220,7 @@ Skip manual rebuilds during development:
 
 ```bash
 # Start with watch mode enabled
-bin/use-local-gems --apply --watch
+bin/swap-deps --apply --watch
 
 # Now changes auto-rebuild in the background
 # Make changes, they'll be compiled automatically
@@ -362,7 +362,7 @@ If `--restore` fails:
 For active development with automatic rebuilds:
 
 ```bash
-bin/use-local-gems --apply --watch
+bin/swap-deps --apply --watch
 ```
 
 This runs `npm run watch` (if available) in each local package, rebuilding on file changes.
@@ -384,17 +384,17 @@ You can easily test different combinations:
 
 ```bash
 # Test with local react_on_rails but published shakapacker
-bin/use-local-gems --react-on-rails ~/dev/react_on_rails
+bin/swap-deps --react-on-rails ~/dev/react_on_rails
 
 # Later, add local shakapacker too
-bin/use-local-gems --shakapacker ~/dev/shakapacker \
+bin/swap-deps --shakapacker ~/dev/shakapacker \
                    --react-on-rails ~/dev/react_on_rails
 ```
 
 ## Best Practices
 
 1. **Commit before swapping** - Make sure your demo app changes are committed before swapping to local gems
-2. **Use config file** - Create `.local-gems.yml` for consistent paths across swaps
+2. **Use config file** - Create `.swap-deps.yml` for consistent paths across swaps
 3. **Test before publishing** - Always test local changes with demos before publishing new gem versions
 4. **Restore when done** - Restore to published versions before committing demo app changes
 5. **Watch for .backup files** - Don't commit `.backup` files (they're gitignored)
@@ -411,7 +411,7 @@ git push  # if you have local gem paths
 # Error message will show:
 # ❌ ERROR: Found local gem paths in Gemfile(s)
 # To fix:
-#   1. Run: bin/use-local-gems --restore
+#   1. Run: bin/swap-deps --restore
 ```
 
 The hook checks for:
@@ -432,7 +432,7 @@ This prevents accidentally pushing local development paths to the repository.
 
 2. **Swap to local versions**
    ```bash
-   bin/use-local-gems --apply
+   bin/swap-deps --apply
    ```
 
 3. **Make changes in your local gem repo**
@@ -453,7 +453,7 @@ This prevents accidentally pushing local development paths to the repository.
 
 6. **Restore when done**
    ```bash
-   bin/use-local-gems --restore
+   bin/swap-deps --restore
    ```
 
 ### Testing Before Publishing

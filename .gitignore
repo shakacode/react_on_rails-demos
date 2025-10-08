@@ -65,5 +65,5 @@ spec/examples.txt
 commit_message.txt
 
 # Local development configuration
-.local-gems.yml
+.swap-deps.yml
 *.backup

@@ -3,9 +3,9 @@
 require 'optparse'
 
 module DemoScripts
-  # CLI for managing local gem development
-  class LocalGemsCLI
-    CONFIG_FILE = '.local-gems.yml'
+  # CLI for swapping dependencies between production and local/GitHub versions
+  class SwapDepsCLI
+    CONFIG_FILE = '.swap-deps.yml'
 
     attr_reader :gem_paths, :github_repos, :dry_run, :verbose, :restore, :apply_config,
                 :skip_build, :watch_mode, :demo_filter, :demos_dir
@@ -39,8 +39,8 @@ module DemoScripts
       elsif @apply_config
         apply_from_config
       elsif gem_paths.empty? && github_repos.empty?
-        puts 'Error: No gems specified. Use --shakapacker, --react-on-rails, --cypress-on-rails, or --github'
-        puts 'Or use --apply to load from .local-gems.yml'
+        puts 'Error: No dependencies specified. Use --shakapacker, --react-on-rails, --cypress-on-rails, or --github'
+        puts 'Or use --apply to load from .swap-deps.yml'
         puts 'Run with --help for more information'
         exit 1
       else
@@ -59,19 +59,19 @@ module DemoScripts
     private
 
     def detect_context!
-      # Check if we're in a demo directory by looking for Gemfile and presence of ../../.local-gems.yml
-      if File.exist?('Gemfile') && File.exist?('../../.local-gems.yml')
+      # Check if we're in a demo directory by looking for Gemfile and presence of ../../.swap-deps.yml
+      if File.exist?('Gemfile') && File.exist?('../../.swap-deps.yml')
         @in_demo_dir = true
-        @root_config_file = File.expand_path('../../.local-gems.yml')
+        @root_config_file = File.expand_path('../../.swap-deps.yml')
         @current_demo = File.basename(Dir.pwd)
         @auto_demos_dir = File.basename(File.expand_path('..')) # 'demos' or 'demos-scratch'
         puts "📍 Detected demo directory context: #{@current_demo}"
         puts "   Using config: #{@root_config_file}"
         puts '   Auto-scoped to this demo only'
-      elsif File.exist?('Gemfile') && File.exist?('../../../.local-gems.yml')
+      elsif File.exist?('Gemfile') && File.exist?('../../../.swap-deps.yml')
         # Handle demos-scratch or other nested directories (3 levels deep)
         @in_demo_dir = true
-        @root_config_file = File.expand_path('../../../.local-gems.yml')
+        @root_config_file = File.expand_path('../../../.swap-deps.yml')
         @current_demo = File.basename(Dir.pwd)
         @auto_demos_dir = File.basename(File.expand_path('..'))
         puts "📍 Detected demo directory context: #{@current_demo}"
@@ -83,9 +83,9 @@ module DemoScripts
     # rubocop:disable Metrics/AbcSize, Metrics/MethodLength, Metrics/BlockLength
     def parse_options!
       parser = OptionParser.new do |opts|
-        opts.banner = 'Usage: bin/use-local-gems [options]'
+        opts.banner = 'Usage: bin/swap-deps [options]'
         opts.separator ''
-        opts.separator 'Swap between published and local gem/npm package versions for development'
+        opts.separator 'Swap dependencies between production and local/GitHub versions for development'
         opts.separator ''
         opts.separator 'Gem options (specify one or more):'
 
@@ -124,11 +124,11 @@ module DemoScripts
         opts.separator ''
         opts.separator 'Configuration options:'
 
-        opts.on('--apply', 'Apply gem paths from .local-gems.yml config file') do
+        opts.on('--apply', 'Apply dependency paths from .swap-deps.yml config file') do
           @apply_config = true
         end
 
-        opts.on('--restore', 'Restore original gem versions from backups') do
+        opts.on('--restore', 'Restore original dependency versions from backups') do
           @restore = true
         end
 
@@ -174,43 +174,43 @@ module DemoScripts
           puts ''
           puts 'Examples:'
           puts '  # Swap react_on_rails to local version'
-          puts '  bin/use-local-gems --react-on-rails ~/dev/react_on_rails'
+          puts '  bin/swap-deps --react-on-rails ~/dev/react_on_rails'
           puts ''
-          puts '  # Swap multiple gems'
-          puts '  bin/use-local-gems --shakapacker ~/dev/shakapacker \\'
-          puts '                      --react-on-rails ~/dev/react_on_rails'
+          puts '  # Swap multiple dependencies'
+          puts '  bin/swap-deps --shakapacker ~/dev/shakapacker \\'
+          puts '                --react-on-rails ~/dev/react_on_rails'
           puts ''
           puts '  # Apply to specific demo only'
-          puts '  bin/use-local-gems --demo basic-v16-rspack --react-on-rails ~/dev/react_on_rails'
+          puts '  bin/swap-deps --demo basic-v16-rspack --react-on-rails ~/dev/react_on_rails'
           puts ''
           puts '  # Apply to demos-scratch directory'
-          puts '  bin/use-local-gems --demos-dir demos-scratch --react-on-rails ~/dev/react_on_rails'
+          puts '  bin/swap-deps --demos-dir demos-scratch --react-on-rails ~/dev/react_on_rails'
           puts ''
           puts '  # Use a GitHub repository with a branch (# for branches)'
-          puts '  bin/use-local-gems --github shakacode/shakapacker#fix-hmr'
+          puts '  bin/swap-deps --github shakacode/shakapacker#fix-hmr'
           puts ''
           puts '  # Use a release tag (@ for tags)'
-          puts '  bin/use-local-gems --github shakacode/shakapacker@v9.0.0'
+          puts '  bin/swap-deps --github shakacode/shakapacker@v9.0.0'
           puts ''
           puts '  # Mix branches and tags'
-          puts '  bin/use-local-gems --github shakacode/shakapacker#v8-stable \\'
-          puts '                      --github shakacode/react_on_rails@v16.1.0'
+          puts '  bin/swap-deps --github shakacode/shakapacker#v8-stable \\'
+          puts '                --github shakacode/react_on_rails@v16.1.0'
           puts ''
           puts '  # Mix local paths and GitHub repos'
-          puts '  bin/use-local-gems --shakapacker ~/dev/shakapacker \\'
-          puts '                      --github shakacode/react_on_rails#feature-x'
+          puts '  bin/swap-deps --shakapacker ~/dev/shakapacker \\'
+          puts '                --github shakacode/react_on_rails#feature-x'
           puts ''
           puts '  # Use config file'
-          puts '  bin/use-local-gems --apply'
+          puts '  bin/swap-deps --apply'
           puts ''
           puts '  # Restore original versions'
-          puts '  bin/use-local-gems --restore'
+          puts '  bin/swap-deps --restore'
           puts ''
           puts '  # Preview without making changes'
-          puts '  bin/use-local-gems --dry-run --react-on-rails ~/dev/react_on_rails'
+          puts '  bin/swap-deps --dry-run --react-on-rails ~/dev/react_on_rails'
           puts ''
           puts 'Configuration file:'
-          puts "  Create #{CONFIG_FILE} (see #{CONFIG_FILE}.example) with your local gem paths."
+          puts "  Create #{CONFIG_FILE} (see #{CONFIG_FILE}.example) with your dependency paths."
           puts '  This file is git-ignored for local development.'
           exit 0
         end
@@ -259,9 +259,9 @@ module DemoScripts
       effective_demo_filter = demo_filter || (@in_demo_dir ? @current_demo : nil)
 
       if effective_demo_filter
-        FilteredGemSwapper.new(demo_filter: effective_demo_filter, **options)
+        FilteredDependencySwapper.new(demo_filter: effective_demo_filter, **options)
       else
-        GemSwapper.new(**options)
+        DependencySwapper.new(**options)
       end
     end
 
@@ -284,8 +284,8 @@ module DemoScripts
     end
   end
 
-  # Gem swapper that filters to a specific demo
-  class FilteredGemSwapper < GemSwapper
+  # Dependency swapper that filters to a specific demo
+  class FilteredDependencySwapper < DependencySwapper
     attr_reader :demo_filter
 
     def initialize(demo_filter:, **options)

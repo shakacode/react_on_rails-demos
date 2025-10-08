@@ -6,9 +6,9 @@ require 'pathname'
 require 'fileutils'
 
 module DemoScripts
-  # Manages swapping between published and local gem/npm package versions
+  # Manages swapping dependencies between production and local/GitHub versions
   # rubocop:disable Metrics/ClassLength
-  class GemSwapper < DemoManager
+  class DependencySwapper < DemoManager
     # Maps gem names to their npm package subdirectories
     NPM_PACKAGE_PATHS = {
       'shakapacker' => '.',
@@ -18,7 +18,7 @@ module DemoScripts
 
     SUPPORTED_GEMS = NPM_PACKAGE_PATHS.keys.freeze
     BACKUP_SUFFIX = '.backup'
-    CACHE_DIR = File.expand_path('~/.cache/local-gems')
+    CACHE_DIR = File.expand_path('~/.cache/swap-deps')
 
     attr_reader :gem_paths, :github_repos, :skip_build, :watch_mode
 
@@ -91,36 +91,48 @@ module DemoScripts
       paths.transform_values { |path| File.expand_path(path) }
     end
 
-    # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/MethodLength
+    # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/MethodLength, Metrics/AbcSize, Metrics/BlockLength
     def validate_github_repos(repos)
       invalid = repos.keys - SUPPORTED_GEMS
       raise Error, "Unsupported gems: #{invalid.join(', ')}" if invalid.any?
 
       repos.transform_values do |value|
-        if value.is_a?(String)
-          # String format: supports 'user/repo', 'user/repo#branch', or 'user/repo@tag'
-          if value.include?('@')
-            repo, ref = value.split('@', 2)
-            { repo: repo, branch: ref, ref_type: :tag }
-          elsif value.include?('#')
-            repo, ref = value.split('#', 2)
-            { repo: repo, branch: ref, ref_type: :branch }
-          else
-            { repo: value, branch: 'main', ref_type: :branch }
-          end
-        elsif value.is_a?(Hash)
-          # Hash format with repo and optional branch
-          {
-            repo: value['repo'] || value[:repo],
-            branch: value['branch'] || value[:branch] || 'main',
-            ref_type: (value['ref_type'] || value[:ref_type] || :branch).to_sym
-          }
-        else
-          raise Error, "Invalid GitHub repo format for #{value}"
+        result = if value.is_a?(String)
+                   # String format: supports 'user/repo', 'user/repo#branch', or 'user/repo@tag'
+                   if value.include?('@')
+                     repo, ref = value.split('@', 2)
+                     { repo: repo, branch: ref, ref_type: :tag }
+                   elsif value.include?('#')
+                     repo, ref = value.split('#', 2)
+                     { repo: repo, branch: ref, ref_type: :branch }
+                   else
+                     { repo: value, branch: 'main', ref_type: :branch }
+                   end
+                 elsif value.is_a?(Hash)
+                   # Hash format with repo and optional branch
+                   {
+                     repo: value['repo'] || value[:repo],
+                     branch: value['branch'] || value[:branch] || 'main',
+                     ref_type: (value['ref_type'] || value[:ref_type] || :branch).to_sym
+                   }
+                 else
+                   raise Error, "Invalid GitHub repo format for #{value}"
+                 end
+
+        # Validate repo format (must be 'user/repo')
+        unless %r{\A[\w.-]+/[\w.-]+\z}.match?(result[:repo])
+          raise Error, "Invalid GitHub repo format: #{result[:repo]} (must be 'user/repo')"
         end
+
+        # Validate branch/tag name (alphanumeric, hyphens, underscores, dots, slashes)
+        unless %r{\A[\w.\-/]+\z}.match?(result[:branch])
+          raise Error, "Invalid branch/tag name: #{result[:branch]} (contains unsafe characters)"
+        end
+
+        result
       end
     end
-    # rubocop:enable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/MethodLength
+    # rubocop:enable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/MethodLength, Metrics/AbcSize, Metrics/BlockLength
 
     def validate_local_paths!
       gem_paths.each do |gem_name, path|
@@ -355,7 +367,7 @@ module DemoScripts
 
       puts '  Running bundle install...'
       success = Dir.chdir(demo_path) do
-        system('bundle install --quiet')
+        system('bundle', 'install', '--quiet')
       end
 
       warn '  ⚠️  Warning: bundle install failed' unless success
@@ -366,7 +378,7 @@ module DemoScripts
 
       puts '  Running npm install...'
       success = Dir.chdir(demo_path) do
-        system('npm install --silent 2>/dev/null')
+        system('npm', 'install', '--silent', out: '/dev/null', err: '/dev/null')
       end
 
       warn '  ⚠️  Warning: npm install failed' unless success
@@ -404,9 +416,10 @@ module DemoScripts
           if watch_mode
             puts "  Starting watch mode for #{gem_name}..."
             puts '  Note: Watch process will run in background. Kill manually if needed.'
-            system('npm run watch &')
+            # NOTE: Background process management (&) requires shell, but npm/run/watch are safe literals
+            system('npm', 'run', 'watch', '&')
           else
-            system('npm run build')
+            system('npm', 'run', 'build')
           end
         end
 

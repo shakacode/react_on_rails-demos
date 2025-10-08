@@ -12,7 +12,7 @@ require_relative 'demo_scripts/demo_creator'
 require_relative 'demo_scripts/demo_scaffolder'
 require_relative 'demo_scripts/demo_updater'
 require_relative 'demo_scripts/gem_swapper'
-require_relative 'demo_scripts/local_gems_cli'
+require_relative 'demo_scripts/swap_deps_cli'
 
 # Main module for demo scripts
 module DemoScripts
