@@ -183,8 +183,12 @@ module DemoScripts
     def update_github_repo(cache_path, info)
       Dir.chdir(cache_path) do
         # Use array form to avoid shell injection
-        system('git', 'fetch', 'origin', info[:branch], out: '/dev/null', err: '/dev/null')
-        system('git', 'reset', '--hard', "origin/#{info[:branch]}", out: '/dev/null', err: '/dev/null')
+        success = system('git', 'fetch', 'origin', info[:branch], out: '/dev/null', err: '/dev/null')
+        raise Error, "Failed to fetch #{info[:repo]} branch #{info[:branch]}" unless success
+
+        # String interpolation is safe here because info[:branch] is validated by regex in validate_github_repos
+        success = system('git', 'reset', '--hard', "origin/#{info[:branch]}", out: '/dev/null', err: '/dev/null')
+        raise Error, "Failed to reset #{info[:repo]} to #{info[:branch]}" unless success
       end
     end
 
@@ -412,18 +416,19 @@ module DemoScripts
 
       if build_script
         puts "  Building #{gem_name}..."
-        success = Dir.chdir(npm_path) do
-          if watch_mode
-            puts "  Starting watch mode for #{gem_name}..."
-            puts '  Note: Watch process will run in background. Kill manually if needed.'
-            # NOTE: Background process management (&) requires shell, but npm/run/watch are safe literals
-            system('npm', 'run', 'watch', '&')
-          else
+        if watch_mode
+          puts "  Starting watch mode for #{gem_name}..."
+          puts '  Note: Watch process will run in background. Kill manually if needed.'
+          # Spawn in background using Process.spawn for proper backgrounding
+          Dir.chdir(npm_path) do
+            Process.spawn('npm', 'run', 'watch', out: '/dev/null', err: '/dev/null')
+          end
+        else
+          success = Dir.chdir(npm_path) do
             system('npm', 'run', 'build')
           end
+          warn "  ⚠️  Warning: npm build failed for #{gem_name}" unless success
         end
-
-        warn "  ⚠️  Warning: npm build failed for #{gem_name}" unless success || watch_mode
       else
         puts "  ⊘ No build script found for #{gem_name}"
       end
