@@ -278,9 +278,13 @@ module DemoScripts
         # Extract options after version (if any)
         options = rest.sub(/^\s*,\s*(['"])[^'"]*\1/, '') # Remove version if present
 
-        # Build replacement: gem 'name', github: 'user/repo', branch: 'branch-name' [, options...]
+        # Build replacement: gem 'name', github: 'user/repo', branch/tag: 'ref' [, options...]
         replacement = "#{indent}gem #{quote}#{gem_name}#{quote}, github: #{quote}#{info[:repo]}#{quote}"
-        replacement += ", branch: #{quote}#{info[:branch]}#{quote}" if info[:branch] != 'main'
+        if info[:branch] != 'main'
+          # Use 'tag:' for tags, 'branch:' for branches
+          param_name = info[:ref_type] == :tag ? 'tag' : 'branch'
+          replacement += ", #{param_name}: #{quote}#{info[:branch]}#{quote}"
+        end
         replacement += options unless options.strip.empty?
         replacement
       end
