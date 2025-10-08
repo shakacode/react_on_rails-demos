@@ -7,6 +7,7 @@ require 'fileutils'
 
 module DemoScripts
   # Manages swapping between published and local gem/npm package versions
+  # rubocop:disable Metrics/ClassLength
   class GemSwapper < DemoManager
     # Maps gem names to their npm package subdirectories
     NPM_PACKAGE_PATHS = {
@@ -90,23 +91,36 @@ module DemoScripts
       paths.transform_values { |path| File.expand_path(path) }
     end
 
+    # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/MethodLength
     def validate_github_repos(repos)
       invalid = repos.keys - SUPPORTED_GEMS
       raise Error, "Unsupported gems: #{invalid.join(', ')}" if invalid.any?
 
       repos.transform_values do |value|
         if value.is_a?(String)
-          # String format: supports 'user/repo' or 'user/repo@branch'
-          repo, branch = value.split('@', 2)
-          { repo: repo, branch: branch || 'main' }
+          # String format: supports 'user/repo', 'user/repo#branch', or 'user/repo@tag'
+          if value.include?('@')
+            repo, ref = value.split('@', 2)
+            { repo: repo, branch: ref, ref_type: :tag }
+          elsif value.include?('#')
+            repo, ref = value.split('#', 2)
+            { repo: repo, branch: ref, ref_type: :branch }
+          else
+            { repo: value, branch: 'main', ref_type: :branch }
+          end
         elsif value.is_a?(Hash)
           # Hash format with repo and optional branch
-          { repo: value['repo'] || value[:repo], branch: value['branch'] || value[:branch] || 'main' }
+          {
+            repo: value['repo'] || value[:repo],
+            branch: value['branch'] || value[:branch] || 'main',
+            ref_type: (value['ref_type'] || value[:ref_type] || :branch).to_sym
+          }
         else
           raise Error, "Invalid GitHub repo format for #{value}"
         end
       end
     end
+    # rubocop:enable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/MethodLength
 
     def validate_local_paths!
       gem_paths.each do |gem_name, path|
@@ -420,4 +434,5 @@ module DemoScripts
       puts "\n   To restore: bin/use-local-gems --restore"
     end
   end
+  # rubocop:enable Metrics/ClassLength
 end

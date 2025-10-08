@@ -35,8 +35,8 @@ When developing changes to shakapacker, react_on_rails, or cypress-on-rails, you
 
    # Option 2: GitHub repositories (cloned to ~/.cache/local-gems/)
    github:
-     shakapacker: shakacode/shakapacker@fix-hmr
-     react_on_rails: shakacode/react_on_rails@feature-x
+     shakapacker: shakacode/shakapacker#fix-hmr  # branch
+     react_on_rails: shakacode/react_on_rails@v16.1.0  # tag
 
    # Or mix both approaches
    ```
@@ -115,19 +115,22 @@ bin/use-local-gems --demos-dir demos-scratch \
 Test changes from a GitHub repository (e.g., a fork or feature branch) without cloning it manually:
 
 ```bash
-# Test a specific branch from a GitHub repo (uses repo@branch syntax)
-bin/use-local-gems --github shakacode/shakapacker@fix-hmr
+# Test a branch from a GitHub repo (# for branches)
+bin/use-local-gems --github shakacode/shakapacker#fix-hmr
 
-# Test multiple GitHub repos with different branches
-bin/use-local-gems --github shakacode/shakapacker@v8-stable \
-                   --github shakacode/react_on_rails@feature-x
+# Test a release tag (@ for tags)
+bin/use-local-gems --github shakacode/shakapacker@v9.0.0
+
+# Mix branches and tags
+bin/use-local-gems --github shakacode/shakapacker#v8-stable \
+                   --github shakacode/react_on_rails@v16.1.0
 
 # Mix local paths and GitHub repos
 bin/use-local-gems --shakapacker ~/dev/shakapacker \
-                   --github shakacode/react_on_rails@feature-x
+                   --github shakacode/react_on_rails#feature-x
 
 # Test from a fork
-bin/use-local-gems --github yourname/shakapacker@experimental
+bin/use-local-gems --github yourname/shakapacker#experimental
 
 # Use default branch (main)
 bin/use-local-gems --github shakacode/shakapacker

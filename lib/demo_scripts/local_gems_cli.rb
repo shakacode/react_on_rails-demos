@@ -104,11 +104,21 @@ module DemoScripts
         opts.separator ''
         opts.separator 'GitHub options:'
 
-        opts.on('--github REPO[@BRANCH]', 'GitHub repository to use (e.g., user/repo or user/repo@branch)') do |value|
-          repo, branch = value.split('@', 2)
-          branch ||= 'main'
+        opts.on('--github REPO[#BRANCH|@TAG]',
+                'GitHub repository (e.g., user/repo, user/repo#branch, or user/repo@tag)') do |value|
+          if value.include?('@')
+            repo, ref = value.split('@', 2)
+            ref_type = :tag
+          elsif value.include?('#')
+            repo, ref = value.split('#', 2)
+            ref_type = :branch
+          else
+            repo = value
+            ref = 'main'
+            ref_type = :branch
+          end
           gem_name = infer_gem_from_repo(repo)
-          @github_repos[gem_name] = { repo: repo, branch: branch }
+          @github_repos[gem_name] = { repo: repo, branch: ref, ref_type: ref_type }
         end
 
         opts.separator ''
@@ -176,16 +186,19 @@ module DemoScripts
           puts '  # Apply to demos-scratch directory'
           puts '  bin/use-local-gems --demos-dir demos-scratch --react-on-rails ~/dev/react_on_rails'
           puts ''
-          puts '  # Use a GitHub repository with a specific branch'
-          puts '  bin/use-local-gems --github shakacode/shakapacker@fix-hmr'
+          puts '  # Use a GitHub repository with a branch (# for branches)'
+          puts '  bin/use-local-gems --github shakacode/shakapacker#fix-hmr'
           puts ''
-          puts '  # Use multiple GitHub repos with different branches'
-          puts '  bin/use-local-gems --github shakacode/shakapacker@v8-stable \\'
-          puts '                      --github shakacode/react_on_rails@feature-x'
+          puts '  # Use a release tag (@ for tags)'
+          puts '  bin/use-local-gems --github shakacode/shakapacker@v9.0.0'
+          puts ''
+          puts '  # Mix branches and tags'
+          puts '  bin/use-local-gems --github shakacode/shakapacker#v8-stable \\'
+          puts '                      --github shakacode/react_on_rails@v16.1.0'
           puts ''
           puts '  # Mix local paths and GitHub repos'
           puts '  bin/use-local-gems --shakapacker ~/dev/shakapacker \\'
-          puts '                      --github shakacode/react_on_rails@feature-x'
+          puts '                      --github shakacode/react_on_rails#feature-x'
           puts ''
           puts '  # Use config file'
           puts '  bin/use-local-gems --apply'
