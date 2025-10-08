@@ -18,7 +18,7 @@
     "react-on-rails": "^16.1.1",
     "rspack-manifest-plugin": "^5.0.0",
     "sass-loader": "^16.0.5",
-    "shakapacker": "file:/Users/justin/conductor/shakapacker-1/.conductor/valletta/.",
+    "shakapacker": "^9.0.0",
     "style-loader": "^4.0.0",
     "swc-loader": "^0.2.6"
   },

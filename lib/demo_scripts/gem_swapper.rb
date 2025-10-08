@@ -147,14 +147,17 @@ module DemoScripts
 
     def clone_github_repo(cache_path, info)
       repo_url = "https://github.com/#{info[:repo]}.git"
-      success = system("git clone --depth 1 --branch #{info[:branch]} #{repo_url} #{cache_path} 2>&1")
+      # Use array form to avoid shell injection
+      success = system('git', 'clone', '--depth', '1', '--branch', info[:branch], repo_url, cache_path,
+                       out: '/dev/null', err: '/dev/null')
       raise Error, "Failed to clone #{info[:repo]}@#{info[:branch]}" unless success
     end
 
     def update_github_repo(cache_path, info)
       Dir.chdir(cache_path) do
-        system("git fetch origin #{info[:branch]} 2>&1")
-        system("git reset --hard origin/#{info[:branch]} 2>&1")
+        # Use array form to avoid shell injection
+        system('git', 'fetch', 'origin', info[:branch], out: '/dev/null', err: '/dev/null')
+        system('git', 'reset', '--hard', "origin/#{info[:branch]}", out: '/dev/null', err: '/dev/null')
       end
     end
 
