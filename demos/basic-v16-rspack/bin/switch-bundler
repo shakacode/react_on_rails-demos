@@ -190,11 +190,12 @@ def show_usage
   current = current_bundler
   puts "Current bundler: #{current}"
   puts ""
-  puts "Usage: bin/switch-bundler [webpack|rspack] [--install-deps] [--init-config]"
+  puts "Usage: bin/switch-bundler [webpack|rspack] [--install-deps] [--init-config] [--help]"
   puts ""
   puts "Options:"
   puts "  --install-deps    Automatically install/uninstall dependencies"
   puts "  --init-config     Create #{CUSTOM_DEPS_CONFIG} with default dependencies"
+  puts "  --help, -h        Show this help message"
   puts ""
   puts "Examples:"
   puts "  bin/switch-bundler rspack              # Switch to rspack (manual dependency install)"
@@ -203,7 +204,7 @@ def show_usage
   puts "  bin/switch-bundler --init-config           # Create custom dependencies config file"
 end
 
-if ARGV.empty?
+if ARGV.empty? || ARGV.include?("--help") || ARGV.include?("-h")
   show_usage
   exit 0
 elsif ARGV.include?("--init-config")
