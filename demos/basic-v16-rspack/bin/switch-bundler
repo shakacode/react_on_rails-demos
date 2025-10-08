@@ -29,7 +29,13 @@ end
 def load_dependencies
   if File.exist?(CUSTOM_DEPS_CONFIG)
     puts "📝 Using custom dependencies from #{CUSTOM_DEPS_CONFIG}"
-    custom = YAML.load_file(CUSTOM_DEPS_CONFIG, aliases: true)
+    begin
+      custom = YAML.load_file(CUSTOM_DEPS_CONFIG, aliases: true)
+    rescue Psych::SyntaxError => e
+      puts "❌ Error parsing #{CUSTOM_DEPS_CONFIG}: #{e.message}"
+      puts "   Please fix the YAML syntax or delete the file to use defaults"
+      exit 1
+    end
     rspack_deps = {
       dev: custom.dig("rspack", "devDependencies") || DEFAULT_RSPACK_DEPS[:dev],
       prod: custom.dig("rspack", "dependencies") || DEFAULT_RSPACK_DEPS[:prod]
@@ -82,24 +88,34 @@ def install_dependencies(bundler, install_deps, switching_bundlers = true)
     if switching_bundlers
       unless deps_to_remove[:dev].empty?
         puts "   Removing old dev dependencies..."
-        system("npm uninstall #{deps_to_remove[:dev].join(' ')}")
+        unless system("npm uninstall #{deps_to_remove[:dev].join(' ')}")
+          puts "   ⚠️  Warning: Failed to uninstall some dev dependencies"
+        end
       end
 
       unless deps_to_remove[:prod].empty?
         puts "   Removing old prod dependencies..."
-        system("npm uninstall #{deps_to_remove[:prod].join(' ')}")
+        unless system("npm uninstall #{deps_to_remove[:prod].join(' ')}")
+          puts "   ⚠️  Warning: Failed to uninstall some prod dependencies"
+        end
       end
     end
 
     # Install new bundler dependencies
     unless deps_to_install[:dev].empty?
       puts "   Installing new dev dependencies..."
-      system("npm install --save-dev #{deps_to_install[:dev].join(' ')}")
+      unless system("npm install --save-dev #{deps_to_install[:dev].join(' ')}")
+        puts "❌ Failed to install dev dependencies"
+        exit 1
+      end
     end
 
     unless deps_to_install[:prod].empty?
       puts "   Installing new prod dependencies..."
-      system("npm install --save #{deps_to_install[:prod].join(' ')}")
+      unless system("npm install --save #{deps_to_install[:prod].join(' ')}")
+        puts "❌ Failed to install prod dependencies"
+        exit 1
+      end
     end
 
     # Clean reinstall to fix optional dependencies (rspack native bindings)
@@ -109,7 +125,10 @@ def install_dependencies(bundler, install_deps, switching_bundlers = true)
       FileUtils.rm_rf("node_modules")
       FileUtils.rm_f("package-lock.json")
       puts "   Running clean npm install..."
-      system("npm install")
+      unless system("npm install")
+        puts "❌ Failed to run clean npm install"
+        exit 1
+      end
     end
 
     puts "   ✅ Dependencies updated"
