@@ -19,6 +19,7 @@ module DemoScripts
     SUPPORTED_GEMS = NPM_PACKAGE_PATHS.keys.freeze
     BACKUP_SUFFIX = '.backup'
     CACHE_DIR = File.expand_path('~/.cache/swap-deps')
+    WATCH_PIDS_FILE = File.join(CACHE_DIR, 'watch_pids.json')
 
     attr_reader :gem_paths, :github_repos, :skip_build, :watch_mode
 
@@ -49,6 +50,9 @@ module DemoScripts
       puts '🔄 Restoring original gem versions...'
       restored_count = 0
 
+      # Warn about running watch processes
+      warn_about_watch_processes
+
       each_demo do |demo_path|
         restored_count += restore_demo(demo_path)
       end
@@ -59,6 +63,56 @@ module DemoScripts
         puts "✅ Restored #{restored_count} file(s) from backups"
       end
     end
+
+    def list_watch_processes
+      watch_pids = load_watch_pids
+
+      if watch_pids.empty?
+        puts 'ℹ️  No watch processes tracked'
+        return
+      end
+
+      puts '🔍 Tracked watch processes:'
+      running_count = 0
+      watch_pids.each do |gem_name, pid|
+        status = process_running?(pid) ? '✓ Running' : '✗ Not running'
+        puts "   #{gem_name} (PID: #{pid}) - #{status}"
+        running_count += 1 if process_running?(pid)
+      end
+
+      puts "\n   #{running_count}/#{watch_pids.count} process(es) are currently running"
+    end
+
+    # rubocop:disable Metrics/MethodLength
+    def kill_watch_processes
+      watch_pids = load_watch_pids
+
+      if watch_pids.empty?
+        puts 'ℹ️  No watch processes tracked'
+        return
+      end
+
+      puts '🛑 Stopping watch processes...'
+      killed_count = 0
+      watch_pids.each do |gem_name, pid|
+        if process_running?(pid)
+          puts "   Stopping #{gem_name} (PID: #{pid})"
+          begin
+            Process.kill('TERM', pid)
+          rescue Errno::ESRCH, Errno::EPERM
+            # Process already stopped or no permission
+          end
+          killed_count += 1
+        else
+          puts "   #{gem_name} (PID: #{pid}) - already stopped"
+        end
+      end
+
+      # Clear the PID file
+      FileUtils.rm_f(WATCH_PIDS_FILE)
+      puts "✅ Stopped #{killed_count} watch process(es)" if killed_count.positive?
+    end
+    # rubocop:enable Metrics/MethodLength
 
     def load_config(config_file)
       return unless File.exist?(config_file)
@@ -83,6 +137,43 @@ module DemoScripts
     end
 
     private
+
+    def load_watch_pids
+      return {} unless File.exist?(WATCH_PIDS_FILE)
+
+      JSON.parse(File.read(WATCH_PIDS_FILE))
+    rescue JSON::ParserError
+      {}
+    end
+
+    def save_watch_pid(gem_name, pid)
+      FileUtils.mkdir_p(CACHE_DIR) unless File.directory?(CACHE_DIR)
+      pids = load_watch_pids
+      pids[gem_name] = pid
+      File.write(WATCH_PIDS_FILE, JSON.pretty_generate(pids))
+    end
+
+    def process_running?(pid)
+      Process.kill(0, pid)
+      true
+    rescue Errno::ESRCH, Errno::EPERM
+      false
+    end
+
+    def warn_about_watch_processes
+      watch_pids = load_watch_pids
+      return if watch_pids.empty?
+
+      running_pids = watch_pids.select { |_, pid| process_running?(pid) }
+      return if running_pids.empty?
+
+      puts "\n⚠️  Warning: #{running_pids.count} watch process(es) are still running:"
+      running_pids.each do |gem_name, pid|
+        puts "   #{gem_name} (PID: #{pid})"
+      end
+      puts '   Use bin/swap-deps --kill-watch to stop them'
+      puts ''
+    end
 
     def validate_gem_paths(paths)
       invalid = paths.keys - SUPPORTED_GEMS
@@ -418,11 +509,12 @@ module DemoScripts
         puts "  Building #{gem_name}..."
         if watch_mode
           puts "  Starting watch mode for #{gem_name}..."
-          puts '  Note: Watch process will run in background. Kill manually if needed.'
-          # Spawn in background using Process.spawn for proper backgrounding
-          Dir.chdir(npm_path) do
+          # Spawn in background using Process.spawn with PID tracking
+          pid = Dir.chdir(npm_path) do
             Process.spawn('npm', 'run', 'watch', out: '/dev/null', err: '/dev/null')
           end
+          save_watch_pid(gem_name, pid)
+          puts "  Watch process started (PID: #{pid})"
         else
           success = Dir.chdir(npm_path) do
             system('npm', 'run', 'build')
@@ -445,11 +537,14 @@ module DemoScripts
         puts '   4. Remember to build packages manually if needed'
       elsif watch_mode
         puts '   4. Watch mode is active - changes will auto-rebuild'
+        puts "\n   Manage watch processes:"
+        puts '   - List: bin/swap-deps --list-watch'
+        puts '   - Stop: bin/swap-deps --kill-watch'
       else
         puts '   4. Rebuild packages when needed: cd <gem-path> && npm run build'
       end
 
-      puts "\n   To restore: bin/use-local-gems --restore"
+      puts "\n   To restore: bin/swap-deps --restore"
     end
   end
   # rubocop:enable Metrics/ClassLength
