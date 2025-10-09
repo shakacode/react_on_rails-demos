@@ -732,20 +732,48 @@ module DemoScripts
       restored
     end
 
+    # rubocop:disable Metrics/MethodLength
     def backup_file(file_path)
       backup_path = file_path + BACKUP_SUFFIX
 
+      # If backup exists, check if the current file is already swapped
       if File.exist?(backup_path)
-        puts "  ⚠️  Backup already exists for #{File.basename(file_path)} - skipping new backup"
-        return
+        content = File.read(file_path)
+        is_gemfile = file_path.end_with?('Gemfile')
+
+        # Check if file has already been swapped
+        gem_pattern = /gem\s+["'](?:shakapacker|react_on_rails|cypress-on-rails)["'],.*(?:path:|github:)/
+        already_swapped = if is_gemfile
+                            # Check for path: or github: in Gemfile
+                            content.match?(gem_pattern)
+                          else
+                            # Check for file: in package.json
+                            content.include?('"file:')
+                          end
+
+        if already_swapped
+          # File is already swapped and backup exists - this is OK for re-swapping to new location
+          puts '  ℹ️  Using existing backup (preserving original dependencies)'
+          return
+        else
+          # File is not swapped but backup exists - this shouldn't happen normally
+          puts '  ⚠️  WARNING: Backup exists but file appears unswapped. This is an inconsistent state.'
+          puts '     The backup file may be corrupted or the file was manually edited.'
+          puts '     Please either:'
+          puts '     1. Run: bin/swap-deps --restore'
+          puts "     2. Or manually remove: #{File.basename(backup_path)}"
+          raise Error, 'Inconsistent state: backup exists but file is not swapped. Run --restore first.'
+        end
       end
 
       if dry_run
         puts "  [DRY-RUN] Would backup #{File.basename(file_path)}"
       else
         FileUtils.cp(file_path, backup_path)
+        puts "  ✓ Created backup: #{File.basename(backup_path)}"
       end
     end
+    # rubocop:enable Metrics/MethodLength
 
     def write_file(file_path, content)
       if dry_run
