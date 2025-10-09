@@ -30,23 +30,30 @@ gems:
 # Repos are cloned to ~/.cache/swap-deps/ and built automatically
 github:
   # Simple format (uses 'main' branch by default)
-  shakapacker: shakacode/shakapacker
+  # shakapacker: shakacode/shakapacker
 
-  # With custom branch or tag:
-  # Format 1: String with #branch or @tag
-  # react_on_rails: shakacode/react_on_rails#feature-branch
+  # Branch example: Use # for branches
+  # shakapacker: shakacode/shakapacker#fix-hmr
+
+  # Tag example: Use @ for tags (Bundler will use 'tag:' parameter)
   # react_on_rails: shakacode/react_on_rails@v16.1.0
 
-  # Format 2: Hash with repo and branch
+  # Format 2: Hash with repo and branch/tag
   # react_on_rails:
   #   repo: shakacode/react_on_rails
   #   branch: feature-branch-name
+  #   ref_type: branch  # or :tag
 
-  # Examples:
+  # Common examples:
   # - Test a PR branch: shakacode/shakapacker#fix-hmr
   # - Test from a fork: yourname/react_on_rails#experimental
-  # - Use a release tag: shakacode/shakapacker@v9.0.0
+  # - Use a specific release tag: shakacode/shakapacker@v9.0.0
+  # - Use a pre-release tag: shakacode/react_on_rails@v16.1.0-rc.1
   # - Use stable branch: shakacode/shakapacker#v8-stable
+
+  # Real-world tag examples:
+  # shakapacker: shakacode/shakapacker@v9.0.0         # Generates: gem "shakapacker", github: "...", tag: "v9.0.0"
+  # react_on_rails: shakacode/react_on_rails@v16.1.0  # Generates: gem "react_on_rails", github: "...", tag: "v16.1.0"
 
   # You can mix local paths (gems:) and GitHub repos (github:)
   # GitHub repos are cloned, built, and treated like local paths
