@@ -20,6 +20,7 @@ module DemoScripts
     BACKUP_SUFFIX = '.backup'
     CACHE_DIR = File.expand_path('~/.cache/swap-deps')
     WATCH_PIDS_FILE = File.join(CACHE_DIR, 'watch_pids.json')
+    WATCH_LOG_DIR = File.join(CACHE_DIR, 'watch_logs')
 
     attr_reader :gem_paths, :github_repos, :skip_build, :watch_mode
 
@@ -29,6 +30,7 @@ module DemoScripts
       @github_repos = validate_github_repos(github_repos)
       @skip_build = skip_build
       @watch_mode = watch_mode
+      @spawned_pids = [] # Track PIDs for cleanup on failure
     end
 
     def swap!
@@ -44,6 +46,10 @@ module DemoScripts
 
       puts '✅ Successfully swapped to local gem versions!'
       print_next_steps
+    rescue StandardError
+      # Cleanup spawned watch processes on failure
+      cleanup_spawned_processes if watch_mode && @spawned_pids.any?
+      raise
     end
 
     def restore!
@@ -74,7 +80,8 @@ module DemoScripts
 
       puts '🔍 Tracked watch processes:'
       running_count = 0
-      watch_pids.each do |gem_name, pid|
+      watch_pids.each do |gem_name, info|
+        pid = info.is_a?(Hash) ? info['pid'] : info
         status = process_running?(pid) ? '✓ Running' : '✗ Not running'
         puts "   #{gem_name} (PID: #{pid}) - #{status}"
         running_count += 1 if process_running?(pid)
@@ -94,7 +101,8 @@ module DemoScripts
 
       puts '🛑 Stopping watch processes...'
       killed_count = 0
-      watch_pids.each do |gem_name, pid|
+      watch_pids.each do |gem_name, info|
+        pid = info.is_a?(Hash) ? info['pid'] : info
         if process_running?(pid)
           puts "   Stopping #{gem_name} (PID: #{pid})"
           begin
@@ -146,16 +154,48 @@ module DemoScripts
     def load_watch_pids
       return {} unless File.exist?(WATCH_PIDS_FILE)
 
-      JSON.parse(File.read(WATCH_PIDS_FILE))
+      data = JSON.parse(File.read(WATCH_PIDS_FILE))
+      # Validate PIDs belong to npm watch processes
+      data.select do |gem_name, info|
+        validate_watch_pid(gem_name, info)
+      end
     rescue JSON::ParserError
       {}
     end
 
-    def save_watch_pid(gem_name, pid)
+    def save_watch_pid(gem_name, pid, command)
       FileUtils.mkdir_p(CACHE_DIR) unless File.directory?(CACHE_DIR)
       pids = load_watch_pids
-      pids[gem_name] = pid
+      pids[gem_name] = {
+        'pid' => pid,
+        'command' => command,
+        'started_at' => Time.now.to_i
+      }
       File.write(WATCH_PIDS_FILE, JSON.pretty_generate(pids))
+    end
+
+    def validate_watch_pid(_gem_name, info)
+      # Handle both old format (just PID) and new format (hash with metadata)
+      if info.is_a?(Integer)
+        # Old format - just return true, will be migrated on next save
+        return true
+      end
+
+      return false unless info.is_a?(Hash)
+
+      pid = info['pid']
+      return false unless pid
+
+      # Check if process is still running
+      return false unless process_running?(pid)
+
+      # Validate it's actually an npm watch process by checking command
+      begin
+        command_output = `ps -p #{pid} -o command=`.strip
+        command_output.include?('npm') && command_output.include?('watch')
+      rescue StandardError
+        false
+      end
     end
 
     def process_running?(pid)
@@ -169,15 +209,67 @@ module DemoScripts
       watch_pids = load_watch_pids
       return if watch_pids.empty?
 
-      running_pids = watch_pids.select { |_, pid| process_running?(pid) }
+      running_pids = watch_pids.select do |_, info|
+        pid = info.is_a?(Hash) ? info['pid'] : info
+        process_running?(pid)
+      end
       return if running_pids.empty?
 
       puts "\n⚠️  Warning: #{running_pids.count} watch process(es) are still running:"
-      running_pids.each do |gem_name, pid|
+      running_pids.each do |gem_name, info|
+        pid = info.is_a?(Hash) ? info['pid'] : info
         puts "   #{gem_name} (PID: #{pid})"
       end
       puts '   Use bin/swap-deps --kill-watch to stop them'
       puts ''
+    end
+
+    def cleanup_spawned_processes
+      return if @spawned_pids.empty?
+
+      puts "\n⚠️  Cleaning up #{@spawned_pids.count} spawned watch process(es)..."
+      @spawned_pids.each do |pid|
+        Process.kill('TERM', pid)
+        puts "   Stopped process #{pid}"
+      rescue Errno::ESRCH
+        # Already stopped
+      rescue Errno::EPERM
+        puts "   ⚠️  Could not stop process #{pid} - permission denied"
+      end
+      @spawned_pids.clear
+    end
+
+    def spawn_watch_process(gem_name, npm_path)
+      puts "  Starting watch mode for #{gem_name}..."
+
+      # Create log directory if it doesn't exist
+      FileUtils.mkdir_p(WATCH_LOG_DIR) unless File.directory?(WATCH_LOG_DIR)
+      log_file = File.join(WATCH_LOG_DIR, "#{gem_name}.log")
+
+      # Spawn process with output redirected to log file
+      pid = Dir.chdir(npm_path) do
+        Process.spawn('npm', 'run', 'watch', out: log_file, err: log_file)
+      end
+
+      # Detach to prevent zombie processes
+      Process.detach(pid)
+
+      # Track PID for cleanup on failure
+      @spawned_pids << pid
+
+      # Give process a moment to start and verify it's running
+      sleep 0.1
+
+      unless process_running?(pid)
+        warn "  ⚠️  Warning: Watch process for #{gem_name} failed to start. Check log: #{log_file}"
+        @spawned_pids.delete(pid)
+        return
+      end
+
+      # Save PID with metadata
+      command = "npm run watch (#{npm_path})"
+      save_watch_pid(gem_name, pid, command)
+      puts "  Watch process started (PID: #{pid}, Log: #{log_file})"
     end
 
     def validate_gem_paths(paths)
@@ -513,13 +605,7 @@ module DemoScripts
       if build_script
         puts "  Building #{gem_name}..."
         if watch_mode
-          puts "  Starting watch mode for #{gem_name}..."
-          # Spawn in background using Process.spawn with PID tracking
-          pid = Dir.chdir(npm_path) do
-            Process.spawn('npm', 'run', 'watch', out: '/dev/null', err: '/dev/null')
-          end
-          save_watch_pid(gem_name, pid)
-          puts "  Watch process started (PID: #{pid})"
+          spawn_watch_process(gem_name, npm_path)
         else
           success = Dir.chdir(npm_path) do
             system('npm', 'run', 'build')
