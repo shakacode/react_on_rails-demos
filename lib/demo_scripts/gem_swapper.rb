@@ -765,16 +765,23 @@ module DemoScripts
         puts '  Running bundle update (to restore gem sources)...'
 
         # Find which gems were swapped by looking for our supported gems in the Gemfile
+        # Use proper regex to avoid matching comments or strings
         gemfile_content = File.read(File.join(demo_path, 'Gemfile'))
         gems_to_update = SUPPORTED_GEMS.select do |gem_name|
-          gemfile_content.include?("gem \"#{gem_name}\"") ||
-            gemfile_content.include?("gem '#{gem_name}'")
+          # Match lines that start with gem declaration (ignoring comments and whitespace)
+          # Handles: gem 'name' or gem "name" with any options
+          gemfile_content.match?(/^\s*gem\s+["']#{Regexp.escape(gem_name)}["']/)
         end
 
         success = Dir.chdir(demo_path) do
           if gems_to_update.any?
             # Update specific gems to pull from rubygems
-            system('bundle', 'update', *gems_to_update, '--quiet')
+            success = system('bundle', 'update', *gems_to_update, '--quiet')
+            unless success
+              warn '  ⚠️  ERROR: Failed to update gems. Lock file may be inconsistent.'
+              return false
+            end
+            success
           else
             # Fallback to regular install if no swapped gems found
             system('bundle', 'install', '--quiet')
@@ -788,29 +795,42 @@ module DemoScripts
       end
 
       warn '  ⚠️  Warning: bundle command failed' unless success
+      success
     end
     # rubocop:enable Metrics/MethodLength
 
+    # rubocop:disable Metrics/MethodLength
     def run_npm_install(demo_path, for_restore: false)
       return if dry_run
 
       if for_restore
-        # For restore, we need to clear the npm cache for file: dependencies
-        # and then reinstall to fetch from npm registry
-        puts '  Running npm install (clearing local cache)...'
+        # For restore, we need to regenerate package-lock.json from package.json
+        # to fetch from npm registry instead of local file: paths
+        puts '  Running npm install (regenerating lock file)...'
 
         package_lock_path = File.join(demo_path, 'package-lock.json')
+        package_lock_backup = "#{package_lock_path}.backup"
 
-        # Remove package-lock.json to force npm to re-resolve dependencies
+        # Backup package-lock.json before removing it
         if File.exist?(package_lock_path)
+          FileUtils.cp(package_lock_path, package_lock_backup)
           FileUtils.rm(package_lock_path)
-          puts '  Removed package-lock.json to force re-resolution'
+          puts '  Backed up and removed package-lock.json for regeneration'
         end
 
         success = Dir.chdir(demo_path) do
-          # Clean install to ensure proper resolution
-          system('npm', 'ci', '--silent', out: '/dev/null', err: '/dev/null') ||
-            system('npm', 'install', '--silent', out: '/dev/null', err: '/dev/null')
+          # Use npm install to regenerate package-lock.json from package.json
+          # Don't use npm ci since we just deleted package-lock.json
+          system('npm', 'install', '--silent', out: '/dev/null', err: '/dev/null')
+        end
+
+        if success
+          # Remove backup on success
+          FileUtils.rm_f(package_lock_backup)
+        elsif File.exist?(package_lock_backup)
+          # Restore backup on failure
+          FileUtils.mv(package_lock_backup, package_lock_path)
+          warn '  ⚠️  ERROR: npm install failed. Restored original package-lock.json'
         end
       else
         puts '  Running npm install...'
@@ -820,7 +840,9 @@ module DemoScripts
       end
 
       warn '  ⚠️  Warning: npm install failed' unless success
+      success
     end
+    # rubocop:enable Metrics/MethodLength
 
     def build_local_packages!
       return if dry_run
