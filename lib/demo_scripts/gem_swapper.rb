@@ -4,6 +4,7 @@ require 'yaml'
 require 'json'
 require 'pathname'
 require 'fileutils'
+require 'open3'
 
 module DemoScripts
   # Manages swapping dependencies between production and local/GitHub versions
@@ -21,6 +22,8 @@ module DemoScripts
     CACHE_DIR = File.expand_path('~/.cache/swap-deps')
     WATCH_PIDS_FILE = File.join(CACHE_DIR, 'watch_pids.json')
     WATCH_LOG_DIR = File.join(CACHE_DIR, 'watch_logs')
+    # Delay after spawning process to verify it started (configurable for slower systems)
+    PROCESS_SPAWN_VERIFY_DELAY = ENV.fetch('SWAP_DEPS_SPAWN_DELAY', '0.1').to_f
 
     attr_reader :gem_paths, :github_repos, :skip_build, :watch_mode
 
@@ -163,16 +166,40 @@ module DemoScripts
       {}
     end
 
+    # rubocop:disable Metrics/MethodLength, Metrics/AbcSize
     def save_watch_pid(gem_name, pid, command)
       FileUtils.mkdir_p(CACHE_DIR) unless File.directory?(CACHE_DIR)
-      pids = load_watch_pids
-      pids[gem_name] = {
-        'pid' => pid,
-        'command' => command,
-        'started_at' => Time.now.to_i
-      }
-      File.write(WATCH_PIDS_FILE, JSON.pretty_generate(pids))
+
+      # Use file locking to prevent race conditions during concurrent spawns
+      File.open(WATCH_PIDS_FILE, File::RDWR | File::CREAT, 0o644) do |f|
+        f.flock(File::LOCK_EX)
+        pids = f.size.positive? ? JSON.parse(f.read) : {}
+        pids[gem_name] = {
+          'pid' => pid,
+          'command' => command,
+          'started_at' => Time.now.to_i
+        }
+        f.rewind
+        f.truncate(0)
+        f.write(JSON.pretty_generate(pids))
+        f.flush
+      end
+    rescue JSON::ParserError
+      # If file is corrupted, start fresh
+      File.open(WATCH_PIDS_FILE, File::WRONLY | File::CREAT | File::TRUNC, 0o644) do |f|
+        f.flock(File::LOCK_EX)
+        pids = {
+          gem_name => {
+            'pid' => pid,
+            'command' => command,
+            'started_at' => Time.now.to_i
+          }
+        }
+        f.write(JSON.pretty_generate(pids))
+        f.flush
+      end
     end
+    # rubocop:enable Metrics/MethodLength, Metrics/AbcSize
 
     def validate_watch_pid(_gem_name, info)
       # Handle both old format (just PID) and new format (hash with metadata)
@@ -190,12 +217,13 @@ module DemoScripts
       return false unless process_running?(pid)
 
       # Validate it's actually an npm watch process by checking command
-      begin
-        command_output = `ps -p #{pid} -o command=`.strip
-        command_output.include?('npm') && command_output.include?('watch')
-      rescue StandardError
-        false
-      end
+      stdout, _stderr, status = Open3.capture3('ps', '-p', pid.to_s, '-o', 'command=')
+      return false unless status.success?
+
+      command_output = stdout.strip
+      command_output.include?('npm') && command_output.include?('watch')
+    rescue StandardError
+      false
     end
 
     def process_running?(pid)
@@ -263,7 +291,7 @@ module DemoScripts
       @spawned_pids << pid
 
       # Give process a moment to start and verify it's running
-      sleep 0.1
+      sleep PROCESS_SPAWN_VERIFY_DELAY
 
       unless process_running?(pid)
         warn "  ⚠️  Warning: Watch process for #{gem_name} failed to start. Check log: #{log_file}"
