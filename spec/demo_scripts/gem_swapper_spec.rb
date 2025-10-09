@@ -793,8 +793,7 @@ RSpec.describe DemoScripts::DependencySwapper do
     context 'when for_restore is true' do
       it 'backs up and removes package-lock.json before install' do
         allow(File).to receive(:exist?).with(package_lock_path).and_return(true)
-        expect(FileUtils).to receive(:cp).with(package_lock_path, package_lock_backup)
-        expect(FileUtils).to receive(:rm).with(package_lock_path)
+        expect(File).to receive(:rename).with(package_lock_path, package_lock_backup)
         expect(Dir).to receive(:chdir).with(demo_path).and_yield
         expect(swapper).to receive(:system)
           .with('npm', 'install', '--silent', out: '/dev/null', err: '/dev/null').and_return(true)
@@ -806,8 +805,7 @@ RSpec.describe DemoScripts::DependencySwapper do
       it 'restores backup on failure' do
         allow(File).to receive(:exist?).with(package_lock_path).and_return(true)
         allow(File).to receive(:exist?).with(package_lock_backup).and_return(true)
-        expect(FileUtils).to receive(:cp).with(package_lock_path, package_lock_backup)
-        expect(FileUtils).to receive(:rm).with(package_lock_path)
+        expect(File).to receive(:rename).with(package_lock_path, package_lock_backup)
         expect(Dir).to receive(:chdir).with(demo_path).and_yield
         expect(swapper).to receive(:system)
           .with('npm', 'install', '--silent', out: '/dev/null', err: '/dev/null').and_return(false)
@@ -820,8 +818,7 @@ RSpec.describe DemoScripts::DependencySwapper do
 
       it 'handles missing package-lock.json' do
         allow(File).to receive(:exist?).with(package_lock_path).and_return(false)
-        expect(FileUtils).not_to receive(:cp)
-        expect(FileUtils).not_to receive(:rm)
+        expect(File).not_to receive(:rename)
         expect(FileUtils).to receive(:rm_f).with(package_lock_backup)
         expect(Dir).to receive(:chdir).with(demo_path).and_yield
         expect(swapper).to receive(:system)

@@ -713,6 +713,7 @@ module DemoScripts
     end
     # rubocop:enable Metrics/AbcSize
 
+    # rubocop:disable Metrics/MethodLength
     def restore_demo(demo_path)
       restored = 0
       gemfile_path = File.join(demo_path, 'Gemfile')
@@ -733,12 +734,17 @@ module DemoScripts
       end
 
       if restored.positive?
-        run_bundle_install(demo_path, for_restore: true) if File.exist?(gemfile_path)
-        run_npm_install(demo_path, for_restore: true) if File.exist?(package_json_path)
+        bundle_success = File.exist?(gemfile_path) ? run_bundle_install(demo_path, for_restore: true) : true
+        npm_success = File.exist?(package_json_path) ? run_npm_install(demo_path, for_restore: true) : true
+
+        unless bundle_success && npm_success
+          warn '  ⚠️  Warning: Some dependency installations failed. Check the errors above.'
+        end
       end
 
       restored
     end
+    # rubocop:enable Metrics/MethodLength
 
     # rubocop:disable Metrics/MethodLength, Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
     def backup_file(file_path)
@@ -808,6 +814,15 @@ module DemoScripts
       end
     end
 
+    def find_supported_gems_in_gemfile(demo_path)
+      gemfile_content = File.read(File.join(demo_path, 'Gemfile'))
+      SUPPORTED_GEMS.select do |gem_name|
+        # Match: gem 'name' or gem "name" at line start (avoiding false matches in comments)
+        # Note: Regex compilation per gem is negligible for our 3 supported gems
+        gemfile_content.match?(/^\s*gem\s+["']#{Regexp.escape(gem_name)}["']/)
+      end
+    end
+
     # rubocop:disable Metrics/MethodLength
     def run_bundle_install(demo_path, for_restore: false)
       return if dry_run
@@ -817,13 +832,7 @@ module DemoScripts
         # This ensures Gemfile.lock is properly updated
         puts '  Running bundle update (to restore gem sources)...'
 
-        # Find swapped gems in Gemfile (avoiding false matches in comments)
-        gemfile_content = File.read(File.join(demo_path, 'Gemfile'))
-        gems_to_update = SUPPORTED_GEMS.select do |gem_name|
-          # Match: gem 'name' or gem "name" at line start
-          # Note: Regex compilation per gem is negligible for our 3 supported gems
-          gemfile_content.match?(/^\s*gem\s+["']#{Regexp.escape(gem_name)}["']/)
-        end
+        gems_to_update = find_supported_gems_in_gemfile(demo_path)
 
         if gems_to_update.empty?
           # No supported gems found in Gemfile - this might indicate they were never swapped
@@ -864,11 +873,10 @@ module DemoScripts
         package_lock_path = File.join(demo_path, 'package-lock.json')
         package_lock_backup = "#{package_lock_path}.backup"
 
-        # Backup package-lock.json before removing it
+        # Atomically move package-lock.json to backup to avoid race conditions
         if File.exist?(package_lock_path)
-          FileUtils.cp(package_lock_path, package_lock_backup)
-          FileUtils.rm(package_lock_path)
-          puts '  Backed up and removed package-lock.json for regeneration' if verbose
+          File.rename(package_lock_path, package_lock_backup)
+          puts '  Moved package-lock.json to backup for regeneration' if verbose
         end
 
         success = Dir.chdir(demo_path) do
