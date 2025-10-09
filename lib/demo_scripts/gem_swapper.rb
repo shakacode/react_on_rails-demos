@@ -4,6 +4,7 @@ require 'yaml'
 require 'json'
 require 'pathname'
 require 'fileutils'
+require 'open3'
 
 module DemoScripts
   # Manages swapping dependencies between production and local/GitHub versions
@@ -19,6 +20,10 @@ module DemoScripts
     SUPPORTED_GEMS = NPM_PACKAGE_PATHS.keys.freeze
     BACKUP_SUFFIX = '.backup'
     CACHE_DIR = File.expand_path('~/.cache/swap-deps')
+    WATCH_PIDS_FILE = File.join(CACHE_DIR, 'watch_pids.json')
+    WATCH_LOG_DIR = File.join(CACHE_DIR, 'watch_logs')
+    # Delay after spawning process to verify it started (configurable for slower systems)
+    PROCESS_SPAWN_VERIFY_DELAY = ENV.fetch('SWAP_DEPS_SPAWN_DELAY', '0.1').to_f
 
     attr_reader :gem_paths, :github_repos, :skip_build, :watch_mode
 
@@ -28,6 +33,7 @@ module DemoScripts
       @github_repos = validate_github_repos(github_repos)
       @skip_build = skip_build
       @watch_mode = watch_mode
+      @spawned_pids = [] # Track PIDs for cleanup on failure
     end
 
     def swap!
@@ -43,11 +49,18 @@ module DemoScripts
 
       puts '✅ Successfully swapped to local gem versions!'
       print_next_steps
+    rescue StandardError
+      # Cleanup spawned watch processes on failure
+      cleanup_spawned_processes if watch_mode && @spawned_pids.any?
+      raise
     end
 
     def restore!
       puts '🔄 Restoring original gem versions...'
       restored_count = 0
+
+      # Warn about running watch processes
+      warn_about_watch_processes
 
       each_demo do |demo_path|
         restored_count += restore_demo(demo_path)
@@ -59,6 +72,63 @@ module DemoScripts
         puts "✅ Restored #{restored_count} file(s) from backups"
       end
     end
+
+    def list_watch_processes
+      watch_pids = load_watch_pids
+
+      if watch_pids.empty?
+        puts 'ℹ️  No watch processes tracked'
+        return
+      end
+
+      puts '🔍 Tracked watch processes:'
+      running_count = 0
+      watch_pids.each do |gem_name, info|
+        pid = info.is_a?(Hash) ? info['pid'] : info
+        status = process_running?(pid) ? '✓ Running' : '✗ Not running'
+        puts "   #{gem_name} (PID: #{pid}) - #{status}"
+        running_count += 1 if process_running?(pid)
+      end
+
+      puts "\n   #{running_count}/#{watch_pids.count} process(es) are currently running"
+    end
+
+    # rubocop:disable Metrics/MethodLength
+    def kill_watch_processes
+      watch_pids = load_watch_pids
+
+      if watch_pids.empty?
+        puts 'ℹ️  No watch processes tracked'
+        return
+      end
+
+      puts '🛑 Stopping watch processes...'
+      killed_count = 0
+      watch_pids.each do |gem_name, info|
+        pid = info.is_a?(Hash) ? info['pid'] : info
+        if process_running?(pid)
+          puts "   Stopping #{gem_name} (PID: #{pid})"
+          begin
+            Process.kill('TERM', pid)
+            killed_count += 1
+          rescue Errno::ESRCH
+            # Process already stopped - treat as success
+            puts "   #{gem_name} (PID: #{pid}) - process no longer exists"
+            killed_count += 1
+          rescue Errno::EPERM
+            # Permission denied - do not count as success
+            puts "   ⚠️  #{gem_name} (PID: #{pid}) - permission denied (process owned by another user)"
+          end
+        else
+          puts "   #{gem_name} (PID: #{pid}) - already stopped"
+        end
+      end
+
+      # Clear the PID file
+      FileUtils.rm_f(WATCH_PIDS_FILE)
+      puts "✅ Stopped #{killed_count} watch process(es)" if killed_count.positive?
+    end
+    # rubocop:enable Metrics/MethodLength
 
     def load_config(config_file)
       return unless File.exist?(config_file)
@@ -83,6 +153,157 @@ module DemoScripts
     end
 
     private
+
+    def load_watch_pids
+      return {} unless File.exist?(WATCH_PIDS_FILE)
+
+      data = JSON.parse(File.read(WATCH_PIDS_FILE))
+      # Validate PIDs belong to npm watch processes
+      data.select do |gem_name, info|
+        validate_watch_pid(gem_name, info)
+      end
+    rescue JSON::ParserError
+      {}
+    end
+
+    # rubocop:disable Metrics/MethodLength, Metrics/AbcSize
+    def save_watch_pid(gem_name, pid, command)
+      FileUtils.mkdir_p(CACHE_DIR) unless File.directory?(CACHE_DIR)
+
+      # Use file locking to prevent race conditions during concurrent spawns
+      File.open(WATCH_PIDS_FILE, File::RDWR | File::CREAT, 0o644) do |f|
+        f.flock(File::LOCK_EX)
+        pids = f.size.positive? ? JSON.parse(f.read) : {}
+        pids[gem_name] = {
+          'pid' => pid,
+          'command' => command,
+          'started_at' => Time.now.to_i
+        }
+        f.rewind
+        f.truncate(0)
+        f.write(JSON.pretty_generate(pids))
+        f.flush
+      end
+    rescue JSON::ParserError
+      # If file is corrupted, start fresh
+      File.open(WATCH_PIDS_FILE, File::WRONLY | File::CREAT | File::TRUNC, 0o644) do |f|
+        f.flock(File::LOCK_EX)
+        pids = {
+          gem_name => {
+            'pid' => pid,
+            'command' => command,
+            'started_at' => Time.now.to_i
+          }
+        }
+        f.write(JSON.pretty_generate(pids))
+        f.flush
+      end
+    end
+    # rubocop:enable Metrics/MethodLength, Metrics/AbcSize
+
+    def validate_watch_pid(_gem_name, info)
+      # Handle both old format (just PID) and new format (hash with metadata)
+      if info.is_a?(Integer)
+        # Old format - just return true, will be migrated on next save
+        return true
+      end
+
+      return false unless info.is_a?(Hash)
+
+      pid = info['pid']
+      return false unless pid
+
+      # Check if process is still running
+      return false unless process_running?(pid)
+
+      # Validate it's actually an npm watch process by checking command
+      stdout, _stderr, status = Open3.capture3('ps', '-p', pid.to_s, '-o', 'command=')
+      return false unless status.success?
+
+      command_output = stdout.strip
+      command_output.include?('npm') && command_output.include?('watch')
+    rescue StandardError
+      false
+    end
+
+    def process_running?(pid)
+      Process.kill(0, pid)
+      true
+    rescue Errno::ESRCH
+      # Process doesn't exist
+      false
+    rescue Errno::EPERM
+      # Process exists but we don't have permission to signal it
+      # Treat as running so permission errors are surfaced when attempting to kill
+      true
+    end
+
+    def warn_about_watch_processes
+      watch_pids = load_watch_pids
+      return if watch_pids.empty?
+
+      running_pids = watch_pids.select do |_, info|
+        pid = info.is_a?(Hash) ? info['pid'] : info
+        process_running?(pid)
+      end
+      return if running_pids.empty?
+
+      puts "\n⚠️  Warning: #{running_pids.count} watch process(es) are still running:"
+      running_pids.each do |gem_name, info|
+        pid = info.is_a?(Hash) ? info['pid'] : info
+        puts "   #{gem_name} (PID: #{pid})"
+      end
+      puts '   Use bin/swap-deps --kill-watch to stop them'
+      puts ''
+    end
+
+    def cleanup_spawned_processes
+      return if @spawned_pids.empty?
+
+      puts "\n⚠️  Cleaning up #{@spawned_pids.count} spawned watch process(es)..."
+      @spawned_pids.each do |pid|
+        Process.kill('TERM', pid)
+        puts "   Stopped process #{pid}"
+      rescue Errno::ESRCH
+        # Already stopped
+      rescue Errno::EPERM
+        puts "   ⚠️  Could not stop process #{pid} - permission denied"
+      end
+      @spawned_pids.clear
+    end
+
+    def spawn_watch_process(gem_name, npm_path)
+      puts "  Starting watch mode for #{gem_name}..."
+
+      # Create log directory if it doesn't exist
+      FileUtils.mkdir_p(WATCH_LOG_DIR) unless File.directory?(WATCH_LOG_DIR)
+      log_file = File.join(WATCH_LOG_DIR, "#{gem_name}.log")
+
+      # Spawn process with output redirected to log file
+      pid = Dir.chdir(npm_path) do
+        Process.spawn('npm', 'run', 'watch', out: log_file, err: log_file)
+      end
+
+      # Detach to prevent zombie processes
+      Process.detach(pid)
+
+      # Track PID for cleanup on failure
+      @spawned_pids << pid
+
+      # Give process a moment to start and verify it's running
+      sleep PROCESS_SPAWN_VERIFY_DELAY
+
+      unless process_running?(pid)
+        warn "  ⚠️  Warning: Watch process for #{gem_name} failed to start. Check log: #{log_file}"
+        @spawned_pids.delete(pid)
+        return
+      end
+
+      # Save PID with metadata
+      command = "npm run watch (#{npm_path})"
+      save_watch_pid(gem_name, pid, command)
+      puts "  Watch process started (PID: #{pid}, Log: #{log_file})"
+    end
 
     def validate_gem_paths(paths)
       invalid = paths.keys - SUPPORTED_GEMS
@@ -417,12 +638,7 @@ module DemoScripts
       if build_script
         puts "  Building #{gem_name}..."
         if watch_mode
-          puts "  Starting watch mode for #{gem_name}..."
-          puts '  Note: Watch process will run in background. Kill manually if needed.'
-          # Spawn in background using Process.spawn for proper backgrounding
-          Dir.chdir(npm_path) do
-            Process.spawn('npm', 'run', 'watch', out: '/dev/null', err: '/dev/null')
-          end
+          spawn_watch_process(gem_name, npm_path)
         else
           success = Dir.chdir(npm_path) do
             system('npm', 'run', 'build')
@@ -445,11 +661,14 @@ module DemoScripts
         puts '   4. Remember to build packages manually if needed'
       elsif watch_mode
         puts '   4. Watch mode is active - changes will auto-rebuild'
+        puts "\n   Manage watch processes:"
+        puts '   - List: bin/swap-deps --list-watch'
+        puts '   - Stop: bin/swap-deps --kill-watch'
       else
         puts '   4. Rebuild packages when needed: cd <gem-path> && npm run build'
       end
 
-      puts "\n   To restore: bin/use-local-gems --restore"
+      puts "\n   To restore: bin/swap-deps --restore"
     end
   end
   # rubocop:enable Metrics/ClassLength

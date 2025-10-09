@@ -8,7 +8,7 @@ module DemoScripts
     CONFIG_FILE = '.swap-deps.yml'
 
     attr_reader :gem_paths, :github_repos, :dry_run, :verbose, :restore, :apply_config,
-                :skip_build, :watch_mode, :demo_filter, :demos_dir
+                :skip_build, :watch_mode, :demo_filter, :demos_dir, :list_watch, :kill_watch
 
     def initialize
       @gem_paths = {}
@@ -24,6 +24,8 @@ module DemoScripts
       @in_demo_dir = false
       @root_config_file = nil
       @auto_demos_dir = nil
+      @list_watch = false
+      @kill_watch = false
     end
 
     # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
@@ -34,7 +36,11 @@ module DemoScripts
       # Require bundler/setup only when actually running commands (not for --help)
       require 'bundler/setup'
 
-      if @restore
+      if @list_watch
+        list_watch_processes
+      elsif @kill_watch
+        kill_watch_processes
+      elsif @restore
         restore_gems
       elsif @apply_config
         apply_from_config
@@ -159,6 +165,17 @@ module DemoScripts
         end
 
         opts.separator ''
+        opts.separator 'Watch process management:'
+
+        opts.on('--list-watch', 'List tracked watch processes') do
+          @list_watch = true
+        end
+
+        opts.on('--kill-watch', 'Stop all tracked watch processes') do
+          @kill_watch = true
+        end
+
+        opts.separator ''
         opts.separator 'General options:'
 
         opts.on('--dry-run', 'Show what would be done without making changes') do
@@ -209,6 +226,15 @@ module DemoScripts
           puts '  # Preview without making changes'
           puts '  bin/swap-deps --dry-run --react-on-rails ~/dev/react_on_rails'
           puts ''
+          puts '  # Use watch mode for auto-rebuild'
+          puts '  bin/swap-deps --watch --react-on-rails ~/dev/react_on_rails'
+          puts ''
+          puts '  # List watch processes'
+          puts '  bin/swap-deps --list-watch'
+          puts ''
+          puts '  # Stop all watch processes'
+          puts '  bin/swap-deps --kill-watch'
+          puts ''
           puts 'Configuration file:'
           puts "  Create #{CONFIG_FILE} (see #{CONFIG_FILE}.example) with your dependency paths."
           puts '  This file is git-ignored for local development.'
@@ -228,6 +254,16 @@ module DemoScripts
     def restore_gems
       swapper = create_swapper
       swapper.restore!
+    end
+
+    def list_watch_processes
+      swapper = create_swapper
+      swapper.list_watch_processes
+    end
+
+    def kill_watch_processes
+      swapper = create_swapper
+      swapper.kill_watch_processes
     end
 
     def apply_from_config
