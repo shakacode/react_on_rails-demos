@@ -826,18 +826,22 @@ module DemoScripts
           gemfile_content.match?(/^\s*gem\s+["']#{Regexp.escape(gem_name)}["']/)
         end
 
-        success = Dir.chdir(demo_path) do
-          if gems_to_update.any?
-            # Update specific gems to pull from rubygems
-            success = system('bundle', 'update', *gems_to_update, '--quiet')
-            unless success
-              warn '  ⚠️  ERROR: Failed to update gems. Lock file may be inconsistent.'
-              return false
-            end
-            success
-          else
-            # Fallback to regular install if no swapped gems found
+        if gems_to_update.empty?
+          # No supported gems found in Gemfile - this might indicate they were never swapped
+          # or the Gemfile structure is unexpected
+          puts '  ⚠️  No swapped gems detected in Gemfile. Running standard bundle install...'
+          success = Dir.chdir(demo_path) do
             system('bundle', 'install', '--quiet')
+          end
+        else
+          success = Dir.chdir(demo_path) do
+            # Update specific gems to pull from rubygems
+            if system('bundle', 'update', *gems_to_update, '--quiet')
+              true
+            else
+              warn '  ⚠️  ERROR: Failed to update gems. Lock file may be inconsistent.'
+              false
+            end
           end
         end
       else
@@ -868,7 +872,7 @@ module DemoScripts
         if File.exist?(package_lock_path)
           FileUtils.cp(package_lock_path, package_lock_backup)
           FileUtils.rm(package_lock_path)
-          puts '  Backed up and removed package-lock.json for regeneration'
+          puts '  Backed up and removed package-lock.json for regeneration' if verbose
         end
 
         success = Dir.chdir(demo_path) do

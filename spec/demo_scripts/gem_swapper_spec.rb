@@ -721,4 +721,124 @@ RSpec.describe DemoScripts::DependencySwapper do
       end.to output(//).to_stdout
     end
   end
+
+  describe '#run_bundle_install with restore' do
+    let(:demo_path) { '/path/to/demo' }
+    let(:gemfile_path) { File.join(demo_path, 'Gemfile') }
+
+    before do
+      allow(swapper).to receive(:dry_run).and_return(false)
+    end
+
+    context 'when for_restore is true' do
+      it 'runs bundle update for supported gems' do
+        gemfile_content = <<~GEMFILE
+          gem 'rails'
+          gem 'shakapacker', '~> 9.0'
+          gem 'react_on_rails'
+        GEMFILE
+
+        allow(File).to receive(:read).with(gemfile_path).and_return(gemfile_content)
+        expect(Dir).to receive(:chdir).with(demo_path).and_yield
+        expect(swapper).to receive(:system)
+          .with('bundle', 'update', 'shakapacker', 'react_on_rails', '--quiet').and_return(true)
+
+        result = swapper.send(:run_bundle_install, demo_path, for_restore: true)
+        expect(result).to be true
+      end
+
+      it 'falls back to bundle install when no supported gems found' do
+        gemfile_content = "gem 'rails'\ngem 'pg'"
+
+        allow(File).to receive(:read).with(gemfile_path).and_return(gemfile_content)
+        expect(Dir).to receive(:chdir).with(demo_path).and_yield
+        expect(swapper).to receive(:system).with('bundle', 'install', '--quiet').and_return(true)
+
+        swapper.send(:run_bundle_install, demo_path, for_restore: true)
+      end
+
+      it 'returns false and warns on failure' do
+        gemfile_content = "gem 'shakapacker'"
+
+        allow(File).to receive(:read).with(gemfile_path).and_return(gemfile_content)
+        expect(Dir).to receive(:chdir).with(demo_path).and_yield
+        expect(swapper).to receive(:system).with('bundle', 'update', 'shakapacker', '--quiet').and_return(false)
+        expect(swapper).to receive(:warn).with(/ERROR: Failed to update gems/)
+        expect(swapper).to receive(:warn).with(/Warning: bundle command failed/)
+
+        result = swapper.send(:run_bundle_install, demo_path, for_restore: true)
+        expect(result).to be false
+      end
+    end
+
+    context 'when for_restore is false' do
+      it 'runs regular bundle install' do
+        expect(Dir).to receive(:chdir).with(demo_path).and_yield
+        expect(swapper).to receive(:system).with('bundle', 'install', '--quiet').and_return(true)
+
+        swapper.send(:run_bundle_install, demo_path, for_restore: false)
+      end
+    end
+  end
+
+  describe '#run_npm_install with restore' do
+    let(:demo_path) { '/path/to/demo' }
+    let(:package_lock_path) { File.join(demo_path, 'package-lock.json') }
+    let(:package_lock_backup) { "#{package_lock_path}.backup" }
+
+    before do
+      allow(swapper).to receive(:dry_run).and_return(false)
+    end
+
+    context 'when for_restore is true' do
+      it 'backs up and removes package-lock.json before install' do
+        allow(File).to receive(:exist?).with(package_lock_path).and_return(true)
+        expect(FileUtils).to receive(:cp).with(package_lock_path, package_lock_backup)
+        expect(FileUtils).to receive(:rm).with(package_lock_path)
+        expect(Dir).to receive(:chdir).with(demo_path).and_yield
+        expect(swapper).to receive(:system)
+          .with('npm', 'install', '--silent', out: '/dev/null', err: '/dev/null').and_return(true)
+        expect(FileUtils).to receive(:rm_f).with(package_lock_backup)
+
+        swapper.send(:run_npm_install, demo_path, for_restore: true)
+      end
+
+      it 'restores backup on failure' do
+        allow(File).to receive(:exist?).with(package_lock_path).and_return(true)
+        allow(File).to receive(:exist?).with(package_lock_backup).and_return(true)
+        expect(FileUtils).to receive(:cp).with(package_lock_path, package_lock_backup)
+        expect(FileUtils).to receive(:rm).with(package_lock_path)
+        expect(Dir).to receive(:chdir).with(demo_path).and_yield
+        expect(swapper).to receive(:system)
+          .with('npm', 'install', '--silent', out: '/dev/null', err: '/dev/null').and_return(false)
+        expect(FileUtils).to receive(:mv).with(package_lock_backup, package_lock_path)
+        expect(swapper).to receive(:warn).with(/ERROR: npm install failed/)
+        expect(swapper).to receive(:warn).with(/Warning: npm install failed/)
+
+        swapper.send(:run_npm_install, demo_path, for_restore: true)
+      end
+
+      it 'handles missing package-lock.json' do
+        allow(File).to receive(:exist?).with(package_lock_path).and_return(false)
+        expect(FileUtils).not_to receive(:cp)
+        expect(FileUtils).not_to receive(:rm)
+        expect(FileUtils).to receive(:rm_f).with(package_lock_backup)
+        expect(Dir).to receive(:chdir).with(demo_path).and_yield
+        expect(swapper).to receive(:system)
+          .with('npm', 'install', '--silent', out: '/dev/null', err: '/dev/null').and_return(true)
+
+        swapper.send(:run_npm_install, demo_path, for_restore: true)
+      end
+    end
+
+    context 'when for_restore is false' do
+      it 'runs regular npm install' do
+        expect(Dir).to receive(:chdir).with(demo_path).and_yield
+        expect(swapper).to receive(:system)
+          .with('npm', 'install', '--silent', out: '/dev/null', err: '/dev/null').and_return(true)
+
+        swapper.send(:run_npm_install, demo_path, for_restore: false)
+      end
+    end
+  end
 end
