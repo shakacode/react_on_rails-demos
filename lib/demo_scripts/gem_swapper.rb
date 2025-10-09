@@ -131,6 +131,7 @@ module DemoScripts
     end
     # rubocop:enable Metrics/MethodLength
 
+    # CLI entry point: Display cache information including location, size, and cached repositories
     def show_cache_info
       unless File.directory?(CACHE_DIR)
         puts 'ℹ️  Cache directory does not exist'
@@ -161,6 +162,8 @@ module DemoScripts
       end
     end
 
+    # CLI entry point: Remove cached GitHub repositories
+    # @param gem_name [String, nil] Optional gem name to clean specific gem cache, or nil to clean all
     def clean_cache(gem_name: nil)
       unless File.directory?(CACHE_DIR)
         puts 'ℹ️  Cache directory does not exist - nothing to clean'
@@ -287,21 +290,23 @@ module DemoScripts
         return
       end
 
-      total_size = repo_dirs.sum { |dir| directory_size(dir) }
-      puts "🗑️  Cleaning entire cache (#{repo_dirs.count} repositories, #{human_readable_size(total_size)})..."
+      # Calculate sizes once to avoid redundant directory traversal
+      repo_info = repo_dirs.map do |dir|
+        { path: dir, basename: File.basename(dir), size: directory_size(dir) }
+      end
+
+      total_size = repo_info.sum { |info| info[:size] }
+      puts "🗑️  Cleaning entire cache (#{repo_info.count} repositories, #{human_readable_size(total_size)})..."
 
       if dry_run
         puts '  [DRY-RUN] Would remove:'
-        repo_dirs.each do |dir|
-          size = directory_size(dir)
-          puts "  - #{File.basename(dir)} (#{human_readable_size(size)})"
+        repo_info.each do |info|
+          puts "  - #{info[:basename]} (#{human_readable_size(info[:size])})"
         end
       else
-        repo_dirs.each do |dir|
-          size = directory_size(dir)
-          basename = File.basename(dir)
-          FileUtils.rm_rf(dir)
-          puts "  ✓ Removed #{basename} (#{human_readable_size(size)})"
+        repo_info.each do |info|
+          FileUtils.rm_rf(info[:path])
+          puts "  ✓ Removed #{info[:basename]} (#{human_readable_size(info[:size])})"
         end
         puts "✅ Cleaned cache - freed #{human_readable_size(total_size)}"
       end
