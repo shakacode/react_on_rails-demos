@@ -817,12 +817,11 @@ module DemoScripts
         # This ensures Gemfile.lock is properly updated
         puts '  Running bundle update (to restore gem sources)...'
 
-        # Find which gems were swapped by looking for our supported gems in the Gemfile
-        # Use proper regex to avoid matching comments or strings
+        # Find swapped gems in Gemfile (avoiding false matches in comments)
         gemfile_content = File.read(File.join(demo_path, 'Gemfile'))
         gems_to_update = SUPPORTED_GEMS.select do |gem_name|
-          # Match lines that start with gem declaration (ignoring comments and whitespace)
-          # Handles: gem 'name' or gem "name" with any options
+          # Match: gem 'name' or gem "name" at line start
+          # Note: Regex compilation per gem is negligible for our 3 supported gems
           gemfile_content.match?(/^\s*gem\s+["']#{Regexp.escape(gem_name)}["']/)
         end
 
@@ -836,12 +835,9 @@ module DemoScripts
         else
           success = Dir.chdir(demo_path) do
             # Update specific gems to pull from rubygems
-            if system('bundle', 'update', *gems_to_update, '--quiet')
-              true
-            else
-              warn '  ⚠️  ERROR: Failed to update gems. Lock file may be inconsistent.'
-              false
-            end
+            result = system('bundle', 'update', *gems_to_update, '--quiet')
+            warn '  ⚠️  ERROR: Failed to update gems. Lock file may be inconsistent.' unless result
+            result
           end
         end
       else
