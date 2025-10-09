@@ -99,10 +99,15 @@ module DemoScripts
           puts "   Stopping #{gem_name} (PID: #{pid})"
           begin
             Process.kill('TERM', pid)
-          rescue Errno::ESRCH, Errno::EPERM
-            # Process already stopped or no permission
+            killed_count += 1
+          rescue Errno::ESRCH
+            # Process already stopped - treat as success
+            puts "   #{gem_name} (PID: #{pid}) - process no longer exists"
+            killed_count += 1
+          rescue Errno::EPERM
+            # Permission denied - do not count as success
+            puts "   ⚠️  #{gem_name} (PID: #{pid}) - permission denied (process owned by another user)"
           end
-          killed_count += 1
         else
           puts "   #{gem_name} (PID: #{pid}) - already stopped"
         end
