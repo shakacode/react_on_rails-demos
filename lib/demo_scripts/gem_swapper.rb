@@ -733,8 +733,8 @@ module DemoScripts
       end
 
       if restored.positive?
-        run_bundle_install(demo_path) if File.exist?(gemfile_path)
-        run_npm_install(demo_path) if File.exist?(package_json_path)
+        run_bundle_install(demo_path, for_restore: true) if File.exist?(gemfile_path)
+        run_npm_install(demo_path, for_restore: true) if File.exist?(package_json_path)
       end
 
       restored
@@ -808,23 +808,68 @@ module DemoScripts
       end
     end
 
-    def run_bundle_install(demo_path)
+    # rubocop:disable Metrics/MethodLength
+    def run_bundle_install(demo_path, for_restore: false)
       return if dry_run
 
-      puts '  Running bundle install...'
-      success = Dir.chdir(demo_path) do
-        system('bundle', 'install', '--quiet')
+      if for_restore
+        # For restore, we need to update the gems to fetch from rubygems
+        # This ensures Gemfile.lock is properly updated
+        puts '  Running bundle update (to restore gem sources)...'
+
+        # Find which gems were swapped by looking for our supported gems in the Gemfile
+        gemfile_content = File.read(File.join(demo_path, 'Gemfile'))
+        gems_to_update = SUPPORTED_GEMS.select do |gem_name|
+          gemfile_content.include?("gem \"#{gem_name}\"") ||
+            gemfile_content.include?("gem '#{gem_name}'")
+        end
+
+        success = Dir.chdir(demo_path) do
+          if gems_to_update.any?
+            # Update specific gems to pull from rubygems
+            system('bundle', 'update', *gems_to_update, '--quiet')
+          else
+            # Fallback to regular install if no swapped gems found
+            system('bundle', 'install', '--quiet')
+          end
+        end
+      else
+        puts '  Running bundle install...'
+        success = Dir.chdir(demo_path) do
+          system('bundle', 'install', '--quiet')
+        end
       end
 
-      warn '  ⚠️  Warning: bundle install failed' unless success
+      warn '  ⚠️  Warning: bundle command failed' unless success
     end
+    # rubocop:enable Metrics/MethodLength
 
-    def run_npm_install(demo_path)
+    def run_npm_install(demo_path, for_restore: false)
       return if dry_run
 
-      puts '  Running npm install...'
-      success = Dir.chdir(demo_path) do
-        system('npm', 'install', '--silent', out: '/dev/null', err: '/dev/null')
+      if for_restore
+        # For restore, we need to clear the npm cache for file: dependencies
+        # and then reinstall to fetch from npm registry
+        puts '  Running npm install (clearing local cache)...'
+
+        package_lock_path = File.join(demo_path, 'package-lock.json')
+
+        # Remove package-lock.json to force npm to re-resolve dependencies
+        if File.exist?(package_lock_path)
+          FileUtils.rm(package_lock_path)
+          puts '  Removed package-lock.json to force re-resolution'
+        end
+
+        success = Dir.chdir(demo_path) do
+          # Clean install to ensure proper resolution
+          system('npm', 'ci', '--silent', out: '/dev/null', err: '/dev/null') ||
+            system('npm', 'install', '--silent', out: '/dev/null', err: '/dev/null')
+        end
+      else
+        puts '  Running npm install...'
+        success = Dir.chdir(demo_path) do
+          system('npm', 'install', '--silent', out: '/dev/null', err: '/dev/null')
+        end
       end
 
       warn '  ⚠️  Warning: npm install failed' unless success
