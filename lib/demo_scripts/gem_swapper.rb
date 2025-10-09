@@ -748,13 +748,20 @@ module DemoScripts
                             # Check for path: or github: in Gemfile
                             content.match?(gem_pattern)
                           else
-                            # Check for file: in package.json dependencies
+                            # Check for file: protocol on managed packages in package.json
                             begin
                               data = JSON.parse(content)
                               dep_types = %w[dependencies devDependencies peerDependencies]
+                              # Convert gem names to npm package names (snake_case to kebab-case)
+                              npm_package_names = NPM_PACKAGE_PATHS.keys.map { |name| name.tr('_', '-') }
                               dep_types.any? do |type|
                                 deps = data[type]
-                                deps.is_a?(Hash) && deps.values.any? { |v| v.is_a?(String) && v.start_with?('file:') }
+                                next false unless deps.is_a?(Hash)
+
+                                # Check if any managed package uses file: protocol
+                                npm_package_names.any? do |pkg_name|
+                                  deps[pkg_name].is_a?(String) && deps[pkg_name].start_with?('file:')
+                                end
                               end
                             rescue JSON::ParserError
                               false
