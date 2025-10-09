@@ -740,20 +740,65 @@ module DemoScripts
       restored
     end
 
+    # rubocop:disable Metrics/MethodLength, Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
     def backup_file(file_path)
       backup_path = file_path + BACKUP_SUFFIX
 
+      # If backup exists, check if the current file is already swapped
       if File.exist?(backup_path)
-        puts "  ⚠️  Backup already exists for #{File.basename(file_path)} - skipping new backup"
-        return
+        content = File.read(file_path)
+        is_gemfile = file_path.end_with?('Gemfile')
+
+        # Check if file has already been swapped
+        gem_names = NPM_PACKAGE_PATHS.keys.map { |name| Regexp.escape(name) }.join('|')
+        gem_pattern = /^\s*gem\s+["'](?:#{gem_names})["'],.*(?:path:|github:)/
+        already_swapped = if is_gemfile
+                            # Check for path: or github: in Gemfile
+                            content.match?(gem_pattern)
+                          else
+                            # Check for file: protocol on managed packages in package.json
+                            begin
+                              data = JSON.parse(content)
+                              dep_types = %w[dependencies devDependencies peerDependencies]
+                              # Convert gem names to npm package names (snake_case to kebab-case)
+                              npm_package_names = NPM_PACKAGE_PATHS.keys.map { |name| name.tr('_', '-') }
+                              dep_types.any? do |type|
+                                deps = data[type]
+                                next false unless deps.is_a?(Hash)
+
+                                # Check if any managed package uses file: protocol
+                                npm_package_names.any? do |pkg_name|
+                                  deps[pkg_name].is_a?(String) && deps[pkg_name].start_with?('file:')
+                                end
+                              end
+                            rescue JSON::ParserError
+                              false
+                            end
+                          end
+
+        if already_swapped
+          # File is already swapped and backup exists - this is OK for re-swapping to new location
+          puts '  ℹ️  Using existing backup (preserving original dependencies)'
+          return
+        else
+          # File is not swapped but backup exists - this shouldn't happen normally
+          puts '  ⚠️  WARNING: Backup exists but file appears unswapped. This is an inconsistent state.'
+          puts '     The backup file may be corrupted or the file was manually edited.'
+          puts '     Please either:'
+          puts '     1. Run: bin/swap-deps --restore'
+          puts "     2. Or manually remove: #{File.basename(backup_path)}"
+          raise Error, 'Inconsistent state: backup exists but file is not swapped. Run --restore first.'
+        end
       end
 
       if dry_run
         puts "  [DRY-RUN] Would backup #{File.basename(file_path)}"
       else
         FileUtils.cp(file_path, backup_path)
+        puts "  ✓ Created backup: #{File.basename(backup_path)}"
       end
     end
+    # rubocop:enable Metrics/MethodLength, Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
 
     def write_file(file_path, content)
       if dry_run
