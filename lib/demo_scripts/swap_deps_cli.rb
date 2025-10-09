@@ -8,7 +8,8 @@ module DemoScripts
     CONFIG_FILE = '.swap-deps.yml'
 
     attr_reader :gem_paths, :github_repos, :dry_run, :verbose, :restore, :apply_config,
-                :skip_build, :watch_mode, :demo_filter, :demos_dir, :list_watch, :kill_watch
+                :skip_build, :watch_mode, :demo_filter, :demos_dir, :list_watch, :kill_watch,
+                :show_cache, :clean_cache, :clean_cache_gem
 
     def initialize
       @gem_paths = {}
@@ -26,9 +27,12 @@ module DemoScripts
       @auto_demos_dir = nil
       @list_watch = false
       @kill_watch = false
+      @show_cache = false
+      @clean_cache = false
+      @clean_cache_gem = nil
     end
 
-    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
     def run!
       detect_context!
       parse_options!
@@ -36,7 +40,11 @@ module DemoScripts
       # Require bundler/setup only when actually running commands (not for --help)
       require 'bundler/setup'
 
-      if @list_watch
+      if @show_cache
+        show_cache_info
+      elsif @clean_cache || @clean_cache_gem
+        clean_cache_handler
+      elsif @list_watch
         list_watch_processes
       elsif @kill_watch
         kill_watch_processes
@@ -60,7 +68,7 @@ module DemoScripts
       warn e.backtrace.join("\n") if verbose
       exit 1
     end
-    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
+    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
 
     private
 
@@ -176,6 +184,21 @@ module DemoScripts
         end
 
         opts.separator ''
+        opts.separator 'Cache management:'
+
+        opts.on('--show-cache', 'Show cache location, size, and cached repositories') do
+          @show_cache = true
+        end
+
+        opts.on('--clean-cache [GEM]', 'Remove cached repositories (all or specific gem, excludes watch_logs)') do |gem|
+          if gem
+            @clean_cache_gem = gem
+          else
+            @clean_cache = true
+          end
+        end
+
+        opts.separator ''
         opts.separator 'General options:'
 
         opts.on('--dry-run', 'Show what would be done without making changes') do
@@ -235,6 +258,15 @@ module DemoScripts
           puts '  # Stop all watch processes'
           puts '  bin/swap-deps --kill-watch'
           puts ''
+          puts '  # Show cache information'
+          puts '  bin/swap-deps --show-cache'
+          puts ''
+          puts '  # Clean all cached repositories'
+          puts '  bin/swap-deps --clean-cache'
+          puts ''
+          puts '  # Clean cache for specific gem'
+          puts '  bin/swap-deps --clean-cache shakapacker'
+          puts ''
           puts 'Configuration file:'
           puts "  Create #{CONFIG_FILE} (see #{CONFIG_FILE}.example) with your dependency paths."
           puts '  This file is git-ignored for local development.'
@@ -264,6 +296,16 @@ module DemoScripts
     def kill_watch_processes
       swapper = create_swapper
       swapper.kill_watch_processes
+    end
+
+    def show_cache_info
+      swapper = create_swapper
+      swapper.show_cache_info
+    end
+
+    def clean_cache_handler
+      swapper = create_swapper
+      swapper.clean_cache(gem_name: @clean_cache_gem)
     end
 
     def apply_from_config

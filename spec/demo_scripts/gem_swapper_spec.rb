@@ -392,4 +392,333 @@ RSpec.describe DemoScripts::DependencySwapper do
       expect(described_class::BACKUP_SUFFIX).to eq('.backup')
     end
   end
+
+  # Cache management methods tests
+  describe '#human_readable_size' do
+    it 'formats zero bytes' do
+      result = swapper.send(:human_readable_size, 0)
+      expect(result).to eq('0 B')
+    end
+
+    it 'formats bytes correctly' do
+      result = swapper.send(:human_readable_size, 512)
+      expect(result).to eq('512.00 B')
+    end
+
+    it 'formats kilobytes correctly' do
+      result = swapper.send(:human_readable_size, 2048)
+      expect(result).to eq('2.00 KB')
+    end
+
+    it 'formats megabytes correctly' do
+      result = swapper.send(:human_readable_size, 5_242_880) # 5 MB
+      expect(result).to eq('5.00 MB')
+    end
+
+    it 'formats gigabytes correctly' do
+      result = swapper.send(:human_readable_size, 2_147_483_648) # 2 GB
+      expect(result).to eq('2.00 GB')
+    end
+
+    it 'formats terabytes correctly' do
+      result = swapper.send(:human_readable_size, 1_099_511_627_776) # 1 TB
+      expect(result).to eq('1.00 TB')
+    end
+  end
+
+  describe '#matches_gem_cache_pattern?' do
+    it 'matches gem name in middle position with hyphens' do
+      result = swapper.send(:matches_gem_cache_pattern?, 'shakacode-shakapacker-main', 'shakapacker')
+      expect(result).to be true
+    end
+
+    it 'matches gem name with underscores' do
+      result = swapper.send(:matches_gem_cache_pattern?, 'shakacode-react_on_rails-main', 'react_on_rails')
+      expect(result).to be true
+    end
+
+    it 'matches normalized gem name (underscore to hyphen)' do
+      result = swapper.send(:matches_gem_cache_pattern?, 'shakacode-react-on-rails-main', 'react_on_rails')
+      expect(result).to be true
+    end
+
+    it 'does not match gem name in org position' do
+      result = swapper.send(:matches_gem_cache_pattern?, 'shakapacker-other-repo-main', 'shakapacker')
+      expect(result).to be false
+    end
+
+    it 'does not match gem name in branch position' do
+      result = swapper.send(:matches_gem_cache_pattern?, 'shakacode-repo-shakapacker', 'shakapacker')
+      expect(result).to be false
+    end
+
+    it 'does not match partial gem name' do
+      result = swapper.send(:matches_gem_cache_pattern?, 'shakacode-shake-main', 'shakapacker')
+      expect(result).to be false
+    end
+  end
+
+  describe '#cache_repo_dirs' do
+    it 'returns empty array when cache directory does not exist' do
+      allow(File).to receive(:directory?).with(described_class::CACHE_DIR).and_return(false)
+      result = swapper.send(:cache_repo_dirs)
+      expect(result).to eq([])
+    end
+
+    it 'excludes watch_logs directory' do
+      allow(File).to receive(:directory?).with(described_class::CACHE_DIR).and_return(true)
+      allow(Dir).to receive(:glob).and_return([
+                                                "#{described_class::CACHE_DIR}/watch_logs",
+                                                "#{described_class::CACHE_DIR}/shakacode-shakapacker-main"
+                                              ])
+      allow(File).to receive(:directory?).and_return(true)
+
+      result = swapper.send(:cache_repo_dirs)
+      expect(result).not_to include("#{described_class::CACHE_DIR}/watch_logs")
+      expect(result).to include("#{described_class::CACHE_DIR}/shakacode-shakapacker-main")
+    end
+
+    it 'only returns directories' do
+      cache_dir = described_class::CACHE_DIR
+      shakapacker_dir = "#{cache_dir}/shakacode-shakapacker-main"
+      file_path = "#{cache_dir}/some-file.txt"
+
+      allow(File).to receive(:directory?).with(cache_dir).and_return(true)
+      allow(Dir).to receive(:glob).and_return([shakapacker_dir, file_path])
+      allow(File).to receive(:directory?).with(shakapacker_dir).and_return(true)
+      allow(File).to receive(:directory?).with(file_path).and_return(false)
+
+      result = swapper.send(:cache_repo_dirs)
+      expect(result).to include(shakapacker_dir)
+      expect(result).not_to include(file_path)
+    end
+  end
+
+  describe '#directory_size' do
+    it 'calculates size of directory with files' do
+      Dir.mktmpdir do |dir|
+        File.write(File.join(dir, 'file1.txt'), 'a' * 100)
+        File.write(File.join(dir, 'file2.txt'), 'b' * 200)
+
+        result = swapper.send(:directory_size, dir)
+        expect(result).to eq(300)
+      end
+    end
+
+    it 'skips symlinks to avoid circular references' do
+      Dir.mktmpdir do |dir|
+        file = File.join(dir, 'real_file.txt')
+        link = File.join(dir, 'symlink')
+        File.write(file, 'test')
+        File.symlink(file, link)
+
+        result = swapper.send(:directory_size, dir)
+        # Should only count the real file, not follow the symlink
+        expect(result).to eq(4)
+      end
+    end
+
+    it 'returns 0 for permission errors' do
+      allow(Find).to receive(:find).and_raise(Errno::EACCES.new('Permission denied'))
+      swapper_verbose = described_class.new(gem_paths: {}, dry_run: true, verbose: true)
+
+      expect do
+        result = swapper_verbose.send(:directory_size, '/some/path')
+        expect(result).to eq(0)
+      end.to output(/Permission denied/).to_stderr
+    end
+
+    it 'returns 0 for missing paths' do
+      allow(Find).to receive(:find).and_raise(Errno::ENOENT.new('No such file'))
+      swapper_verbose = described_class.new(gem_paths: {}, dry_run: true, verbose: true)
+
+      expect do
+        result = swapper_verbose.send(:directory_size, '/nonexistent')
+        expect(result).to eq(0)
+      end.to output(/Path not found/).to_stderr
+    end
+
+    it 'returns 0 for other errors' do
+      allow(Find).to receive(:find).and_raise(StandardError.new('Some error'))
+      swapper_verbose = described_class.new(gem_paths: {}, dry_run: true, verbose: true)
+
+      expect do
+        result = swapper_verbose.send(:directory_size, '/some/path')
+        expect(result).to eq(0)
+      end.to output(/Error calculating size/).to_stderr
+    end
+  end
+
+  describe '#show_cache_info' do
+    context 'when cache directory does not exist' do
+      it 'displays appropriate message' do
+        allow(File).to receive(:directory?).with(described_class::CACHE_DIR).and_return(false)
+
+        expect do
+          swapper.show_cache_info
+        end.to output(/Cache directory does not exist/).to_stdout
+      end
+    end
+
+    context 'when cache is empty' do
+      it 'shows zero repositories' do
+        allow(File).to receive(:directory?).with(described_class::CACHE_DIR).and_return(true)
+        allow(swapper).to receive(:cache_repo_dirs).and_return([])
+
+        expect do
+          swapper.show_cache_info
+        end.to output(/Repositories: 0/).to_stdout
+      end
+    end
+
+    context 'with cached repositories' do
+      it 'displays repository information' do
+        cache_dir = described_class::CACHE_DIR
+        repo_path = "#{cache_dir}/shakacode-shakapacker-main"
+
+        allow(File).to receive(:directory?).with(cache_dir).and_return(true)
+        allow(swapper).to receive(:cache_repo_dirs).and_return([repo_path])
+        allow(swapper).to receive(:directory_size).and_return(1024)
+
+        expect do
+          swapper.show_cache_info
+        end.to output(/Repositories: 1.*shakacode-shakapacker-main.*1\.00 KB/m).to_stdout
+      end
+    end
+  end
+
+  describe '#clean_cache' do
+    context 'when cache directory does not exist' do
+      it 'displays appropriate message' do
+        allow(File).to receive(:directory?).with(described_class::CACHE_DIR).and_return(false)
+
+        expect do
+          swapper.clean_cache
+        end.to output(/Cache directory does not exist/).to_stdout
+      end
+    end
+
+    context 'with gem_name parameter' do
+      it 'validates gem name and raises error for invalid characters' do
+        expect do
+          swapper.clean_cache(gem_name: '../etc/passwd')
+        end.to raise_error(DemoScripts::Error, /Invalid gem name/)
+      end
+
+      it 'calls clean_gem_cache with gem name' do
+        allow(File).to receive(:directory?).with(described_class::CACHE_DIR).and_return(true)
+        allow(swapper).to receive(:cache_repo_dirs).and_return([])
+
+        expect do
+          swapper.clean_cache(gem_name: 'shakapacker')
+        end.to output(/No cached repositories found/).to_stdout
+      end
+    end
+
+    context 'without gem_name parameter' do
+      it 'calls clean_all_cache' do
+        allow(File).to receive(:directory?).with(described_class::CACHE_DIR).and_return(true)
+        allow(swapper).to receive(:cache_repo_dirs).and_return([])
+
+        expect do
+          swapper.clean_cache
+        end.to output(/Cache is empty/).to_stdout
+      end
+    end
+
+    context 'with dry_run enabled' do
+      it 'shows what would be removed without removing' do
+        cache_dir = described_class::CACHE_DIR
+        repo_path = "#{cache_dir}/shakacode-shakapacker-main"
+
+        allow(File).to receive(:directory?).with(cache_dir).and_return(true)
+        allow(swapper).to receive(:cache_repo_dirs).and_return([repo_path])
+        allow(swapper).to receive(:directory_size).and_return(1024)
+
+        expect(FileUtils).not_to receive(:rm_rf)
+
+        expect do
+          swapper.clean_cache
+        end.to output(/\[DRY-RUN\] Would remove/).to_stdout
+      end
+    end
+  end
+
+  describe '#clean_gem_cache' do
+    before do
+      allow(File).to receive(:directory?).with(described_class::CACHE_DIR).and_return(true)
+    end
+
+    it 'finds and cleans matching repositories' do
+      cache_dir = described_class::CACHE_DIR
+      shakapacker_path = "#{cache_dir}/shakacode-shakapacker-main"
+      react_path = "#{cache_dir}/shakacode-react_on_rails-main"
+
+      allow(swapper).to receive(:cache_repo_dirs).and_return([shakapacker_path, react_path])
+      allow(swapper).to receive(:directory_size).and_return(1024)
+      allow(FileUtils).to receive(:rm_rf)
+
+      swapper_no_dry_run = described_class.new(gem_paths: {}, dry_run: false)
+      allow(swapper_no_dry_run).to receive(:cache_repo_dirs).and_return([shakapacker_path])
+      allow(swapper_no_dry_run).to receive(:directory_size).and_return(1024)
+
+      expect(FileUtils).to receive(:rm_rf).with(shakapacker_path)
+
+      expect do
+        swapper_no_dry_run.send(:clean_gem_cache, 'shakapacker')
+      end.to output(/Removed shakacode-shakapacker-main/).to_stdout
+    end
+
+    it 'displays message when no matching repositories found' do
+      cache_dir = described_class::CACHE_DIR
+      react_path = "#{cache_dir}/shakacode-react_on_rails-main"
+
+      allow(swapper).to receive(:cache_repo_dirs).and_return([react_path])
+
+      expect do
+        swapper.send(:clean_gem_cache, 'shakapacker')
+      end.to output(/No cached repositories found for: shakapacker/).to_stdout
+    end
+  end
+
+  describe '#clean_all_cache' do
+    before do
+      allow(File).to receive(:directory?).with(described_class::CACHE_DIR).and_return(true)
+    end
+
+    it 'cleans all cached repositories' do
+      allow(swapper).to receive(:cache_repo_dirs).and_return([
+                                                               "#{described_class::CACHE_DIR}/repo1",
+                                                               "#{described_class::CACHE_DIR}/repo2"
+                                                             ])
+      allow(swapper).to receive(:directory_size).and_return(1024)
+
+      expect do
+        swapper.send(:clean_all_cache)
+      end.to output(/Cleaning entire cache \(2 repositories/).to_stdout
+    end
+
+    it 'displays message when cache is empty' do
+      allow(swapper).to receive(:cache_repo_dirs).and_return([])
+
+      expect do
+        swapper.send(:clean_all_cache)
+      end.to output(/Cache is empty/).to_stdout
+    end
+
+    it 'calculates sizes only once for performance' do
+      repos = [
+        "#{described_class::CACHE_DIR}/repo1",
+        "#{described_class::CACHE_DIR}/repo2"
+      ]
+      allow(swapper).to receive(:cache_repo_dirs).and_return(repos)
+
+      # directory_size should be called exactly once per repo
+      expect(swapper).to receive(:directory_size).exactly(2).times.and_return(1024)
+
+      expect do
+        swapper.send(:clean_all_cache)
+      end.to output(//).to_stdout
+    end
+  end
 end
