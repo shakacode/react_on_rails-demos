@@ -842,6 +842,7 @@ module DemoScripts
             system('bundle', 'install', '--quiet')
           end
         else
+          puts "  Updating gems: #{gems_to_update.join(', ')}" if verbose
           success = Dir.chdir(demo_path) do
             # Update specific gems to pull from rubygems
             result = system('bundle', 'update', *gems_to_update, '--quiet')
@@ -856,7 +857,7 @@ module DemoScripts
         end
       end
 
-      warn '  ⚠️  Warning: bundle command failed' unless success
+      warn '  ⚠️  ERROR: bundle command failed' unless success
       success
     end
     # rubocop:enable Metrics/MethodLength
@@ -874,9 +875,12 @@ module DemoScripts
         package_lock_backup = "#{package_lock_path}.backup"
 
         # Atomically move package-lock.json to backup to avoid race conditions
-        if File.exist?(package_lock_path)
+        begin
           File.rename(package_lock_path, package_lock_backup)
           puts '  Moved package-lock.json to backup for regeneration' if verbose
+        rescue Errno::ENOENT
+          # File doesn't exist, which is fine - nothing to backup
+          puts '  No package-lock.json found to backup' if verbose
         end
 
         success = Dir.chdir(demo_path) do
@@ -900,7 +904,7 @@ module DemoScripts
         end
       end
 
-      warn '  ⚠️  Warning: npm install failed' unless success
+      warn '  ⚠️  ERROR: npm install failed' unless success
       success
     end
     # rubocop:enable Metrics/MethodLength

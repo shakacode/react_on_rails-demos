@@ -764,7 +764,7 @@ RSpec.describe DemoScripts::DependencySwapper do
         expect(Dir).to receive(:chdir).with(demo_path).and_yield
         expect(swapper).to receive(:system).with('bundle', 'update', 'shakapacker', '--quiet').and_return(false)
         expect(swapper).to receive(:warn).with(/ERROR: Failed to update gems/)
-        expect(swapper).to receive(:warn).with(/Warning: bundle command failed/)
+        expect(swapper).to receive(:warn).with(/ERROR: bundle command failed/)
 
         result = swapper.send(:run_bundle_install, demo_path, for_restore: true)
         expect(result).to be false
@@ -792,7 +792,6 @@ RSpec.describe DemoScripts::DependencySwapper do
 
     context 'when for_restore is true' do
       it 'backs up and removes package-lock.json before install' do
-        allow(File).to receive(:exist?).with(package_lock_path).and_return(true)
         expect(File).to receive(:rename).with(package_lock_path, package_lock_backup)
         expect(Dir).to receive(:chdir).with(demo_path).and_yield
         expect(swapper).to receive(:system)
@@ -803,7 +802,6 @@ RSpec.describe DemoScripts::DependencySwapper do
       end
 
       it 'restores backup on failure' do
-        allow(File).to receive(:exist?).with(package_lock_path).and_return(true)
         allow(File).to receive(:exist?).with(package_lock_backup).and_return(true)
         expect(File).to receive(:rename).with(package_lock_path, package_lock_backup)
         expect(Dir).to receive(:chdir).with(demo_path).and_yield
@@ -811,14 +809,15 @@ RSpec.describe DemoScripts::DependencySwapper do
           .with('npm', 'install', '--silent', out: '/dev/null', err: '/dev/null').and_return(false)
         expect(FileUtils).to receive(:mv).with(package_lock_backup, package_lock_path)
         expect(swapper).to receive(:warn).with(/ERROR: npm install failed/)
-        expect(swapper).to receive(:warn).with(/Warning: npm install failed/)
+        expect(swapper).to receive(:warn).with(/ERROR: npm install failed/)
 
         swapper.send(:run_npm_install, demo_path, for_restore: true)
       end
 
-      it 'handles missing package-lock.json' do
-        allow(File).to receive(:exist?).with(package_lock_path).and_return(false)
-        expect(File).not_to receive(:rename)
+      it 'handles missing package-lock.json gracefully' do
+        expect(File).to receive(:rename)
+          .with(package_lock_path, package_lock_backup)
+          .and_raise(Errno::ENOENT)
         expect(FileUtils).to receive(:rm_f).with(package_lock_backup)
         expect(Dir).to receive(:chdir).with(demo_path).and_yield
         expect(swapper).to receive(:system)
