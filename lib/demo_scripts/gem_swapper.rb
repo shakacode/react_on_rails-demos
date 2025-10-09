@@ -519,7 +519,15 @@ module DemoScripts
       gem_paths.each do |gem_name, path|
         next if File.directory?(path)
 
-        raise Error, "Local path for #{gem_name} does not exist: #{path}"
+        error_msg = "Local path for #{gem_name} does not exist: #{path}\n\n"
+        error_msg += "This usually means:\n"
+        error_msg += "  1. The path in .swap-deps.yml is outdated\n"
+        error_msg += "  2. You moved or deleted the local repository\n\n"
+        error_msg += "To fix:\n"
+        error_msg += "  - Update .swap-deps.yml with the correct path\n"
+        error_msg += '  - Or use --restore to restore original dependencies'
+
+        raise Error, error_msg
       end
     end
 
