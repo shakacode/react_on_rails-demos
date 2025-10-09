@@ -12,7 +12,8 @@ module DemoScripts
     #   org/repo           -> [org/repo, nil, nil]
     #   org/repo#branch    -> [org/repo, branch, :branch]
     #   org/repo@tag       -> [org/repo, tag, :tag]
-    #   org/repo@branch    -> [org/repo, branch, :branch] (backward compatibility)
+    #
+    # Note: @ always indicates a tag (use # for branches)
     def parse_github_spec(github_spec)
       if github_spec.include?('@')
         parts = github_spec.split('@', 2)
