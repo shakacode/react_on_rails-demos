@@ -39,11 +39,11 @@ parser = OptionParser.new do |opts|
     options[:dry_run] = true
   end
 
-  opts.on('--shakapacker-version VERSION', 'Shakapacker version (or github:org/repo@branch)') do |v|
+  opts.on('--shakapacker-version VERSION', 'Shakapacker version (or github:org/repo[#branch|@tag])') do |v|
     options[:shakapacker_version] = v
   end
 
-  opts.on('--react-on-rails-version VERSION', 'React on Rails version (or github:org/repo@branch)') do |v|
+  opts.on('--react-on-rails-version VERSION', 'React on Rails version (or github:org/repo[#branch|@tag])') do |v|
     options[:react_on_rails_version] = v
   end
 
@@ -93,9 +93,9 @@ parser = OptionParser.new do |opts|
     puts '  bin/new-demo my-demo --shakapacker-prerelease'
     puts '  bin/new-demo my-demo --react-on-rails-prerelease'
     puts ''
-    puts '  # Use GitHub branches'
-    puts '  bin/new-demo my-demo --shakapacker-version="github:shakacode/shakapacker@my-branch"'
-    puts '  bin/new-demo my-demo --react-on-rails-version="github:shakacode/react_on_rails@fix-hmr"'
+    puts '  # Use GitHub branches (# for branches) or tags (@ for tags)'
+    puts '  bin/new-demo my-demo --shakapacker-version="github:shakacode/shakapacker#my-branch"'
+    puts '  bin/new-demo my-demo --react-on-rails-version="github:shakacode/react_on_rails@v16.1.0"'
     puts ''
     puts '  # Customize Rails and React on Rails setup'
     puts '  bin/new-demo my-demo --rails-args="--skip-test,--api"'

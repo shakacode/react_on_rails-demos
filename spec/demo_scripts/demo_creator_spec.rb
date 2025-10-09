@@ -230,14 +230,14 @@ RSpec.describe DemoScripts::DemoCreator do
     end
 
     describe 'with GitHub source' do
-      context 'with branch specified' do
+      context 'with branch specified (# syntax)' do
         it 'uses bundle add with github and branch flags' do
           expect(runner).to receive(:run!).with(
             'bundle add shakapacker --github shakacode/shakapacker --branch main',
             dir: demo_dir
           )
 
-          creator.send(:add_gem_with_source, 'shakapacker', 'github:shakacode/shakapacker@main')
+          creator.send(:add_gem_with_source, 'shakapacker', 'github:shakacode/shakapacker#main')
         end
 
         it 'handles branch names with hyphens' do
@@ -246,7 +246,18 @@ RSpec.describe DemoScripts::DemoCreator do
             dir: demo_dir
           )
 
-          creator.send(:add_gem_with_source, 'react_on_rails', 'github:shakacode/react_on_rails@fix-hmr-issue')
+          creator.send(:add_gem_with_source, 'react_on_rails', 'github:shakacode/react_on_rails#fix-hmr-issue')
+        end
+      end
+
+      context 'with tag specified (@ syntax)' do
+        it 'uses bundle add with github and tag flags' do
+          expect(runner).to receive(:run!).with(
+            'bundle add shakapacker --github shakacode/shakapacker --tag v1.0.0',
+            dir: demo_dir
+          )
+
+          creator.send(:add_gem_with_source, 'shakapacker', 'github:shakacode/shakapacker@v1.0.0')
         end
       end
 
@@ -274,10 +285,16 @@ RSpec.describe DemoScripts::DemoCreator do
           end.to raise_error(DemoScripts::Error, /Invalid GitHub spec: empty repository/)
         end
 
-        it 'raises error for empty branch' do
+        it 'raises error for empty ref after @' do
           expect do
             creator.send(:add_gem_with_source, 'shakapacker', 'github:shakacode/shakapacker@')
-          end.to raise_error(DemoScripts::Error, /Invalid GitHub spec: empty branch/)
+          end.to raise_error(DemoScripts::Error, /Invalid GitHub spec: empty ref after @/)
+        end
+
+        it 'raises error for empty ref after #' do
+          expect do
+            creator.send(:add_gem_with_source, 'shakapacker', 'github:shakacode/shakapacker#')
+          end.to raise_error(DemoScripts::Error, /Invalid GitHub spec: empty ref after #/)
         end
 
         it 'raises error for missing organization' do
@@ -292,28 +309,22 @@ RSpec.describe DemoScripts::DemoCreator do
           end.to raise_error(DemoScripts::Error, %r{Invalid GitHub repo format: expected 'org/repo'})
         end
 
-        it 'raises error for invalid characters in repo' do
-          expect do
-            creator.send(:add_gem_with_source, 'shakapacker', 'github:org/repo#invalid')
-          end.to raise_error(DemoScripts::Error, /contains invalid characters/)
-        end
-
         it 'raises error for invalid characters in branch' do
           expect do
-            creator.send(:add_gem_with_source, 'shakapacker', 'github:shakacode/shakapacker@branch with spaces')
+            creator.send(:add_gem_with_source, 'shakapacker', 'github:shakacode/shakapacker#branch with spaces')
           end.to raise_error(DemoScripts::Error, /Invalid GitHub branch.*contains invalid character/)
         end
 
         it 'raises error for branch with ..' do
           expect do
-            creator.send(:add_gem_with_source, 'shakapacker', 'github:shakacode/shakapacker@../etc/passwd')
+            creator.send(:add_gem_with_source, 'shakapacker', 'github:shakacode/shakapacker#../etc/passwd')
           end.to raise_error(DemoScripts::Error, /Invalid GitHub branch/)
         end
 
         it 'raises error for branch with special git characters' do
           ['~', '^', ':', '?', '*', '[', '\\'].each do |char|
             expect do
-              creator.send(:add_gem_with_source, 'shakapacker', "github:shakacode/shakapacker@test#{char}branch")
+              creator.send(:add_gem_with_source, 'shakapacker', "github:shakacode/shakapacker#test#{char}branch")
             end.to raise_error(DemoScripts::Error, /Invalid GitHub branch/)
           end
         end
@@ -353,7 +364,7 @@ RSpec.describe DemoScripts::DemoCreator do
             dir: demo_dir
           )
 
-          creator.send(:add_gem_with_source, 'shakapacker', 'github:shakacode/shakapacker@release/v1.0')
+          creator.send(:add_gem_with_source, 'shakapacker', 'github:shakacode/shakapacker#release/v1.0')
         end
       end
     end
@@ -411,38 +422,53 @@ RSpec.describe DemoScripts::DemoCreator do
     end
 
     describe '#parse_github_spec' do
-      it 'parses repo with branch' do
-        repo, branch = creator.send(:parse_github_spec, 'shakacode/shakapacker@main')
+      it 'parses repo with tag (@ syntax)' do
+        repo, ref, ref_type = creator.send(:parse_github_spec, 'shakacode/shakapacker@v1.0.0')
         expect(repo).to eq('shakacode/shakapacker')
-        expect(branch).to eq('main')
+        expect(ref).to eq('v1.0.0')
+        expect(ref_type).to eq(:tag)
       end
 
-      it 'parses repo without branch' do
-        repo, branch = creator.send(:parse_github_spec, 'shakacode/shakapacker')
+      it 'parses repo with branch (# syntax)' do
+        repo, ref, ref_type = creator.send(:parse_github_spec, 'shakacode/shakapacker#main')
         expect(repo).to eq('shakacode/shakapacker')
-        expect(branch).to be_nil
+        expect(ref).to eq('main')
+        expect(ref_type).to eq(:branch)
+      end
+
+      it 'parses repo without ref' do
+        repo, ref, ref_type = creator.send(:parse_github_spec, 'shakacode/shakapacker')
+        expect(repo).to eq('shakacode/shakapacker')
+        expect(ref).to be_nil
+        expect(ref_type).to be_nil
       end
 
       it 'handles multiple @ symbols (uses first as delimiter)' do
-        repo, branch = creator.send(:parse_github_spec, 'shakacode/shakapacker@branch@with@symbols')
+        repo, ref, ref_type = creator.send(:parse_github_spec, 'shakacode/shakapacker@tag@with@symbols')
         expect(repo).to eq('shakacode/shakapacker')
-        expect(branch).to eq('branch@with@symbols')
+        expect(ref).to eq('tag@with@symbols')
+        expect(ref_type).to eq(:tag)
       end
     end
 
     describe '#build_github_bundle_command' do
       it 'builds command with branch' do
-        cmd = creator.send(:build_github_bundle_command, 'shakapacker', 'shakacode/shakapacker', 'main')
+        cmd = creator.send(:build_github_bundle_command, 'shakapacker', 'shakacode/shakapacker', 'main', :branch)
         expect(cmd).to eq('bundle add shakapacker --github shakacode/shakapacker --branch main')
       end
 
-      it 'builds command without branch' do
-        cmd = creator.send(:build_github_bundle_command, 'shakapacker', 'shakacode/shakapacker', nil)
+      it 'builds command with tag' do
+        cmd = creator.send(:build_github_bundle_command, 'shakapacker', 'shakacode/shakapacker', 'v1.0.0', :tag)
+        expect(cmd).to eq('bundle add shakapacker --github shakacode/shakapacker --tag v1.0.0')
+      end
+
+      it 'builds command without ref' do
+        cmd = creator.send(:build_github_bundle_command, 'shakapacker', 'shakacode/shakapacker', nil, nil)
         expect(cmd).to eq('bundle add shakapacker --github shakacode/shakapacker')
       end
 
       it 'properly escapes special characters' do
-        cmd = creator.send(:build_github_bundle_command, 'my-gem', 'org/repo', 'branch-name')
+        cmd = creator.send(:build_github_bundle_command, 'my-gem', 'org/repo', 'branch-name', :branch)
         # Shellwords.join should properly escape if needed
         expect(cmd).to be_a(String)
         expect(cmd).to include('my-gem')

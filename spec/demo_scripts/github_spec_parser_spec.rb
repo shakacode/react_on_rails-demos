@@ -14,42 +14,79 @@ RSpec.describe DemoScripts::GitHubSpecParser do
 
   describe '#parse_github_spec' do
     context 'with valid input' do
-      it 'parses repo without branch' do
-        repo, branch = parser.parse_github_spec('shakacode/shakapacker')
+      it 'parses repo without ref' do
+        repo, ref, ref_type = parser.parse_github_spec('shakacode/shakapacker')
         expect(repo).to eq('shakacode/shakapacker')
-        expect(branch).to be_nil
+        expect(ref).to be_nil
+        expect(ref_type).to be_nil
       end
 
-      it 'parses repo with branch' do
-        repo, branch = parser.parse_github_spec('shakacode/shakapacker@main')
+      it 'parses repo with tag (@ syntax)' do
+        repo, ref, ref_type = parser.parse_github_spec('shakacode/shakapacker@v1.0.0')
         expect(repo).to eq('shakacode/shakapacker')
-        expect(branch).to eq('main')
+        expect(ref).to eq('v1.0.0')
+        expect(ref_type).to eq(:tag)
+      end
+
+      it 'parses repo with branch (# syntax)' do
+        repo, ref, ref_type = parser.parse_github_spec('shakacode/shakapacker#fix-bug')
+        expect(repo).to eq('shakacode/shakapacker')
+        expect(ref).to eq('fix-bug')
+        expect(ref_type).to eq(:branch)
+      end
+
+      it 'handles @ for backward compatibility (treated as tag)' do
+        repo, ref, ref_type = parser.parse_github_spec('shakacode/shakapacker@main')
+        expect(repo).to eq('shakacode/shakapacker')
+        expect(ref).to eq('main')
+        expect(ref_type).to eq(:tag)
       end
 
       it 'handles multiple @ symbols (uses first as delimiter)' do
-        repo, branch = parser.parse_github_spec('shakacode/shakapacker@branch@with@symbols')
+        repo, ref, ref_type = parser.parse_github_spec('shakacode/shakapacker@tag@with@symbols')
         expect(repo).to eq('shakacode/shakapacker')
-        expect(branch).to eq('branch@with@symbols')
+        expect(ref).to eq('tag@with@symbols')
+        expect(ref_type).to eq(:tag)
       end
 
-      it 'parses repo with branch containing slashes' do
-        repo, branch = parser.parse_github_spec('shakacode/shakapacker@release/v1.0')
+      it 'parses branch with slashes' do
+        repo, ref, ref_type = parser.parse_github_spec('shakacode/shakapacker#release/v1.0')
         expect(repo).to eq('shakacode/shakapacker')
-        expect(branch).to eq('release/v1.0')
+        expect(ref).to eq('release/v1.0')
+        expect(ref_type).to eq(:branch)
+      end
+
+      it 'parses tag with dots and hyphens' do
+        repo, ref, ref_type = parser.parse_github_spec('shakacode/shakapacker@v1.0.0-rc.1')
+        expect(repo).to eq('shakacode/shakapacker')
+        expect(ref).to eq('v1.0.0-rc.1')
+        expect(ref_type).to eq(:tag)
       end
     end
 
     context 'with invalid input' do
-      it 'raises error for empty repository' do
+      it 'raises error for empty repository with @' do
         expect do
           parser.parse_github_spec('@main')
         end.to raise_error(DemoScripts::Error, /empty repository/)
       end
 
-      it 'raises error for empty branch' do
+      it 'raises error for empty repository with #' do
+        expect do
+          parser.parse_github_spec('#main')
+        end.to raise_error(DemoScripts::Error, /empty repository/)
+      end
+
+      it 'raises error for empty ref after @' do
         expect do
           parser.parse_github_spec('shakacode/shakapacker@')
-        end.to raise_error(DemoScripts::Error, /empty branch/)
+        end.to raise_error(DemoScripts::Error, /empty ref after @/)
+      end
+
+      it 'raises error for empty ref after #' do
+        expect do
+          parser.parse_github_spec('shakacode/shakapacker#')
+        end.to raise_error(DemoScripts::Error, /empty ref after #/)
       end
     end
   end

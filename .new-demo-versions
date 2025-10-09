@@ -10,9 +10,19 @@
 RAILS_VERSION="8.0.3"
 
 # Shakapacker version (use ~> for compatibility range, or specific version)
+# Examples:
+#   SHAKAPACKER_VERSION="~> 9.0"                          # Published gem version
+#   SHAKAPACKER_VERSION="github:shakacode/shakapacker"    # GitHub main branch (default)
+#   SHAKAPACKER_VERSION="github:shakacode/shakapacker#fix-hmr"  # GitHub branch (use #)
+#   SHAKAPACKER_VERSION="github:shakacode/shakapacker@v9.0.0"   # GitHub tag (use @)
 SHAKAPACKER_VERSION="github:shakacode/shakapacker"
 
 # React on Rails version (use ~> for compatibility range, or specific version)
+# Examples:
+#   REACT_ON_RAILS_VERSION="~> 16.1"                              # Published gem version
+#   REACT_ON_RAILS_VERSION="github:shakacode/react_on_rails"      # GitHub main branch (default)
+#   REACT_ON_RAILS_VERSION="github:shakacode/react_on_rails#feature-x"  # GitHub branch (use #)
+#   REACT_ON_RAILS_VERSION="github:shakacode/react_on_rails@v16.1.0"    # GitHub tag (use @)
 REACT_ON_RAILS_VERSION="~> 16.1"
 
 # ═══════════════════════════════════════════════════════════════════════

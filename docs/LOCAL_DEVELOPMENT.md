@@ -140,7 +140,9 @@ bin/swap-deps --github shakacode/shakapacker
 - The repo is cloned to `~/.cache/local-gems/` with the pattern `{user}-{repo}-{branch}/`
 - The clone is automatically built (if it has npm packages)
 - Subsequent runs update the existing clone instead of re-cloning
-- For Gemfiles: Uses `github: 'user/repo', branch: 'branch-name'` syntax
+- For Gemfiles:
+  - Branches use: `github: 'user/repo', branch: 'branch-name'` (omits `branch:` for main/master)
+  - Tags use: `github: 'user/repo', tag: 'v1.0.0'` (always explicit)
 - For package.json: Uses `file:` protocol pointing to the cached clone
 
 **Benefits:**
