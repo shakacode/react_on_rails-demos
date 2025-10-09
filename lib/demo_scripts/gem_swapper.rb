@@ -5,6 +5,7 @@ require 'json'
 require 'pathname'
 require 'fileutils'
 require 'open3'
+require 'find'
 
 module DemoScripts
   # Manages swapping dependencies between production and local/GitHub versions
@@ -130,6 +131,59 @@ module DemoScripts
     end
     # rubocop:enable Metrics/MethodLength
 
+    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+    def show_cache_info
+      unless File.directory?(CACHE_DIR)
+        puts 'ℹ️  Cache directory does not exist'
+        puts "   Location: #{CACHE_DIR}"
+        return
+      end
+
+      # Calculate cache size and count repos
+      total_size = 0
+      repo_count = 0
+
+      Dir.glob(File.join(CACHE_DIR, '*')).each do |path|
+        next unless File.directory?(path)
+
+        # Skip non-repo directories
+        next if File.basename(path) == 'watch_logs'
+
+        repo_count += 1
+        total_size += directory_size(path)
+      end
+
+      puts '📊 Cache information:'
+      puts "   Location: #{CACHE_DIR}"
+      puts "   Repositories: #{repo_count}"
+      puts "   Total size: #{human_readable_size(total_size)}"
+
+      return unless repo_count.positive?
+
+      puts "\n   Cached repositories:"
+      Dir.glob(File.join(CACHE_DIR, '*')).each do |path|
+        next unless File.directory?(path)
+        next if File.basename(path) == 'watch_logs'
+
+        size = directory_size(path)
+        puts "   - #{File.basename(path)} (#{human_readable_size(size)})"
+      end
+    end
+    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
+
+    def clean_cache(gem_name: nil)
+      unless File.directory?(CACHE_DIR)
+        puts 'ℹ️  Cache directory does not exist - nothing to clean'
+        return
+      end
+
+      if gem_name
+        clean_gem_cache(gem_name)
+      else
+        clean_all_cache
+      end
+    end
+
     def load_config(config_file)
       return unless File.exist?(config_file)
 
@@ -153,6 +207,82 @@ module DemoScripts
     end
 
     private
+
+    def directory_size(path)
+      size = 0
+      Find.find(path) do |file_path|
+        size += File.size(file_path) if File.file?(file_path)
+      end
+      size
+    rescue StandardError
+      0
+    end
+
+    def human_readable_size(bytes)
+      units = %w[B KB MB GB TB]
+      return "0 #{units[0]}" if bytes.zero?
+
+      exp = (Math.log(bytes) / Math.log(1024)).to_i
+      exp = [exp, units.length - 1].min
+      size = bytes.to_f / (1024**exp)
+      format('%<size>.2f %<unit>s', size: size, unit: units[exp])
+    end
+
+    def clean_gem_cache(gem_name)
+      # Find all cached repos for this gem
+      pattern = File.join(CACHE_DIR, "*#{gem_name}*")
+      matching_dirs = Dir.glob(pattern).select { |path| File.directory?(path) && File.basename(path) != 'watch_logs' }
+
+      if matching_dirs.empty?
+        puts "ℹ️  No cached repositories found for: #{gem_name}"
+        return
+      end
+
+      puts "🗑️  Cleaning cache for #{gem_name}..."
+      matching_dirs.each do |dir|
+        size = directory_size(dir)
+        basename = File.basename(dir)
+        if dry_run
+          puts "  [DRY-RUN] Would remove #{basename} (#{human_readable_size(size)})"
+        else
+          FileUtils.rm_rf(dir)
+          puts "  ✓ Removed #{basename} (#{human_readable_size(size)})"
+        end
+      end
+    end
+
+    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+    def clean_all_cache
+      # Get all repo directories (exclude watch_logs)
+      repo_dirs = Dir.glob(File.join(CACHE_DIR, '*')).select do |path|
+        File.directory?(path) && File.basename(path) != 'watch_logs'
+      end
+
+      if repo_dirs.empty?
+        puts 'ℹ️  Cache is empty - nothing to clean'
+        return
+      end
+
+      total_size = repo_dirs.sum { |dir| directory_size(dir) }
+      puts "🗑️  Cleaning entire cache (#{repo_dirs.count} repositories, #{human_readable_size(total_size)})..."
+
+      if dry_run
+        puts '  [DRY-RUN] Would remove:'
+        repo_dirs.each do |dir|
+          size = directory_size(dir)
+          puts "  - #{File.basename(dir)} (#{human_readable_size(size)})"
+        end
+      else
+        repo_dirs.each do |dir|
+          size = directory_size(dir)
+          basename = File.basename(dir)
+          FileUtils.rm_rf(dir)
+          puts "  ✓ Removed #{basename} (#{human_readable_size(size)})"
+        end
+        puts "✅ Cleaned cache - freed #{human_readable_size(total_size)}"
+      end
+    end
+    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
     def load_watch_pids
       return {} unless File.exist?(WATCH_PIDS_FILE)
