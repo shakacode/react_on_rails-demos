@@ -190,7 +190,7 @@ module DemoScripts
           @show_cache = true
         end
 
-        opts.on('--clean-cache [GEM]', 'Remove cached repositories (all or specific gem)') do |gem|
+        opts.on('--clean-cache [GEM]', 'Remove cached repositories (all or specific gem, excludes watch_logs)') do |gem|
           if gem
             @clean_cache_gem = gem
           else

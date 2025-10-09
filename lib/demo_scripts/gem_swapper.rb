@@ -209,6 +209,19 @@ module DemoScripts
       end
     end
 
+    # Match gem name in cache directory pattern: {org}-{gem}-{branch}
+    # This ensures we match the repository component, not the org or branch
+    def matches_gem_cache_pattern?(basename, gem_name)
+      # Normalize gem name for both underscore and hyphen variants
+      normalized_gem = gem_name.tr('_', '-')
+
+      # Match the middle component after the first hyphen
+      # Pattern: ^{org}-{gem}-{branch}$
+      # This prevents false positives like matching "test" in "test-user-repo-branch"
+      basename.match?(/\A[^-]+-#{Regexp.escape(normalized_gem)}-/) ||
+        basename.match?(/\A[^-]+-#{Regexp.escape(gem_name)}-/)
+    end
+
     def directory_size(path)
       size = 0
       Find.find(path) do |file_path|
@@ -251,14 +264,9 @@ module DemoScripts
       end
 
       # Find all cached repos for this gem
-      # Match pattern: user-gemname-branch (e.g., shakacode-shakapacker-main)
-      # The gem name could appear with underscores or hyphens
-      normalized_gem = gem_name.tr('_', '-')
+      # Expected format: {org}-{repo}-{branch} (e.g., shakacode-shakapacker-main)
       matching_dirs = cache_repo_dirs.select do |path|
-        basename = File.basename(path)
-        # Match: *-gemname-* or *-gem_name-*
-        basename.match?(/[-_]#{Regexp.escape(normalized_gem)}[-_]/) ||
-          basename.match?(/[-_]#{Regexp.escape(gem_name)}[-_]/)
+        matches_gem_cache_pattern?(File.basename(path), gem_name)
       end
 
       if matching_dirs.empty?
