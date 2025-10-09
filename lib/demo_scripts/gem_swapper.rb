@@ -201,8 +201,13 @@ module DemoScripts
     def process_running?(pid)
       Process.kill(0, pid)
       true
-    rescue Errno::ESRCH, Errno::EPERM
+    rescue Errno::ESRCH
+      # Process doesn't exist
       false
+    rescue Errno::EPERM
+      # Process exists but we don't have permission to signal it
+      # Treat as running so permission errors are surfaced when attempting to kill
+      true
     end
 
     def warn_about_watch_processes
