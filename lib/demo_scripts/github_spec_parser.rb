@@ -3,17 +3,32 @@
 module DemoScripts
   # Parses and validates GitHub repository specifications
   module GitHubSpecParser
-    # Parses github:org/repo@branch format
-    # Returns [repo, branch] where branch can be nil
+    # Parses GitHub spec: org/repo, org/repo#branch, or org/repo@tag
+    # Returns [repo, ref, ref_type] where:
+    #   - ref can be nil (defaults to 'main')
+    #   - ref_type is :branch, :tag, or nil
+    #
+    # Syntax:
+    #   org/repo           -> [org/repo, nil, nil]
+    #   org/repo#branch    -> [org/repo, branch, :branch]
+    #   org/repo@tag       -> [org/repo, tag, :tag]
+    #   org/repo@branch    -> [org/repo, branch, :branch] (backward compatibility)
     def parse_github_spec(github_spec)
       if github_spec.include?('@')
         parts = github_spec.split('@', 2)
         raise Error, 'Invalid GitHub spec: empty repository' if parts[0].empty?
-        raise Error, 'Invalid GitHub spec: empty branch' if parts[1].empty?
+        raise Error, 'Invalid GitHub spec: empty ref after @' if parts[1].empty?
 
-        parts
+        # @ indicates a tag, but support old behavior as branch for backward compatibility
+        [parts[0], parts[1], :tag]
+      elsif github_spec.include?('#')
+        parts = github_spec.split('#', 2)
+        raise Error, 'Invalid GitHub spec: empty repository' if parts[0].empty?
+        raise Error, 'Invalid GitHub spec: empty ref after #' if parts[1].empty?
+
+        [parts[0], parts[1], :branch]
       else
-        [github_spec, nil]
+        [github_spec, nil, nil]
       end
     end
 

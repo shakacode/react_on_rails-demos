@@ -182,22 +182,26 @@ module DemoScripts
     end
 
     def add_gem_from_github(gem_name, version_spec)
-      # Parse and validate github:org/repo@branch format
+      # Parse and validate github:org/repo#branch or github:org/repo@tag format
       github_spec = version_spec.sub('github:', '').strip
 
       raise Error, "Invalid GitHub spec: empty after 'github:'" if github_spec.empty?
 
-      repo, branch = parse_github_spec(github_spec)
+      repo, ref, ref_type = parse_github_spec(github_spec)
       validate_github_repo(repo)
-      validate_github_branch(branch) if branch
+      validate_github_branch(ref) if ref
 
-      cmd = build_github_bundle_command(gem_name, repo, branch)
+      cmd = build_github_bundle_command(gem_name, repo, ref, ref_type)
       @runner.run!(cmd, dir: @demo_dir)
     end
 
-    def build_github_bundle_command(gem_name, repo, branch)
+    def build_github_bundle_command(gem_name, repo, ref, ref_type)
       cmd = ['bundle', 'add', gem_name, '--github', repo]
-      cmd.push('--branch', branch) if branch
+      if ref
+        # Use --tag for tags, --branch for branches
+        param = ref_type == :tag ? '--tag' : '--branch'
+        cmd.push(param, ref)
+      end
       Shellwords.join(cmd)
     end
 
@@ -272,9 +276,10 @@ module DemoScripts
 
     def convert_to_npm_github_url(version_spec)
       github_spec = version_spec.sub('github:', '').strip
-      repo, branch = parse_github_spec(github_spec)
+      repo, ref, _ref_type = parse_github_spec(github_spec)
       github_url = "github:#{repo}"
-      github_url += "##{branch}" if branch
+      # npm uses # for all refs (both branches and tags)
+      github_url += "##{ref}" if ref
       github_url
     end
 
@@ -284,12 +289,18 @@ module DemoScripts
       return if @dry_run
 
       github_spec = version_spec.sub('github:', '').strip
-      repo, branch = parse_github_spec(github_spec)
+      repo, ref, ref_type = parse_github_spec(github_spec)
 
-      puts "   Building #{gem_name} from #{repo}#{"@#{branch}" if branch}..."
+      ref_display = if ref
+                      prefix = ref_type == :tag ? '@' : '#'
+                      "#{prefix}#{ref}"
+                    else
+                      ''
+                    end
+      puts "   Building #{gem_name} from #{repo}#{ref_display}..."
 
       Dir.mktmpdir("#{gem_name}-") do |temp_dir|
-        clone_and_build_package(temp_dir, repo, branch, gem_name)
+        clone_and_build_package(temp_dir, repo, ref, gem_name)
       end
     rescue CommandError, IOError, SystemCallError => e
       error_message = <<~ERROR
