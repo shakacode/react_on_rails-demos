@@ -732,7 +732,7 @@ module DemoScripts
       restored
     end
 
-    # rubocop:disable Metrics/MethodLength
+    # rubocop:disable Metrics/MethodLength, Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
     def backup_file(file_path)
       backup_path = file_path + BACKUP_SUFFIX
 
@@ -742,13 +742,23 @@ module DemoScripts
         is_gemfile = file_path.end_with?('Gemfile')
 
         # Check if file has already been swapped
-        gem_pattern = /gem\s+["'](?:shakapacker|react_on_rails|cypress-on-rails)["'],.*(?:path:|github:)/
+        gem_names = NPM_PACKAGE_PATHS.keys.map { |name| Regexp.escape(name) }.join('|')
+        gem_pattern = /^\s*gem\s+["'](?:#{gem_names})["'],.*(?:path:|github:)/
         already_swapped = if is_gemfile
                             # Check for path: or github: in Gemfile
                             content.match?(gem_pattern)
                           else
-                            # Check for file: in package.json
-                            content.include?('"file:')
+                            # Check for file: in package.json dependencies
+                            begin
+                              data = JSON.parse(content)
+                              dep_types = %w[dependencies devDependencies peerDependencies]
+                              dep_types.any? do |type|
+                                deps = data[type]
+                                deps.is_a?(Hash) && deps.values.any? { |v| v.is_a?(String) && v.start_with?('file:') }
+                              end
+                            rescue JSON::ParserError
+                              false
+                            end
                           end
 
         if already_swapped
@@ -773,7 +783,7 @@ module DemoScripts
         puts "  ✓ Created backup: #{File.basename(backup_path)}"
       end
     end
-    # rubocop:enable Metrics/MethodLength
+    # rubocop:enable Metrics/MethodLength, Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
 
     def write_file(file_path, content)
       if dry_run
