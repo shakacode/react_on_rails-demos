@@ -131,7 +131,6 @@ module DemoScripts
     end
     # rubocop:enable Metrics/MethodLength
 
-    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
     def show_cache_info
       unless File.directory?(CACHE_DIR)
         puts 'ℹ️  Cache directory does not exist'
@@ -139,37 +138,28 @@ module DemoScripts
         return
       end
 
+      # Get all repo directories once to avoid race conditions
+      repo_dirs = cache_repo_dirs
+
       # Calculate cache size and count repos
-      total_size = 0
-      repo_count = 0
-
-      Dir.glob(File.join(CACHE_DIR, '*')).each do |path|
-        next unless File.directory?(path)
-
-        # Skip non-repo directories
-        next if File.basename(path) == 'watch_logs'
-
-        repo_count += 1
-        total_size += directory_size(path)
+      repo_info = repo_dirs.map do |path|
+        { path: path, basename: File.basename(path), size: directory_size(path) }
       end
+
+      total_size = repo_info.sum { |info| info[:size] }
 
       puts '📊 Cache information:'
       puts "   Location: #{CACHE_DIR}"
-      puts "   Repositories: #{repo_count}"
+      puts "   Repositories: #{repo_info.count}"
       puts "   Total size: #{human_readable_size(total_size)}"
 
-      return unless repo_count.positive?
+      return unless repo_info.any?
 
       puts "\n   Cached repositories:"
-      Dir.glob(File.join(CACHE_DIR, '*')).each do |path|
-        next unless File.directory?(path)
-        next if File.basename(path) == 'watch_logs'
-
-        size = directory_size(path)
-        puts "   - #{File.basename(path)} (#{human_readable_size(size)})"
+      repo_info.each do |info|
+        puts "   - #{info[:basename]} (#{human_readable_size(info[:size])})"
       end
     end
-    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
     def clean_cache(gem_name: nil)
       unless File.directory?(CACHE_DIR)
@@ -208,13 +198,34 @@ module DemoScripts
 
     private
 
+    def cache_repo_dirs
+      return [] unless File.directory?(CACHE_DIR)
+
+      Dir.glob(File.join(CACHE_DIR, '*')).select do |path|
+        File.directory?(path) && File.basename(path) != 'watch_logs'
+      end
+    end
+
     def directory_size(path)
       size = 0
       Find.find(path) do |file_path|
+        # Skip symlinks to avoid circular references and incorrect sizes
+        if File.symlink?(file_path)
+          Find.prune
+          next
+        end
+
         size += File.size(file_path) if File.file?(file_path)
       end
       size
-    rescue StandardError
+    rescue Errno::EACCES => e
+      warn "  ⚠️  Warning: Permission denied accessing #{path}: #{e.message}" if verbose
+      0
+    rescue Errno::ENOENT => e
+      warn "  ⚠️  Warning: Path not found #{path}: #{e.message}" if verbose
+      0
+    rescue StandardError => e
+      warn "  ⚠️  Warning: Error calculating size for #{path}: #{e.message}" if verbose
       0
     end
 
@@ -228,10 +239,24 @@ module DemoScripts
       format('%<size>.2f %<unit>s', size: size, unit: units[exp])
     end
 
+    # rubocop:disable Metrics/MethodLength
     def clean_gem_cache(gem_name)
+      # Validate gem name to prevent path traversal
+      unless gem_name.match?(/\A[\w.-]+\z/)
+        raise Error,
+              "Invalid gem name: #{gem_name}. Only alphanumeric characters, hyphens, underscores, and dots allowed."
+      end
+
       # Find all cached repos for this gem
-      pattern = File.join(CACHE_DIR, "*#{gem_name}*")
-      matching_dirs = Dir.glob(pattern).select { |path| File.directory?(path) && File.basename(path) != 'watch_logs' }
+      # Match pattern: user-gemname-branch (e.g., shakacode-shakapacker-main)
+      # The gem name could appear with underscores or hyphens
+      normalized_gem = gem_name.tr('_', '-')
+      matching_dirs = cache_repo_dirs.select do |path|
+        basename = File.basename(path)
+        # Match: *-gemname-* or *-gem_name-*
+        basename.match?(/[-_]#{Regexp.escape(normalized_gem)}[-_]/) ||
+          basename.match?(/[-_]#{Regexp.escape(gem_name)}[-_]/)
+      end
 
       if matching_dirs.empty?
         puts "ℹ️  No cached repositories found for: #{gem_name}"
@@ -250,13 +275,12 @@ module DemoScripts
         end
       end
     end
+    # rubocop:enable Metrics/MethodLength
 
     # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
     def clean_all_cache
       # Get all repo directories (exclude watch_logs)
-      repo_dirs = Dir.glob(File.join(CACHE_DIR, '*')).select do |path|
-        File.directory?(path) && File.basename(path) != 'watch_logs'
-      end
+      repo_dirs = cache_repo_dirs
 
       if repo_dirs.empty?
         puts 'ℹ️  Cache is empty - nothing to clean'
