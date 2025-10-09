@@ -713,6 +713,7 @@ module DemoScripts
     end
     # rubocop:enable Metrics/AbcSize
 
+    # rubocop:disable Metrics/MethodLength
     def restore_demo(demo_path)
       restored = 0
       gemfile_path = File.join(demo_path, 'Gemfile')
@@ -733,12 +734,17 @@ module DemoScripts
       end
 
       if restored.positive?
-        run_bundle_install(demo_path) if File.exist?(gemfile_path)
-        run_npm_install(demo_path) if File.exist?(package_json_path)
+        bundle_success = File.exist?(gemfile_path) ? run_bundle_install(demo_path, for_restore: true) : true
+        npm_success = File.exist?(package_json_path) ? run_npm_install(demo_path, for_restore: true) : true
+
+        unless bundle_success && npm_success
+          warn '  ⚠️  Warning: Some dependency installations failed. Check the errors above.'
+        end
       end
 
       restored
     end
+    # rubocop:enable Metrics/MethodLength
 
     # rubocop:disable Metrics/MethodLength, Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
     def backup_file(file_path)
@@ -808,27 +814,100 @@ module DemoScripts
       end
     end
 
-    def run_bundle_install(demo_path)
-      return if dry_run
-
-      puts '  Running bundle install...'
-      success = Dir.chdir(demo_path) do
-        system('bundle', 'install', '--quiet')
+    def find_supported_gems_in_gemfile(demo_path)
+      gemfile_content = File.read(File.join(demo_path, 'Gemfile'))
+      SUPPORTED_GEMS.select do |gem_name|
+        # Match: gem 'name' or gem "name" at line start (avoiding false matches in comments)
+        # Note: Regex compilation per gem is negligible for our 3 supported gems
+        gemfile_content.match?(/^\s*gem\s+["']#{Regexp.escape(gem_name)}["']/)
       end
-
-      warn '  ⚠️  Warning: bundle install failed' unless success
     end
 
-    def run_npm_install(demo_path)
+    # rubocop:disable Metrics/MethodLength
+    def run_bundle_install(demo_path, for_restore: false)
       return if dry_run
 
-      puts '  Running npm install...'
-      success = Dir.chdir(demo_path) do
-        system('npm', 'install', '--silent', out: '/dev/null', err: '/dev/null')
+      if for_restore
+        # For restore, we need to update the gems to fetch from rubygems
+        # This ensures Gemfile.lock is properly updated
+        puts '  Running bundle update (to restore gem sources)...'
+
+        gems_to_update = find_supported_gems_in_gemfile(demo_path)
+
+        if gems_to_update.empty?
+          # No supported gems found in Gemfile - this might indicate they were never swapped
+          # or the Gemfile structure is unexpected
+          puts '  ⚠️  No swapped gems detected in Gemfile. Running standard bundle install...'
+          success = Dir.chdir(demo_path) do
+            system('bundle', 'install', '--quiet')
+          end
+        else
+          puts "  Updating gems: #{gems_to_update.join(', ')}" if verbose
+          success = Dir.chdir(demo_path) do
+            # Update specific gems to pull from rubygems
+            result = system('bundle', 'update', *gems_to_update, '--quiet')
+            warn '  ⚠️  ERROR: Failed to update gems. Lock file may be inconsistent.' unless result
+            result
+          end
+        end
+      else
+        puts '  Running bundle install...'
+        success = Dir.chdir(demo_path) do
+          system('bundle', 'install', '--quiet')
+        end
       end
 
-      warn '  ⚠️  Warning: npm install failed' unless success
+      warn '  ⚠️  ERROR: bundle command failed' unless success
+      success
     end
+    # rubocop:enable Metrics/MethodLength
+
+    # rubocop:disable Metrics/MethodLength
+    def run_npm_install(demo_path, for_restore: false)
+      return if dry_run
+
+      if for_restore
+        # For restore, we need to regenerate package-lock.json from package.json
+        # to fetch from npm registry instead of local file: paths
+        puts '  Running npm install (regenerating lock file)...'
+
+        package_lock_path = File.join(demo_path, 'package-lock.json')
+        package_lock_backup = "#{package_lock_path}.backup"
+
+        # Atomically move package-lock.json to backup to avoid race conditions
+        begin
+          File.rename(package_lock_path, package_lock_backup)
+          puts '  Moved package-lock.json to backup for regeneration' if verbose
+        rescue Errno::ENOENT
+          # File doesn't exist, which is fine - nothing to backup
+          puts '  No package-lock.json found to backup' if verbose
+        end
+
+        success = Dir.chdir(demo_path) do
+          # Use npm install to regenerate package-lock.json from package.json
+          # Don't use npm ci since we just deleted package-lock.json
+          system('npm', 'install', '--silent', out: '/dev/null', err: '/dev/null')
+        end
+
+        if success
+          # Remove backup on success
+          FileUtils.rm_f(package_lock_backup)
+        elsif File.exist?(package_lock_backup)
+          # Restore backup on failure
+          FileUtils.mv(package_lock_backup, package_lock_path)
+          warn '  ⚠️  ERROR: npm install failed. Restored original package-lock.json'
+        end
+      else
+        puts '  Running npm install...'
+        success = Dir.chdir(demo_path) do
+          system('npm', 'install', '--silent', out: '/dev/null', err: '/dev/null')
+        end
+      end
+
+      warn '  ⚠️  ERROR: npm install failed' unless success
+      success
+    end
+    # rubocop:enable Metrics/MethodLength
 
     def build_local_packages!
       return if dry_run
