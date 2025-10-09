@@ -310,7 +310,7 @@ RSpec.describe DemoScripts::DependencySwapper do
       it 'raises error for unsafe characters' do
         expect do
           swapper.send(:validate_github_repos, repos)
-        end.to raise_error(DemoScripts::Error, %r{Invalid branch/tag name.*contains unsafe characters})
+        end.to raise_error(DemoScripts::Error, /Invalid GitHub branch.*contains unsafe characters/)
       end
     end
 

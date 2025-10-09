@@ -9,6 +9,8 @@ module DemoScripts
   # Manages swapping dependencies between production and local/GitHub versions
   # rubocop:disable Metrics/ClassLength
   class DependencySwapper < DemoManager
+    include GitHubSpecParser
+
     # Maps gem names to their npm package subdirectories
     NPM_PACKAGE_PATHS = {
       'shakapacker' => '.',
@@ -91,23 +93,20 @@ module DemoScripts
       paths.transform_values { |path| File.expand_path(path) }
     end
 
-    # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/MethodLength, Metrics/AbcSize, Metrics/BlockLength
+    # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/MethodLength
     def validate_github_repos(repos)
       invalid = repos.keys - SUPPORTED_GEMS
       raise Error, "Unsupported gems: #{invalid.join(', ')}" if invalid.any?
 
       repos.transform_values do |value|
         result = if value.is_a?(String)
-                   # String format: supports 'user/repo', 'user/repo#branch', or 'user/repo@tag'
-                   if value.include?('@')
-                     repo, ref = value.split('@', 2)
-                     { repo: repo, branch: ref, ref_type: :tag }
-                   elsif value.include?('#')
-                     repo, ref = value.split('#', 2)
-                     { repo: repo, branch: ref, ref_type: :branch }
-                   else
-                     { repo: value, branch: 'main', ref_type: :branch }
-                   end
+                   # Use shared GitHubSpecParser for consistent parsing
+                   repo, ref, ref_type = parse_github_spec(value)
+                   {
+                     repo: repo,
+                     branch: ref || 'main',
+                     ref_type: ref_type || :branch
+                   }
                  elsif value.is_a?(Hash)
                    # Hash format with repo and optional branch
                    {
@@ -119,20 +118,14 @@ module DemoScripts
                    raise Error, "Invalid GitHub repo format for #{value}"
                  end
 
-        # Validate repo format (must be 'user/repo')
-        unless %r{\A[\w.-]+/[\w.-]+\z}.match?(result[:repo])
-          raise Error, "Invalid GitHub repo format: #{result[:repo]} (must be 'user/repo')"
-        end
-
-        # Validate branch/tag name (alphanumeric, hyphens, underscores, dots, slashes)
-        unless %r{\A[\w.\-/]+\z}.match?(result[:branch])
-          raise Error, "Invalid branch/tag name: #{result[:branch]} (contains unsafe characters)"
-        end
+        # Use shared validation methods
+        validate_github_repo(result[:repo])
+        validate_github_branch(result[:branch]) if result[:branch]
 
         result
       end
     end
-    # rubocop:enable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/MethodLength, Metrics/AbcSize, Metrics/BlockLength
+    # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/MethodLength
 
     def validate_local_paths!
       gem_paths.each do |gem_name, path|

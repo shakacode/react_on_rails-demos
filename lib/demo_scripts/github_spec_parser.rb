@@ -62,6 +62,14 @@ module DemoScripts
       # Additional Git ref naming rules
       raise Error, 'Invalid GitHub branch: cannot end with .lock' if branch.end_with?('.lock')
       raise Error, 'Invalid GitHub branch: cannot contain @{' if branch.include?('@{')
+
+      # Final safety check: ensure only safe characters (alphanumeric, hyphens, underscores, dots, slashes)
+      # This catches any remaining unsafe characters (like $, (), etc.) that could cause shell injection
+      safe_pattern = %r{\A[\w.\-/]+\z}
+      return if branch.match?(safe_pattern)
+
+      raise Error,
+            "Invalid GitHub branch: '#{branch}' contains unsafe characters (only alphanumeric, -, _, ., / allowed)"
     end
   end
 end
