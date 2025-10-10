@@ -210,89 +210,105 @@ module DemoScripts
       raise Error, "Invalid YAML in #{config_file}: #{e.message}"
     end
 
+    # Regex patterns for detecting swapped gems in Gemfile
+    # These patterns match the format used by swap_gem_in_gemfile and swap_gem_to_github
+    GEM_PATH_PATTERN = ->(gem_name) { /^\s*gem\s+["']#{Regexp.escape(gem_name)}["'],\s*path:\s*["']([^"']+)["']/ }
+    GEM_GITHUB_PATTERN = lambda { |gem_name|
+      github_pattern = /^\s*gem\s+["']#{Regexp.escape(gem_name)}["'],\s*github:\s*["']([^"']+)["']/
+      github_ref_pattern = /(?:,\s*(?:branch|tag):\s*["']([^"']+)["'])?/
+      /#{github_pattern}#{github_ref_pattern}/
+    }
+
     private
 
-    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
     def show_demo_status(demo_path)
       puts "\n📦 #{demo_name(demo_path)}:"
 
       gemfile_path = File.join(demo_path, 'Gemfile')
       package_json_path = File.join(demo_path, 'package.json')
-      backup_suffix = BACKUP_SUFFIX
 
-      has_swapped_deps = false
+      swapped_gems = detect_swapped_gems(gemfile_path)
+      swapped_packages = detect_swapped_packages(package_json_path)
+      backups = detect_backup_files(gemfile_path, package_json_path)
 
-      # Check Gemfile for swapped gems
-      if File.exist?(gemfile_path)
-        gemfile_content = File.read(gemfile_path)
-        swapped_gems = []
-
-        SUPPORTED_GEMS.each do |gem_name|
-          # Look for path: or github: directives
-          path_match = gemfile_content.match(/^\s*gem\s+["']#{Regexp.escape(gem_name)}["'],\s*path:\s*["']([^"']+)["']/)
-          github_pattern = /^\s*gem\s+["']#{Regexp.escape(gem_name)}["'],\s*github:\s*["']([^"']+)["']/
-          github_ref_pattern = /(?:,\s*(?:branch|tag):\s*["']([^"']+)["'])?/
-          github_match = gemfile_content.match(/#{github_pattern}#{github_ref_pattern}/)
-
-          if path_match
-            swapped_gems << { name: gem_name, type: 'local', path: path_match[1] }
-            has_swapped_deps = true
-          elsif github_match
-            ref = github_match[2] || 'main'
-            swapped_gems << { name: gem_name, type: 'github', path: "#{github_match[1]}@#{ref}" }
-            has_swapped_deps = true
-          end
-        end
-
-        if swapped_gems.any?
-          puts '  Gemfile:'
-          swapped_gems.each do |gem|
-            puts "    ✓ #{gem[:name]} → #{gem[:path]}"
-          end
-        end
-      end
-
-      # Check package.json for swapped npm packages
-      if File.exist?(package_json_path)
-        begin
-          package_data = JSON.parse(File.read(package_json_path))
-          swapped_packages = []
-          dependency_types = %w[dependencies devDependencies]
-
-          SUPPORTED_GEMS.each do |gem_name|
-            npm_name = gem_name.tr('_', '-')
-            dependency_types.each do |dep_type|
-              next unless package_data[dep_type]&.key?(npm_name)
-
-              version = package_data[dep_type][npm_name]
-              if version.start_with?('file:')
-                swapped_packages << { name: npm_name, path: version.sub('file:', '') }
-                has_swapped_deps = true
-              end
-            end
-          end
-
-          if swapped_packages.any?
-            puts '  package.json:'
-            swapped_packages.each do |pkg|
-              puts "    ✓ #{pkg[:name]} → #{pkg[:path]}"
-            end
-          end
-        rescue JSON::ParserError
-          puts '  ⚠️  Could not parse package.json'
-        end
-      end
-
-      # Check for backup files
-      backups = []
-      backups << 'Gemfile' if File.exist?(gemfile_path + backup_suffix)
-      backups << 'package.json' if File.exist?(package_json_path + backup_suffix)
+      display_swapped_gems(swapped_gems) if swapped_gems.any?
+      display_swapped_packages(swapped_packages) if swapped_packages.any?
 
       puts "  Backups: #{backups.join(', ')}" if backups.any?
 
-      puts '  ℹ️  No swapped dependencies' unless has_swapped_deps
+      return unless swapped_gems.empty? && swapped_packages.empty?
+
+      if backups.any?
+        puts '  ℹ️  No currently swapped dependencies (backups available)'
+      else
+        puts '  ℹ️  No swapped dependencies'
+      end
     end
-    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+
+    def detect_swapped_gems(gemfile_path)
+      return [] unless File.exist?(gemfile_path)
+
+      gemfile_content = File.read(gemfile_path)
+      swapped_gems = []
+
+      SUPPORTED_GEMS.each do |gem_name|
+        path_match = gemfile_content.match(GEM_PATH_PATTERN.call(gem_name))
+        github_match = gemfile_content.match(GEM_GITHUB_PATTERN.call(gem_name))
+
+        if path_match
+          swapped_gems << { name: gem_name, type: 'local', path: path_match[1] }
+        elsif github_match
+          ref = github_match[2] || 'main'
+          swapped_gems << { name: gem_name, type: 'github', path: "#{github_match[1]}@#{ref}" }
+        end
+      end
+
+      swapped_gems
+    end
+
+    def detect_swapped_packages(package_json_path)
+      return [] unless File.exist?(package_json_path)
+
+      package_data = JSON.parse(File.read(package_json_path))
+      swapped_packages = []
+      dependency_types = %w[dependencies devDependencies]
+
+      SUPPORTED_GEMS.each do |gem_name|
+        npm_name = gem_name.tr('_', '-')
+        dependency_types.each do |dep_type|
+          next unless package_data[dep_type]&.key?(npm_name)
+
+          version = package_data[dep_type][npm_name]
+          swapped_packages << { name: npm_name, path: version.sub('file:', '') } if version.start_with?('file:')
+        end
+      end
+
+      swapped_packages
+    rescue JSON::ParserError
+      puts '  ⚠️  Could not parse package.json'
+      []
+    end
+
+    def detect_backup_files(gemfile_path, package_json_path)
+      backups = []
+      backups << 'Gemfile' if File.exist?(gemfile_path + BACKUP_SUFFIX)
+      backups << 'package.json' if File.exist?(package_json_path + BACKUP_SUFFIX)
+      backups
+    end
+
+    def display_swapped_gems(swapped_gems)
+      puts '  Gemfile:'
+      swapped_gems.each do |gem|
+        puts "    ✓ #{gem[:name]} → #{gem[:path]}"
+      end
+    end
+
+    def display_swapped_packages(swapped_packages)
+      puts '  package.json:'
+      swapped_packages.each do |pkg|
+        puts "    ✓ #{pkg[:name]} → #{pkg[:path]}"
+      end
+    end
 
     def cache_repo_dirs
       return [] unless File.directory?(CACHE_DIR)
