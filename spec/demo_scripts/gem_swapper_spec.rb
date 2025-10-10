@@ -837,4 +837,214 @@ RSpec.describe DemoScripts::DependencySwapper do
       end
     end
   end
+
+  describe '#show_status' do
+    let(:demo_path) { '/path/to/demo' }
+
+    before do
+      allow(swapper).to receive(:each_demo).and_yield(demo_path)
+      allow(swapper).to receive(:demo_name).with(demo_path).and_return('test-demo')
+    end
+
+    it 'displays status header' do
+      allow(swapper).to receive(:show_demo_status)
+      expect { swapper.show_status }.to output(/📊 Swapped dependencies status:/).to_stdout
+    end
+
+    it 'calls show_demo_status for each demo' do
+      expect(swapper).to receive(:show_demo_status).with(demo_path)
+      allow($stdout).to receive(:puts)
+      swapper.show_status
+    end
+  end
+
+  describe '#show_demo_status' do
+    let(:demo_path) { '/path/to/demo' }
+    let(:gemfile_path) { File.join(demo_path, 'Gemfile') }
+    let(:package_json_path) { File.join(demo_path, 'package.json') }
+
+    before do
+      allow(swapper).to receive(:demo_name).with(demo_path).and_return('test-demo')
+    end
+
+    context 'with no swapped dependencies' do
+      before do
+        allow(File).to receive(:exist?).with(gemfile_path).and_return(true)
+        allow(File).to receive(:exist?).with(package_json_path).and_return(true)
+        allow(File).to receive(:exist?).with("#{gemfile_path}.backup").and_return(false)
+        allow(File).to receive(:exist?).with("#{package_json_path}.backup").and_return(false)
+        allow(File).to receive(:read).with(gemfile_path).and_return("gem 'shakapacker', '~> 9.0.0'\n")
+        allow(File).to receive(:read).with(package_json_path).and_return('{"dependencies": {"shakapacker": "^9.0.0"}}')
+      end
+
+      it 'displays no swapped dependencies message' do
+        expect { swapper.send(:show_demo_status, demo_path) }
+          .to output(/ℹ️  No swapped dependencies/).to_stdout
+      end
+    end
+
+    context 'with path-based swapped gem' do
+      before do
+        allow(File).to receive(:exist?).with(gemfile_path).and_return(true)
+        allow(File).to receive(:exist?).with(package_json_path).and_return(true)
+        allow(File).to receive(:exist?).with("#{gemfile_path}.backup").and_return(true)
+        allow(File).to receive(:exist?).with("#{package_json_path}.backup").and_return(false)
+        allow(File).to receive(:read).with(gemfile_path)
+                                     .and_return("gem 'shakapacker', path: '/Users/test/dev/shakapacker'\n")
+        allow(File).to receive(:read).with(package_json_path).and_return('{"dependencies": {}}')
+      end
+
+      it 'displays swapped gem with path' do
+        output = capture_output { swapper.send(:show_demo_status, demo_path) }
+        expect(output).to include('Gemfile:')
+        expect(output).to include('✓ shakapacker → /Users/test/dev/shakapacker')
+        expect(output).to include('Backups: Gemfile')
+      end
+    end
+
+    context 'with GitHub-based swapped gem' do
+      before do
+        allow(File).to receive(:exist?).with(gemfile_path).and_return(true)
+        allow(File).to receive(:exist?).with(package_json_path).and_return(true)
+        allow(File).to receive(:exist?).with("#{gemfile_path}.backup").and_return(true)
+        allow(File).to receive(:exist?).with("#{package_json_path}.backup").and_return(false)
+        gemfile_content = "gem 'shakapacker', github: 'shakacode/shakapacker', branch: 'fix-hmr'\n"
+        allow(File).to receive(:read).with(gemfile_path).and_return(gemfile_content)
+        allow(File).to receive(:read).with(package_json_path).and_return('{"dependencies": {}}')
+      end
+
+      it 'displays swapped gem with GitHub repo and branch' do
+        output = capture_output { swapper.send(:show_demo_status, demo_path) }
+        expect(output).to include('Gemfile:')
+        expect(output).to include('✓ shakapacker → shakacode/shakapacker@fix-hmr')
+      end
+    end
+
+    context 'with GitHub-based swapped gem without explicit branch' do
+      before do
+        allow(File).to receive(:exist?).with(gemfile_path).and_return(true)
+        allow(File).to receive(:exist?).with(package_json_path).and_return(true)
+        allow(File).to receive(:exist?).with("#{gemfile_path}.backup").and_return(false)
+        allow(File).to receive(:exist?).with("#{package_json_path}.backup").and_return(false)
+        allow(File).to receive(:read).with(gemfile_path)
+                                     .and_return("gem 'shakapacker', github: 'shakacode/shakapacker'\n")
+        allow(File).to receive(:read).with(package_json_path).and_return('{"dependencies": {}}')
+      end
+
+      it 'displays swapped gem with default main branch' do
+        output = capture_output { swapper.send(:show_demo_status, demo_path) }
+        expect(output).to include('✓ shakapacker → shakacode/shakapacker@main')
+      end
+    end
+
+    context 'with swapped npm package' do
+      before do
+        allow(File).to receive(:exist?).with(gemfile_path).and_return(true)
+        allow(File).to receive(:exist?).with(package_json_path).and_return(true)
+        allow(File).to receive(:exist?).with("#{gemfile_path}.backup").and_return(false)
+        allow(File).to receive(:exist?).with("#{package_json_path}.backup").and_return(true)
+        allow(File).to receive(:read).with(gemfile_path).and_return("gem 'shakapacker', '~> 9.0.0'\n")
+        package_json_content = '{"dependencies": {"shakapacker": "file:/Users/test/dev/shakapacker"}}'
+        allow(File).to receive(:read).with(package_json_path).and_return(package_json_content)
+      end
+
+      it 'displays swapped npm package with path' do
+        output = capture_output { swapper.send(:show_demo_status, demo_path) }
+        expect(output).to include('package.json:')
+        expect(output).to include('✓ shakapacker → /Users/test/dev/shakapacker')
+        expect(output).to include('Backups: package.json')
+      end
+    end
+
+    context 'with multiple swapped dependencies' do
+      before do
+        allow(File).to receive(:exist?).with(gemfile_path).and_return(true)
+        allow(File).to receive(:exist?).with(package_json_path).and_return(true)
+        allow(File).to receive(:exist?).with("#{gemfile_path}.backup").and_return(true)
+        allow(File).to receive(:exist?).with("#{package_json_path}.backup").and_return(true)
+        allow(File).to receive(:read).with(gemfile_path).and_return(<<~GEMFILE)
+          gem 'shakapacker', path: '/Users/test/dev/shakapacker'
+          gem 'react_on_rails', github: 'shakacode/react_on_rails', branch: 'feature-x'
+        GEMFILE
+        allow(File).to receive(:read).with(package_json_path).and_return(<<~JSON)
+          {
+            "dependencies": {
+              "shakapacker": "file:/Users/test/dev/shakapacker"
+            },
+            "devDependencies": {
+              "react-on-rails": "file:/Users/test/dev/react_on_rails/node_package"
+            }
+          }
+        JSON
+      end
+
+      it 'displays all swapped dependencies' do
+        output = capture_output { swapper.send(:show_demo_status, demo_path) }
+        expect(output).to include('Gemfile:')
+        expect(output).to include('✓ shakapacker → /Users/test/dev/shakapacker')
+        expect(output).to include('✓ react_on_rails → shakacode/react_on_rails@feature-x')
+        expect(output).to include('package.json:')
+        expect(output).to include('✓ shakapacker → /Users/test/dev/shakapacker')
+        expect(output).to include('✓ react-on-rails → /Users/test/dev/react_on_rails/node_package')
+        expect(output).to include('Backups: Gemfile, package.json')
+      end
+    end
+
+    context 'with malformed package.json' do
+      before do
+        allow(File).to receive(:exist?).with(gemfile_path).and_return(true)
+        allow(File).to receive(:exist?).with(package_json_path).and_return(true)
+        allow(File).to receive(:exist?).with("#{gemfile_path}.backup").and_return(false)
+        allow(File).to receive(:exist?).with("#{package_json_path}.backup").and_return(false)
+        allow(File).to receive(:read).with(gemfile_path).and_return("gem 'shakapacker', '~> 9.0.0'\n")
+        allow(File).to receive(:read).with(package_json_path).and_return('{ invalid json')
+      end
+
+      it 'displays warning about malformed JSON' do
+        output = capture_output { swapper.send(:show_demo_status, demo_path) }
+        expect(output).to include('⚠️  Could not parse package.json')
+      end
+    end
+
+    context 'with backups but no current swaps' do
+      before do
+        allow(File).to receive(:exist?).with(gemfile_path).and_return(true)
+        allow(File).to receive(:exist?).with(package_json_path).and_return(true)
+        allow(File).to receive(:exist?).with("#{gemfile_path}.backup").and_return(true)
+        allow(File).to receive(:exist?).with("#{package_json_path}.backup").and_return(true)
+        allow(File).to receive(:read).with(gemfile_path).and_return("gem 'shakapacker', '~> 9.0.0'\n")
+        allow(File).to receive(:read).with(package_json_path).and_return('{"dependencies": {"shakapacker": "^9.0.0"}}')
+      end
+
+      it 'shows backups exist but no current swaps with improved message' do
+        output = capture_output { swapper.send(:show_demo_status, demo_path) }
+        expect(output).to include('Backups: Gemfile, package.json')
+        expect(output).to include('ℹ️  No currently swapped dependencies (backups available)')
+      end
+    end
+
+    context 'with missing files' do
+      before do
+        allow(File).to receive(:exist?).with(gemfile_path).and_return(false)
+        allow(File).to receive(:exist?).with(package_json_path).and_return(false)
+        allow(File).to receive(:exist?).with("#{gemfile_path}.backup").and_return(false)
+        allow(File).to receive(:exist?).with("#{package_json_path}.backup").and_return(false)
+      end
+
+      it 'displays no swapped dependencies message' do
+        expect { swapper.send(:show_demo_status, demo_path) }
+          .to output(/ℹ️  No swapped dependencies/).to_stdout
+      end
+    end
+  end
+
+  # Helper method to capture stdout
+  def capture_output
+    original_stdout = $stdout
+    $stdout = StringIO.new
+    yield
+    $stdout.string
+  ensure
+    $stdout = original_stdout
+  end
 end
