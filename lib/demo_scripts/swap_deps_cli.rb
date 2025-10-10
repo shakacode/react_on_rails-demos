@@ -4,12 +4,13 @@ require 'optparse'
 
 module DemoScripts
   # CLI for swapping dependencies between production and local/GitHub versions
+  # rubocop:disable Metrics/ClassLength
   class SwapDepsCLI
     CONFIG_FILE = '.swap-deps.yml'
 
     attr_reader :gem_paths, :github_repos, :dry_run, :verbose, :restore, :apply_config,
                 :skip_build, :watch_mode, :demo_filter, :demos_dir, :list_watch, :kill_watch,
-                :show_cache, :clean_cache, :clean_cache_gem
+                :show_cache, :clean_cache, :clean_cache_gem, :show_status
 
     def initialize
       @gem_paths = {}
@@ -30,6 +31,7 @@ module DemoScripts
       @show_cache = false
       @clean_cache = false
       @clean_cache_gem = nil
+      @show_status = false
     end
 
     # rubocop:disable Metrics/AbcSize, Metrics/MethodLength, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
@@ -40,7 +42,9 @@ module DemoScripts
       # Require bundler/setup only when actually running commands (not for --help)
       require 'bundler/setup'
 
-      if @show_cache
+      if @show_status
+        show_status_info
+      elsif @show_cache
         show_cache_info
       elsif @clean_cache || @clean_cache_gem
         clean_cache_handler
@@ -184,7 +188,11 @@ module DemoScripts
         end
 
         opts.separator ''
-        opts.separator 'Cache management:'
+        opts.separator 'Status and cache management:'
+
+        opts.on('--status', 'Show current swapped dependencies status') do
+          @show_status = true
+        end
 
         opts.on('--show-cache', 'Show cache location, size, and cached repositories') do
           @show_cache = true
@@ -258,6 +266,9 @@ module DemoScripts
           puts '  # Stop all watch processes'
           puts '  bin/swap-deps --kill-watch'
           puts ''
+          puts '  # Show current swapped dependencies status'
+          puts '  bin/swap-deps --status'
+          puts ''
           puts '  # Show cache information'
           puts '  bin/swap-deps --show-cache'
           puts ''
@@ -306,6 +317,11 @@ module DemoScripts
     def clean_cache_handler
       swapper = create_swapper
       swapper.clean_cache(gem_name: @clean_cache_gem)
+    end
+
+    def show_status_info
+      swapper = create_swapper
+      swapper.show_status
     end
 
     def apply_from_config
@@ -381,4 +397,5 @@ module DemoScripts
       demos.each(&)
     end
   end
+  # rubocop:enable Metrics/ClassLength
 end

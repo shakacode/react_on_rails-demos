@@ -133,6 +133,15 @@ module DemoScripts
     end
     # rubocop:enable Metrics/MethodLength
 
+    # CLI entry point: Display current swapped dependencies status
+    def show_status
+      puts '📊 Swapped dependencies status:'
+
+      each_demo do |demo_path|
+        show_demo_status(demo_path)
+      end
+    end
+
     # CLI entry point: Display cache information including location, size, and cached repositories
     def show_cache_info
       unless File.directory?(CACHE_DIR)
@@ -202,6 +211,88 @@ module DemoScripts
     end
 
     private
+
+    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+    def show_demo_status(demo_path)
+      puts "\n📦 #{demo_name(demo_path)}:"
+
+      gemfile_path = File.join(demo_path, 'Gemfile')
+      package_json_path = File.join(demo_path, 'package.json')
+      backup_suffix = BACKUP_SUFFIX
+
+      has_swapped_deps = false
+
+      # Check Gemfile for swapped gems
+      if File.exist?(gemfile_path)
+        gemfile_content = File.read(gemfile_path)
+        swapped_gems = []
+
+        SUPPORTED_GEMS.each do |gem_name|
+          # Look for path: or github: directives
+          path_match = gemfile_content.match(/^\s*gem\s+["']#{Regexp.escape(gem_name)}["'],\s*path:\s*["']([^"']+)["']/)
+          github_pattern = /^\s*gem\s+["']#{Regexp.escape(gem_name)}["'],\s*github:\s*["']([^"']+)["']/
+          github_ref_pattern = /(?:,\s*(?:branch|tag):\s*["']([^"']+)["'])?/
+          github_match = gemfile_content.match(/#{github_pattern}#{github_ref_pattern}/)
+
+          if path_match
+            swapped_gems << { name: gem_name, type: 'local', path: path_match[1] }
+            has_swapped_deps = true
+          elsif github_match
+            ref = github_match[2] || 'main'
+            swapped_gems << { name: gem_name, type: 'github', path: "#{github_match[1]}@#{ref}" }
+            has_swapped_deps = true
+          end
+        end
+
+        if swapped_gems.any?
+          puts '  Gemfile:'
+          swapped_gems.each do |gem|
+            puts "    ✓ #{gem[:name]} → #{gem[:path]}"
+          end
+        end
+      end
+
+      # Check package.json for swapped npm packages
+      if File.exist?(package_json_path)
+        begin
+          package_data = JSON.parse(File.read(package_json_path))
+          swapped_packages = []
+          dependency_types = %w[dependencies devDependencies]
+
+          SUPPORTED_GEMS.each do |gem_name|
+            npm_name = gem_name.tr('_', '-')
+            dependency_types.each do |dep_type|
+              next unless package_data[dep_type]&.key?(npm_name)
+
+              version = package_data[dep_type][npm_name]
+              if version.start_with?('file:')
+                swapped_packages << { name: npm_name, path: version.sub('file:', '') }
+                has_swapped_deps = true
+              end
+            end
+          end
+
+          if swapped_packages.any?
+            puts '  package.json:'
+            swapped_packages.each do |pkg|
+              puts "    ✓ #{pkg[:name]} → #{pkg[:path]}"
+            end
+          end
+        rescue JSON::ParserError
+          puts '  ⚠️  Could not parse package.json'
+        end
+      end
+
+      # Check for backup files
+      backups = []
+      backups << 'Gemfile' if File.exist?(gemfile_path + backup_suffix)
+      backups << 'package.json' if File.exist?(package_json_path + backup_suffix)
+
+      puts "  Backups: #{backups.join(', ')}" if backups.any?
+
+      puts '  ℹ️  No swapped dependencies' unless has_swapped_deps
+    end
+    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
 
     def cache_repo_dirs
       return [] unless File.directory?(CACHE_DIR)
