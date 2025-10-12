@@ -146,7 +146,8 @@ module DemoScripts
           @apply_config = true
         end
 
-        opts.on('--restore', 'Restore original dependency versions from backups') do
+        opts.on('--restore', 'Restore original dependency versions from backups',
+                '(Copies .backup files back and reinstalls dependencies)') do
           @restore = true
         end
 
@@ -253,6 +254,11 @@ module DemoScripts
           puts ''
           puts '  # Restore original versions'
           puts '  bin/swap-deps --restore'
+          puts ''
+          puts '  # Manual restore (if automated restore fails)'
+          puts '  # Copy Gemfile.backup to Gemfile'
+          puts '  # Copy package.json.backup to package.json'
+          puts '  # Run: bundle install && npm install'
           puts ''
           puts '  # Preview without making changes'
           puts '  bin/swap-deps --dry-run --react-on-rails ~/dev/react_on_rails'

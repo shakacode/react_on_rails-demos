@@ -70,7 +70,7 @@ module DemoScripts
       end
 
       if restored_count.zero?
-        puts 'ℹ️  No backup files found - nothing to restore'
+        print_no_backups_message
       else
         puts "✅ Restored #{restored_count} file(s) from backups"
       end
@@ -220,6 +220,23 @@ module DemoScripts
     }
 
     private
+
+    def print_no_backups_message
+      puts 'ℹ️  No backup files found - nothing to restore'
+      puts ''
+      puts '   This means either:'
+      puts '   - Dependencies have not been swapped yet'
+      puts '   - Dependencies were already restored'
+      puts '   - Backup files were manually deleted'
+      puts ''
+      puts '   💡 Next steps:'
+      puts '   - Check current status: bin/swap-deps --status'
+      puts '   - Swap dependencies: bin/swap-deps --apply (or specify paths/repos)'
+      puts '   - Manual restore: If backup files exist but restore failed, you can:'
+      puts '     - Copy Gemfile.backup to Gemfile'
+      puts '     - Copy package.json.backup to package.json'
+      puts '     - Run: bundle install && npm install'
+    end
 
     def show_demo_status(demo_path)
       puts "\n📦 #{demo_name(demo_path)}:"
