@@ -7,8 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.0] - 2024-01-XX
-
 ### Added
 - Initial release of swap-shakacode-deps
 - Support for swapping shakapacker, react_on_rails, and cypress-on-rails gems
@@ -30,5 +28,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - File locking for atomic operations
 - Cross-platform compatibility (macOS, Linux, Windows via WSL)
 
-[Unreleased]: https://github.com/shakacode/swap-shakacode-deps/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/shakacode/swap-shakacode-deps/releases/tag/v0.1.0
+[Unreleased]: https://github.com/shakacode/swap-shakacode-deps

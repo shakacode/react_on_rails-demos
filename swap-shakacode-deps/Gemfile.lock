@@ -3,7 +3,6 @@ PATH
   specs:
     swap-shakacode-deps (0.1.0)
       json (~> 2.0)
-      yaml (~> 0.2)
 
 GEM
   remote: https://rubygems.org/
@@ -64,7 +63,6 @@ GEM
     unicode-display_width (3.2.0)
       unicode-emoji (~> 4.1)
     unicode-emoji (4.1.0)
-    yaml (0.3.0)
 
 PLATFORMS
   arm64-darwin-24
