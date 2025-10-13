@@ -3,39 +3,134 @@
 module SwapShakacodeDeps
   # Handles swapping of gem dependencies in Gemfile
   class GemSwapper
-    # TODO: Extract implementation from demo_scripts/gem_swapper.rb
-
-    def initialize(dry_run: false, verbose: false)
-      @dry_run = dry_run
-      @verbose = verbose
+    def initialize(**options)
+      @dry_run = options[:dry_run]
+      @verbose = options[:verbose]
     end
 
     # Swaps a gem to use a local path in Gemfile
     def swap_to_path(gemfile_content, gem_name, local_path)
-      raise NotImplementedError, 'Gemfile path swapping will be implemented in the next iteration'
+      # Match variations:
+      # gem 'name', '~> 1.0'
+      # gem "name", "~> 1.0", require: false
+      # gem 'name'  (no version)
+      # gem 'name', require: false  (no version, with options)
+      # BUT NOT: gem 'name', path: '...' (already swapped - skip these)
+
+      pattern = /^(\s*)gem\s+(['"])#{Regexp.escape(gem_name)}\2(.*)$/
+
+      gemfile_content.gsub(pattern) do |match|
+        # Skip if line already contains 'path:' or 'github:' - already swapped
+        next match if match.include?('path:') || match.include?('github:')
+
+        indent = Regexp.last_match(1)
+        quote = Regexp.last_match(2)
+        rest = Regexp.last_match(3)
+
+        # Extract options after version (if any)
+        # Match: , 'version', options OR , options OR nothing
+        options = rest.sub(/^\s*,\s*(['"])[^'"]*\1/, '') # Remove version if present
+
+        # Build replacement: gem 'name', path: 'local_path' [, options...]
+        replacement = "#{indent}gem #{quote}#{gem_name}#{quote}, path: #{quote}#{local_path}#{quote}"
+        replacement += options unless options.strip.empty?
+        replacement
+      end
     end
 
     # Swaps a gem to use a GitHub repository in Gemfile
     def swap_to_github(gemfile_content, gem_name, github_info)
-      raise NotImplementedError, 'Gemfile GitHub swapping will be implemented in the next iteration'
+      # Match gem lines for this gem name
+      pattern = /^(\s*)gem\s+(['"])#{Regexp.escape(gem_name)}\2(.*)$/
+
+      gemfile_content.gsub(pattern) do |match|
+        # Skip if line already contains 'path:' or 'github:' - already swapped
+        next match if match.include?('path:') || match.include?('github:')
+
+        indent = Regexp.last_match(1)
+        quote = Regexp.last_match(2)
+        rest = Regexp.last_match(3)
+
+        # Extract options after version (if any)
+        options = rest.sub(/^\s*,\s*(['"])[^'"]*\1/, '') # Remove version if present
+
+        # Use tag: for tags, branch: for branches
+        ref_type = github_info[:ref_type] || :branch
+        param_name = ref_type == :tag ? 'tag' : 'branch'
+
+        # Only omit ref when it's a branch and the branch is 'main' or 'master'
+        should_omit_ref = ref_type == :branch && %w[main master].include?(github_info[:branch])
+
+        # Build replacement: gem 'name', github: 'user/repo', branch/tag: 'ref-name' [, options...]
+        replacement = "#{indent}gem #{quote}#{gem_name}#{quote}, github: #{quote}#{github_info[:repo]}#{quote}"
+        replacement += ", #{param_name}: #{quote}#{github_info[:branch]}#{quote}" unless should_omit_ref
+        replacement += options unless options.strip.empty?
+        replacement
+      end
     end
 
     # Detects swapped gems in a Gemfile
     def detect_swapped_gems(gemfile_path)
       return [] unless File.exist?(gemfile_path)
 
-      puts 'ℹ️  Gem detection will be implemented in the next iteration'
-      []
+      gemfile_content = File.read(gemfile_path)
+      swapped_gems = []
+
+      SUPPORTED_GEMS.each do |gem_name|
+        path_pattern = /^\s*gem\s+["']#{Regexp.escape(gem_name)}["'],\s*path:\s*["']([^"']+)["']/
+        github_pattern = /^\s*gem\s+["']#{Regexp.escape(gem_name)}["'],\s*github:\s*["']([^"']+)["']/
+
+        path_match = gemfile_content.match(path_pattern)
+        github_match = gemfile_content.match(github_pattern)
+
+        if path_match
+          swapped_gems << { name: gem_name, type: 'local', path: path_match[1] }
+        elsif github_match
+          # Try to extract branch/tag if present
+          ref_pattern = /^\s*gem\s+["']#{Regexp.escape(gem_name)}["'].*(?:branch|tag):\s*["']([^"']+)["']/
+          ref_match = gemfile_content.match(ref_pattern)
+          ref = ref_match ? ref_match[1] : 'main'
+          swapped_gems << { name: gem_name, type: 'github', path: "#{github_match[1]}@#{ref}" }
+        end
+      end
+
+      swapped_gems
     end
 
     # Runs bundle install after swapping gems
-    def run_bundle_install(path)
+    def run_bundle_install(path, for_restore: false)
       return if @dry_run
 
-      puts '  Running bundle install...'
-      Dir.chdir(path) do
-        system('bundle', 'install', '--quiet')
+      if for_restore
+        # For restore, we need to update the gems to fetch from rubygems
+        puts '  Running bundle update (to restore gem sources)...'
+
+        # Find which supported gems are in the Gemfile
+        gemfile_content = File.read(File.join(path, 'Gemfile'))
+        gems_to_update = SUPPORTED_GEMS.select do |gem_name|
+          gemfile_content.match?(/^\s*gem\s+["']#{Regexp.escape(gem_name)}["']/)
+        end
+
+        if gems_to_update.empty?
+          puts '  ⚠️  No swapped gems detected. Running standard bundle install...'
+          success = Dir.chdir(path) do
+            system('bundle', 'install', '--quiet')
+          end
+        else
+          puts "  Updating gems: #{gems_to_update.join(', ')}" if @verbose
+          success = Dir.chdir(path) do
+            system('bundle', 'update', *gems_to_update, '--quiet')
+          end
+        end
+      else
+        puts '  Running bundle install...'
+        success = Dir.chdir(path) do
+          system('bundle', 'install', '--quiet')
+        end
       end
+
+      warn '  ⚠️  ERROR: bundle command failed' unless success
+      success
     end
   end
 end
