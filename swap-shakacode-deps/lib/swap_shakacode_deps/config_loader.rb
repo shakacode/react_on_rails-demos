@@ -7,7 +7,7 @@ module SwapShakacodeDeps
   class ConfigLoader
     # TODO: Extract implementation from demo_scripts/gem_swapper.rb load_config method
 
-    def initialize(verbose: false)
+    def initialize(verbose: false, **_options)
       @verbose = verbose
     end
 
