@@ -31,7 +31,6 @@ Gem::Specification.new do |spec|
 
   # Runtime dependencies
   spec.add_dependency 'json', '~> 2.0'
-  spec.add_dependency 'yaml', '~> 0.2'
 
   # Development dependencies
   spec.add_development_dependency 'bundler', '~> 2.0'
