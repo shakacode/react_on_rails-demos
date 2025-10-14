@@ -69,17 +69,25 @@ swap-shakacode-deps --restore
 
 ### Development with Auto-Rebuild
 
+**⚠️ Partially Implemented**: Watch mode infrastructure is in place but auto-rebuild is not yet functional. Use `--skip-build` and rebuild manually for now.
+
 ```bash
 # Start watch mode for automatic rebuilding
+# Status: Partially implemented - swaps dependencies but watch spawning not yet working
 swap-shakacode-deps --shakapacker ~/dev/shakapacker --watch
+# What works: Swaps dependencies, builds once
+# What's missing: Continuous watch/rebuild process
 
-# In another terminal, make changes to shakapacker
-# The npm package rebuilds automatically
+# Alternative: Use --skip-build and rebuild manually
+swap-shakacode-deps --shakapacker ~/dev/shakapacker --skip-build
+# Then manually: cd ~/dev/shakapacker && npm run build
 
 # Check watch processes
+# Status: Stub only - displays "not yet implemented" message
 swap-shakacode-deps --list-watch
 
 # Stop watch processes when done
+# Status: Stub only - displays "not yet implemented" message
 swap-shakacode-deps --kill-watch
 ```
 
