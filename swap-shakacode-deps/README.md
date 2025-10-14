@@ -244,9 +244,11 @@ swap-shakacode-deps --clean-cache shakapacker
 
 - **Automatic Backups**: Always creates backups before modifying files
 - **Validation**: Validates paths and repository names before making changes
-- **Atomic Operations**: Uses file locking to prevent corruption
+- **State Detection**: Detects if files are already swapped to prevent re-swapping
 - **Rollback**: Can restore from backups if something goes wrong
 - **Dry Run**: Preview changes without modifying files
+
+**Note on Concurrency**: The current implementation does not use file locking. Avoid running multiple `swap-shakacode-deps` commands concurrently on the same project to prevent race conditions. File locking may be added in a future release.
 
 ## Cache Location
 

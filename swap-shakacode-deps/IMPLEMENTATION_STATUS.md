@@ -111,9 +111,10 @@ Status: Commands exist but cache is not yet populated since GitHub cloning is no
 
 1. **No GitHub Cloning**: `--github` option validates input but doesn't clone repositories yet
 2. **Watch Mode Incomplete**: Auto-rebuild doesn't work; use manual rebuilding
-3. **No Tests**: No automated test suite (manual testing only)
-4. **Demo-Specific Removal**: Some demo-specific features from original code were intentionally not ported
-5. **Single-Project Focus**: While `--recursive` works, it's not heavily optimized for batch operations
+3. **No File Locking**: No protection against concurrent operations - avoid running multiple instances on the same project
+4. **No Tests**: No automated test suite (manual testing only)
+5. **Demo-Specific Removal**: Some demo-specific features from original code were intentionally not ported
+6. **Single-Project Focus**: While `--recursive` works, it's not heavily optimized for batch operations
 
 ## Usage Recommendations
 
@@ -147,9 +148,10 @@ swap-shakacode-deps --github shakacode/shakapacker#main  # Not yet functional
 
 ### Medium Priority
 1. Add CI/CD pipeline
-2. Improve error recovery
-3. Add progress indicators for long operations
-4. Optimize for batch processing
+2. Implement file locking for concurrent safety
+3. Improve error recovery
+4. Add progress indicators for long operations
+5. Optimize for batch processing
 
 ### Low Priority
 1. Add shell completion
