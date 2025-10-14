@@ -23,7 +23,7 @@ Gem::Specification.new do |spec|
   spec.metadata['changelog_uri'] = 'https://github.com/shakacode/swap-shakacode-deps/blob/main/CHANGELOG.md'
 
   # Specify which files should be added to the gem when it is released
-  spec.files = Dir.glob('{bin,lib}/**/*', File::FNM_DOTMATCH) +
+  spec.files = Dir.glob('{bin,lib}/**/*', File::FNM_DOTMATCH).select { |f| File.file?(f) } +
                %w[README.md LICENSE CHANGELOG.md]
   spec.bindir = 'bin'
   spec.executables = ['swap-shakacode-deps']
