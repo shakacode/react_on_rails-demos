@@ -172,6 +172,15 @@ module SwapShakacodeDeps
       gemfile_path = File.join(project_path, 'Gemfile')
       package_json_path = File.join(project_path, 'package.json')
 
+      # Detect which gems were actually swapped BEFORE restoring
+      # This ensures we only update gems that were swapped, not all supported gems
+      swapped_gem_names = if File.exist?(gemfile_path)
+                            swapped = @gem_swapper.detect_swapped_gems(gemfile_path)
+                            swapped.map { |gem| gem[:name] }
+                          else
+                            []
+                          end
+
       [gemfile_path, package_json_path].each do |file_path|
         next unless @backup_manager.backup_exists?(file_path)
 
@@ -182,7 +191,10 @@ module SwapShakacodeDeps
       end
 
       if restored.positive?
-        @gem_swapper.run_bundle_install(project_path, for_restore: true) if File.exist?(gemfile_path)
+        # Pass the list of actually-swapped gems to avoid updating unswapped gems
+        if File.exist?(gemfile_path)
+          @gem_swapper.run_bundle_install(project_path, for_restore: true, swapped_gems: swapped_gem_names)
+        end
         @npm_swapper.run_npm_install(project_path, for_restore: true) if File.exist?(package_json_path)
       end
 

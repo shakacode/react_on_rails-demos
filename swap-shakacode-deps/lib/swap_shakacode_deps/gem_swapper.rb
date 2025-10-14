@@ -98,17 +98,21 @@ module SwapShakacodeDeps
     end
 
     # Runs bundle install after swapping gems
-    def run_bundle_install(path, for_restore: false)
+    # @param swapped_gems [Array<String>] Optional list of gem names that were actually swapped
+    def run_bundle_install(path, for_restore: false, swapped_gems: nil)
       return if @dry_run
 
       if for_restore
-        # For restore, we need to update the gems to fetch from rubygems
+        # For restore, we need to update ONLY the gems that were actually swapped
         puts '  Running bundle update (to restore gem sources)...'
 
-        # Find which supported gems are in the Gemfile
-        gemfile_content = File.read(File.join(path, 'Gemfile'))
-        gems_to_update = SUPPORTED_GEMS.select do |gem_name|
-          gemfile_content.match?(/^\s*gem\s+["']#{Regexp.escape(gem_name)}["']/)
+        # Use provided list of swapped gems, or detect from Gemfile
+        if swapped_gems && !swapped_gems.empty?
+          gems_to_update = swapped_gems
+        else
+          # Fallback: try to detect from current Gemfile before restore
+          detected = detect_swapped_gems(File.join(path, 'Gemfile'))
+          gems_to_update = detected.map { |gem| gem[:name] }
         end
 
         if gems_to_update.empty?
