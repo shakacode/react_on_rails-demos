@@ -54,17 +54,33 @@ cd ~/projects/app2
 swap-shakacode-deps --apply
 ```
 
-### Testing a Pull Request
+### Testing a Pull Request (Coming Soon)
+
+**⚠️ Not Yet Implemented**: GitHub repository cloning is not yet implemented. This feature is planned for a future release (v0.2.0).
+
+**Current Workaround**: Clone the repository manually and use local path swapping:
 
 ```bash
-# Test a specific PR branch
-swap-shakacode-deps --github shakacode/shakapacker#pr-123-feature
+# Clone the PR branch manually
+cd ~/dev
+git clone https://github.com/shakacode/shakapacker.git
+cd shakapacker
+git checkout pr-123-feature
+
+# Then use local path swapping
+swap-shakacode-deps --shakapacker ~/dev/shakapacker
 
 # Run your tests
 bundle exec rspec
 
 # Restore when done
 swap-shakacode-deps --restore
+```
+
+**Planned for future version**:
+```bash
+# This will be available once GitHub cloning is implemented:
+# swap-shakacode-deps --github shakacode/shakapacker#pr-123-feature
 ```
 
 ### Development with Auto-Rebuild

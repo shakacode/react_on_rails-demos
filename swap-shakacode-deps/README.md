@@ -48,18 +48,28 @@ swap-shakacode-deps --shakapacker ~/dev/shakapacker \
                     --react-on-rails ~/dev/react_on_rails
 ```
 
-### Use GitHub Branches or Tags
+### Use GitHub Branches or Tags (Coming Soon)
+
+**⚠️ Not Yet Implemented**: GitHub repository cloning is not yet implemented. This feature will be available in v0.2.0.
+
+**Current Workaround**: Clone repositories manually, then use local paths:
 
 ```bash
-# Use a specific branch
-swap-shakacode-deps --github shakacode/shakapacker#feature-branch
+# Clone the repository first
+cd ~/dev && git clone https://github.com/shakacode/shakapacker.git
+cd shakapacker && git checkout feature-branch
 
-# Use a specific tag
-swap-shakacode-deps --github shakacode/react_on_rails@v14.0.0
+# Then use local path
+swap-shakacode-deps --shakapacker ~/dev/shakapacker
+```
 
-# Mix local and GitHub sources
-swap-shakacode-deps --shakapacker ~/dev/shakapacker \
-                    --github shakacode/react_on_rails#main
+**Planned for v0.2.0**:
+```bash
+# These will be available once GitHub cloning is implemented:
+# swap-shakacode-deps --github shakacode/shakapacker#feature-branch
+# swap-shakacode-deps --github shakacode/react_on_rails@v14.0.0
+# swap-shakacode-deps --shakapacker ~/dev/shakapacker \
+#                     --github shakacode/react_on_rails#main
 ```
 
 ### Restore Original Dependencies
@@ -174,17 +184,15 @@ swap-shakacode-deps --apply
    swap-shakacode-deps --restore
    ```
 
-### Testing GitHub Branches
+### Testing GitHub Branches (Coming Soon)
+
+**⚠️ Not Yet Implemented**: See "Use GitHub Branches or Tags" section above for current workaround.
 
 ```bash
-# Test a PR branch
-swap-shakacode-deps --github shakacode/react_on_rails#pr-1234
-
-# Run your tests
-bundle exec rspec
-
-# Restore when done
-swap-shakacode-deps --restore
+# Planned for v0.2.0:
+# swap-shakacode-deps --github shakacode/react_on_rails#pr-1234
+# bundle exec rspec
+# swap-shakacode-deps --restore
 ```
 
 ### Working with Multiple Projects
