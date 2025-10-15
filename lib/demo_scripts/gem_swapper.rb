@@ -320,16 +320,18 @@ module DemoScripts
     end
 
     def display_dependency_info(gem)
-      # For GitHub specs, resolve to cache path
+      # For GitHub specs, resolve to cache path and show repo info
       if gem[:type] == 'github'
         repo, ref = gem[:path].split('@', 2)
         cache_path = github_cache_path(gem[:name], { repo: repo, branch: ref })
         path = cache_path
         branch_info = ref
+        source_indicator = "📦 #{repo}"
       else
         # Clean up path (remove trailing /. from npm packages)
         path = gem[:path].sub(%r{/\.$}, '')
         branch_info = nil
+        source_indicator = nil
       end
 
       # Check if directory exists
@@ -342,9 +344,10 @@ module DemoScripts
       # Build status line
       status = exists ? '✓' : '⚠️ '
       branch_text = branch_info ? " (#{branch_info})" : ''
+      source_text = source_indicator ? " [#{source_indicator}]" : ''
       warning = exists ? '' : ' - DIRECTORY NOT FOUND'
 
-      puts "    #{status} #{gem[:name]} → #{path}#{branch_text}#{warning}"
+      puts "    #{status} #{gem[:name]} → #{path}#{branch_text}#{source_text}#{warning}"
     end
 
     def detect_git_branch(path)
