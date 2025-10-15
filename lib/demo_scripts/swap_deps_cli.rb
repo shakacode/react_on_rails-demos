@@ -83,17 +83,23 @@ module DemoScripts
 
     private
 
+    # rubocop:disable Lint/DuplicateBranch
     def process_gem_value(gem_name, value)
-      # Check if it's a GitHub spec (starts with #, @, or contains /)
-      if value.start_with?('#', '@') || value.include?('/')
+      # Check if it's a local filesystem path first (before checking for GitHub specs)
+      expanded_path = File.expand_path(value)
+      if File.exist?(expanded_path) || value.start_with?('./', '../')
+        # It's a local path
+        @gem_paths[gem_name] = value
+      elsif value.start_with?('#', '@') || value.include?('/')
         # It's a GitHub spec
         repo, ref, ref_type = parse_github_spec(gem_name, value)
         @github_repos[gem_name] = { repo: repo, branch: ref, ref_type: ref_type }
       else
-        # It's a local path
+        # Default to local path (for simple names without paths or GitHub markers)
         @gem_paths[gem_name] = value
       end
     end
+    # rubocop:enable Lint/DuplicateBranch
 
     # rubocop:disable Metrics/MethodLength
     def parse_github_spec(gem_name, spec)
