@@ -183,18 +183,29 @@ module DemoScripts
         opts.separator 'Swap dependencies between production and local/GitHub versions for development'
         opts.separator ''
         opts.separator 'Gem options (specify one or more):'
+        opts.separator ''
+        opts.separator '  Local paths:'
+        opts.separator '    /absolute/path/to/gem    - Absolute filesystem path'
+        opts.separator '    ~/path/to/gem            - Home-relative path'
+        opts.separator '    ./relative/path          - Relative path (starts with ./ or ../)'
+        opts.separator ''
+        opts.separator '  GitHub specs (quote in zsh due to # and @):'
+        opts.separator "    '#branch'                - Shorthand for default repo + branch"
+        opts.separator "    '@tag'                   - Shorthand for default repo + tag"
+        opts.separator "    'user/repo#branch'       - Full repo + branch"
+        opts.separator "    'user/repo@tag'          - Full repo + tag"
+        opts.separator '    user/repo                - Full repo (auto-detect default branch)'
+        opts.separator ''
 
-        opts.on('--shakapacker VALUE', 'Local path or GitHub spec (e.g., #branch, @tag, user/repo#branch)') do |value|
+        opts.on('--shakapacker VALUE', 'Local path or GitHub spec') do |value|
           process_gem_value('shakapacker', value)
         end
 
-        opts.on('--react-on-rails VALUE',
-                'Local path or GitHub spec (e.g., #branch, @tag, user/repo#branch)') do |value|
+        opts.on('--react-on-rails VALUE', 'Local path or GitHub spec') do |value|
           process_gem_value('react_on_rails', value)
         end
 
-        opts.on('--cypress-on-rails VALUE',
-                'Local path or GitHub spec (e.g., #branch, @tag, user/repo#branch)') do |value|
+        opts.on('--cypress-on-rails VALUE', 'Local path or GitHub spec') do |value|
           process_gem_value('cypress-on-rails', value)
         end
 
@@ -292,27 +303,51 @@ module DemoScripts
         opts.on('-h', '--help', 'Show this help message') do
           puts opts
           puts ''
-          puts 'Examples:'
-          puts '  # Swap react_on_rails to local version'
-          puts '  bin/swap-deps --react-on-rails ~/dev/react_on_rails'
+          puts 'Path Detection Order:'
+          puts '  1. Existing filesystem paths (checked with File.exist?)'
+          puts '  2. Paths starting with ./ or ../'
+          puts '  3. GitHub specs (contains #, @, or /)'
+          puts '  4. Simple names default to local paths'
           puts ''
-          puts '  # Swap multiple dependencies'
+          puts '  Note: Use ./ prefix to force local path if ambiguous'
+          puts '        (e.g., ./shakacode/fork vs shakacode/fork)'
+          puts ''
+          puts 'Examples:'
+          puts ''
+          puts '  LOCAL PATHS:'
+          puts '  ------------'
+          puts '  # Absolute path'
+          puts '  bin/swap-deps --react-on-rails /Users/me/dev/react_on_rails'
+          puts ''
+          puts '  # Home-relative path'
+          puts '  bin/swap-deps --shakapacker ~/dev/shakapacker'
+          puts ''
+          puts '  # Relative path'
+          puts '  bin/swap-deps --shakapacker ./local/shakapacker'
+          puts ''
+          puts '  # Multiple local paths'
           puts '  bin/swap-deps --shakapacker ~/dev/shakapacker \\'
           puts '                --react-on-rails ~/dev/react_on_rails'
           puts ''
-          puts '  # Use shorthand for GitHub branches (quotes required in zsh!)'
+          puts '  GITHUB REPOS:'
+          puts '  -------------'
+          puts '  # Shorthand for default repo (quotes required in zsh!)'
           puts '  bin/swap-deps --shakapacker \'#main\''
           puts '  bin/swap-deps --react-on-rails \'#feature-x\''
-          puts ''
-          puts '  # Use shorthand for GitHub tags'
           puts '  bin/swap-deps --shakapacker \'@v9.0.0\''
           puts ''
-          puts '  # Use full GitHub repo spec'
+          puts '  # Full repo spec with branch/tag'
           puts '  bin/swap-deps --shakapacker \'shakacode/shakapacker#fix-hmr\''
-          puts '  bin/swap-deps --shakapacker \'otheruser/shakapacker#custom-branch\''
+          puts '  bin/swap-deps --shakapacker \'otheruser/shakapacker@v8.0.0\''
           puts ''
-          puts '  # Auto-detect default branch (no # needed, no quotes needed)'
+          puts '  # Auto-detect default branch (no quotes needed if no #/@)'
           puts '  bin/swap-deps --shakapacker shakacode/shakapacker'
+          puts ''
+          puts '  MIXING SOURCES:'
+          puts '  ---------------'
+          puts '  # Mix local paths and GitHub repos'
+          puts '  bin/swap-deps --shakapacker ~/dev/shakapacker \\'
+          puts '                --react-on-rails \'#feature-x\''
           puts ''
           puts '  # Apply to specific demo only'
           puts '  bin/swap-deps --demo basic-v16-rspack --react-on-rails ~/dev/react_on_rails'
