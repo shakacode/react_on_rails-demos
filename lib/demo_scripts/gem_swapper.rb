@@ -644,13 +644,21 @@ module DemoScripts
     end
     # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/MethodLength
 
+    # Auto-detect the default branch for a GitHub repository
+    # Called during initialization/validation phase for repos without explicit branch
+    # Note: This makes a network call during object construction, but it's intentional because:
+    # 1. The call is fast (git ls-remote with --symref is lightweight)
+    # 2. The repo is already validated before calling this
+    # 3. It happens once per unique repo, not per demo
+    # 4. Failing early during validation is better than failing later during clone
     def detect_default_branch(repo)
       puts "  🔍 Detecting default branch for #{repo}..."
 
       # Use git ls-remote to find the default branch without cloning
-      output = `git ls-remote --symref https://github.com/#{repo}.git HEAD 2>/dev/null`
+      # Use array form to avoid shell injection (repo is already validated by validate_github_repo)
+      output, status = Open3.capture2('git', 'ls-remote', '--symref', "https://github.com/#{repo}.git", 'HEAD')
 
-      if $CHILD_STATUS.success? && output =~ %r{ref: refs/heads/(\S+)\s+HEAD}
+      if status.success? && output =~ %r{ref: refs/heads/(\S+)\s+HEAD}
         branch = ::Regexp.last_match(1)
         puts "     Detected: #{branch}"
         branch

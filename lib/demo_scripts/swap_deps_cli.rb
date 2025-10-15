@@ -93,6 +93,7 @@ module DemoScripts
       elsif value.start_with?('#', '@') || value.include?('/')
         # It's a GitHub spec
         repo, ref, ref_type = parse_github_spec(gem_name, value)
+        # NOTE: ref can be nil for auto-detection; validate_github_repos will detect default branch later
         @github_repos[gem_name] = { repo: repo, branch: ref, ref_type: ref_type }
       else
         # Default to local path (for simple names without paths or GitHub markers)
@@ -101,7 +102,27 @@ module DemoScripts
     end
     # rubocop:enable Lint/DuplicateBranch
 
-    # rubocop:disable Metrics/MethodLength
+    # Parse GitHub spec without shorthand expansion (for --github flag)
+    # Returns: [repo, ref, ref_type]
+    def parse_github_spec_without_shorthand(spec)
+      if spec.include?('@')
+        # Full: user/repo@tag
+        repo, ref = spec.split('@', 2)
+        ref_type = :tag
+      elsif spec.include?('#')
+        # Full: user/repo#branch
+        repo, ref = spec.split('#', 2)
+        ref_type = :branch
+      else
+        # Just repo name: user/repo
+        repo = spec
+        ref = nil # Will auto-detect default branch
+        ref_type = :branch
+      end
+
+      [repo, ref, ref_type]
+    end
+
     def parse_github_spec(gem_name, spec)
       # Handle shorthand formats:
       # - #branch -> shakacode/gem#branch
@@ -124,24 +145,13 @@ module DemoScripts
 
         ref = spec[1..]
         ref_type = :tag
-      elsif spec.include?('@')
-        # Full: user/repo@tag
-        repo, ref = spec.split('@', 2)
-        ref_type = :tag
-      elsif spec.include?('#')
-        # Full: user/repo#branch
-        repo, ref = spec.split('#', 2)
-        ref_type = :branch
       else
-        # Just repo name: user/repo
-        repo = spec
-        ref = nil # Will auto-detect default branch
-        ref_type = :branch
+        # Delegate to shared parser for full specs (user/repo, user/repo#branch, user/repo@tag)
+        repo, ref, ref_type = parse_github_spec_without_shorthand(spec)
       end
 
       [repo, ref, ref_type]
     end
-    # rubocop:enable Metrics/MethodLength
 
     def detect_context!
       # Check if we're in a demo directory by looking for Gemfile and presence of ../../.swap-deps.yml
@@ -194,17 +204,8 @@ module DemoScripts
         opts.on('--github REPO[#BRANCH|@TAG]',
                 'GitHub repository (e.g., user/repo, user/repo#branch, or user/repo@tag)',
                 'Note: In zsh, quote values with # or @ (e.g., \'user/repo#main\')') do |value|
-          if value.include?('@')
-            repo, ref = value.split('@', 2)
-            ref_type = :tag
-          elsif value.include?('#')
-            repo, ref = value.split('#', 2)
-            ref_type = :branch
-          else
-            repo = value
-            ref = nil # Auto-detect default branch
-            ref_type = :branch
-          end
+          # Parse GitHub spec and infer gem name from repo
+          repo, ref, ref_type = parse_github_spec_without_shorthand(value)
           gem_name = infer_gem_from_repo(repo)
           @github_repos[gem_name] = { repo: repo, branch: ref, ref_type: ref_type }
         end
