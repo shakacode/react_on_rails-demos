@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'English'
 require 'yaml'
 require 'json'
 require 'pathname'
@@ -616,14 +617,14 @@ module DemoScripts
                    repo, ref, ref_type = parse_github_spec(value)
                    {
                      repo: repo,
-                     branch: ref || 'main',
+                     branch: ref,
                      ref_type: ref_type || :branch
                    }
                  elsif value.is_a?(Hash)
                    # Hash format with repo and optional branch
                    {
                      repo: value['repo'] || value[:repo],
-                     branch: value['branch'] || value[:branch] || 'main',
+                     branch: value['branch'] || value[:branch],
                      ref_type: (value['ref_type'] || value[:ref_type] || :branch).to_sym
                    }
                  else
@@ -632,12 +633,32 @@ module DemoScripts
 
         # Use shared validation methods
         validate_github_repo(result[:repo])
+
+        # Auto-detect default branch if not specified
+        result[:branch] ||= detect_default_branch(result[:repo])
+
         validate_github_branch(result[:branch]) if result[:branch]
 
         result
       end
     end
     # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/MethodLength
+
+    def detect_default_branch(repo)
+      puts "  🔍 Detecting default branch for #{repo}..."
+
+      # Use git ls-remote to find the default branch without cloning
+      output = `git ls-remote --symref https://github.com/#{repo}.git HEAD 2>/dev/null`
+
+      if $CHILD_STATUS.success? && output =~ %r{ref: refs/heads/(\S+)\s+HEAD}
+        branch = ::Regexp.last_match(1)
+        puts "     Detected: #{branch}"
+        branch
+      else
+        puts "     Could not detect, defaulting to 'main'"
+        'main'
+      end
+    end
 
     def validate_local_paths!
       gem_paths.each do |gem_name, path|
