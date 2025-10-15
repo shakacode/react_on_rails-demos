@@ -74,7 +74,84 @@ module DemoScripts
     end
     # rubocop:enable Metrics/AbcSize, Metrics/MethodLength, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
 
+    # Map gem names to their default GitHub repositories
+    GEM_REPOS = {
+      'shakapacker' => 'shakacode/shakapacker',
+      'react_on_rails' => 'shakacode/react_on_rails',
+      'cypress-on-rails' => 'shakacode/cypress-on-rails'
+    }.freeze
+
     private
+
+    # rubocop:disable Lint/DuplicateBranch
+    def process_gem_value(gem_name, value)
+      # Check if it's a local filesystem path first (before checking for GitHub specs)
+      expanded_path = File.expand_path(value)
+      if File.exist?(expanded_path) || value.start_with?('./', '../')
+        # It's a local path
+        @gem_paths[gem_name] = value
+      elsif value.start_with?('#', '@') || value.include?('/')
+        # It's a GitHub spec
+        repo, ref, ref_type = parse_github_spec(gem_name, value)
+        # NOTE: ref can be nil for auto-detection; validate_github_repos will detect default branch later
+        @github_repos[gem_name] = { repo: repo, branch: ref, ref_type: ref_type }
+      else
+        # Default to local path (for simple names without paths or GitHub markers)
+        @gem_paths[gem_name] = value
+      end
+    end
+    # rubocop:enable Lint/DuplicateBranch
+
+    # Parse GitHub spec without shorthand expansion (for --github flag)
+    # Returns: [repo, ref, ref_type]
+    def parse_github_spec_without_shorthand(spec)
+      if spec.include?('@')
+        # Full: user/repo@tag
+        repo, ref = spec.split('@', 2)
+        ref_type = :tag
+      elsif spec.include?('#')
+        # Full: user/repo#branch
+        repo, ref = spec.split('#', 2)
+        ref_type = :branch
+      else
+        # Just repo name: user/repo
+        repo = spec
+        ref = nil # Will auto-detect default branch
+        ref_type = :branch
+      end
+
+      [repo, ref, ref_type]
+    end
+
+    def parse_github_spec(gem_name, spec)
+      # Handle shorthand formats:
+      # - #branch -> shakacode/gem#branch
+      # - @tag -> shakacode/gem@tag
+      # - user/repo#branch -> user/repo#branch
+      # - user/repo@tag -> user/repo@tag
+      # - user/repo -> user/repo (will auto-detect default branch)
+
+      if spec.start_with?('#')
+        # Shorthand: #branch
+        repo = GEM_REPOS[gem_name]
+        raise Error, "No default repo for gem: #{gem_name}" unless repo
+
+        ref = spec[1..]
+        ref_type = :branch
+      elsif spec.start_with?('@')
+        # Shorthand: @tag
+        repo = GEM_REPOS[gem_name]
+        raise Error, "No default repo for gem: #{gem_name}" unless repo
+
+        ref = spec[1..]
+        ref_type = :tag
+      else
+        # Delegate to shared parser for full specs (user/repo, user/repo#branch, user/repo@tag)
+        repo, ref, ref_type = parse_github_spec_without_shorthand(spec)
+      end
+
+      [repo, ref, ref_type]
+    end
 
     def detect_context!
       # Check if we're in a demo directory by looking for Gemfile and presence of ../../.swap-deps.yml
@@ -106,35 +183,40 @@ module DemoScripts
         opts.separator 'Swap dependencies between production and local/GitHub versions for development'
         opts.separator ''
         opts.separator 'Gem options (specify one or more):'
+        opts.separator ''
+        opts.separator '  Local paths:'
+        opts.separator '    /absolute/path/to/gem    - Absolute filesystem path'
+        opts.separator '    ~/path/to/gem            - Home-relative path'
+        opts.separator '    ./relative/path          - Relative path (starts with ./ or ../)'
+        opts.separator ''
+        opts.separator '  GitHub specs (quote in zsh due to # and @):'
+        opts.separator "    '#branch'                - Shorthand for default repo + branch"
+        opts.separator "    '@tag'                   - Shorthand for default repo + tag"
+        opts.separator "    'user/repo#branch'       - Full repo + branch"
+        opts.separator "    'user/repo@tag'          - Full repo + tag"
+        opts.separator '    user/repo                - Full repo (auto-detect default branch)'
+        opts.separator ''
 
-        opts.on('--shakapacker PATH', 'Path to local shakapacker repository') do |path|
-          @gem_paths['shakapacker'] = path
+        opts.on('--shakapacker VALUE', 'Local path or GitHub spec') do |value|
+          process_gem_value('shakapacker', value)
         end
 
-        opts.on('--react-on-rails PATH', 'Path to local react_on_rails repository') do |path|
-          @gem_paths['react_on_rails'] = path
+        opts.on('--react-on-rails VALUE', 'Local path or GitHub spec') do |value|
+          process_gem_value('react_on_rails', value)
         end
 
-        opts.on('--cypress-on-rails PATH', 'Path to local cypress-on-rails repository') do |path|
-          @gem_paths['cypress-on-rails'] = path
+        opts.on('--cypress-on-rails VALUE', 'Local path or GitHub spec') do |value|
+          process_gem_value('cypress-on-rails', value)
         end
 
         opts.separator ''
         opts.separator 'GitHub options:'
 
         opts.on('--github REPO[#BRANCH|@TAG]',
-                'GitHub repository (e.g., user/repo, user/repo#branch, or user/repo@tag)') do |value|
-          if value.include?('@')
-            repo, ref = value.split('@', 2)
-            ref_type = :tag
-          elsif value.include?('#')
-            repo, ref = value.split('#', 2)
-            ref_type = :branch
-          else
-            repo = value
-            ref = 'main'
-            ref_type = :branch
-          end
+                'GitHub repository (e.g., user/repo, user/repo#branch, or user/repo@tag)',
+                'Note: In zsh, quote values with # or @ (e.g., \'user/repo#main\')') do |value|
+          # Parse GitHub spec and infer gem name from repo
+          repo, ref, ref_type = parse_github_spec_without_shorthand(value)
           gem_name = infer_gem_from_repo(repo)
           @github_repos[gem_name] = { repo: repo, branch: ref, ref_type: ref_type }
         end
@@ -221,13 +303,51 @@ module DemoScripts
         opts.on('-h', '--help', 'Show this help message') do
           puts opts
           puts ''
-          puts 'Examples:'
-          puts '  # Swap react_on_rails to local version'
-          puts '  bin/swap-deps --react-on-rails ~/dev/react_on_rails'
+          puts 'Path Detection Order:'
+          puts '  1. Existing filesystem paths (checked with File.exist?)'
+          puts '  2. Paths starting with ./ or ../'
+          puts '  3. GitHub specs (contains #, @, or /)'
+          puts '  4. Simple names default to local paths'
           puts ''
-          puts '  # Swap multiple dependencies'
+          puts '  Note: Use ./ prefix to force local path if ambiguous'
+          puts '        (e.g., ./shakacode/fork vs shakacode/fork)'
+          puts ''
+          puts 'Examples:'
+          puts ''
+          puts '  LOCAL PATHS:'
+          puts '  ------------'
+          puts '  # Absolute path'
+          puts '  bin/swap-deps --react-on-rails /Users/me/dev/react_on_rails'
+          puts ''
+          puts '  # Home-relative path'
+          puts '  bin/swap-deps --shakapacker ~/dev/shakapacker'
+          puts ''
+          puts '  # Relative path'
+          puts '  bin/swap-deps --shakapacker ./local/shakapacker'
+          puts ''
+          puts '  # Multiple local paths'
           puts '  bin/swap-deps --shakapacker ~/dev/shakapacker \\'
           puts '                --react-on-rails ~/dev/react_on_rails'
+          puts ''
+          puts '  GITHUB REPOS:'
+          puts '  -------------'
+          puts '  # Shorthand for default repo (quotes required in zsh!)'
+          puts '  bin/swap-deps --shakapacker \'#main\''
+          puts '  bin/swap-deps --react-on-rails \'#feature-x\''
+          puts '  bin/swap-deps --shakapacker \'@v9.0.0\''
+          puts ''
+          puts '  # Full repo spec with branch/tag'
+          puts '  bin/swap-deps --shakapacker \'shakacode/shakapacker#fix-hmr\''
+          puts '  bin/swap-deps --shakapacker \'otheruser/shakapacker@v8.0.0\''
+          puts ''
+          puts '  # Auto-detect default branch (no quotes needed if no #/@)'
+          puts '  bin/swap-deps --shakapacker shakacode/shakapacker'
+          puts ''
+          puts '  MIXING SOURCES:'
+          puts '  ---------------'
+          puts '  # Mix local paths and GitHub repos'
+          puts '  bin/swap-deps --shakapacker ~/dev/shakapacker \\'
+          puts '                --react-on-rails \'#feature-x\''
           puts ''
           puts '  # Apply to specific demo only'
           puts '  bin/swap-deps --demo basic-v16-rspack --react-on-rails ~/dev/react_on_rails'
@@ -235,19 +355,12 @@ module DemoScripts
           puts '  # Apply to demos-scratch directory'
           puts '  bin/swap-deps --demos-dir demos-scratch --react-on-rails ~/dev/react_on_rails'
           puts ''
-          puts '  # Use a GitHub repository with a branch (# for branches)'
-          puts '  bin/swap-deps --github shakacode/shakapacker#fix-hmr'
-          puts ''
-          puts '  # Use a release tag (@ for tags)'
-          puts '  bin/swap-deps --github shakacode/shakapacker@v9.0.0'
-          puts ''
-          puts '  # Mix branches and tags'
-          puts '  bin/swap-deps --github shakacode/shakapacker#v8-stable \\'
-          puts '                --github shakacode/react_on_rails@v16.1.0'
+          puts '  # Use --github flag (alternative to gem-specific flags)'
+          puts '  bin/swap-deps --github \'shakacode/shakapacker#fix-hmr\''
           puts ''
           puts '  # Mix local paths and GitHub repos'
           puts '  bin/swap-deps --shakapacker ~/dev/shakapacker \\'
-          puts '                --github shakacode/react_on_rails#feature-x'
+          puts '                --react-on-rails \'#feature-x\''
           puts ''
           puts '  # Use config file'
           puts '  bin/swap-deps --apply'

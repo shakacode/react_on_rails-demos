@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'English'
 require 'yaml'
 require 'json'
 require 'pathname'
@@ -245,15 +246,13 @@ module DemoScripts
       package_json_path = File.join(demo_path, 'package.json')
 
       swapped_gems = detect_swapped_gems(gemfile_path)
-      swapped_packages = detect_swapped_packages(package_json_path)
       backups = detect_backup_files(gemfile_path, package_json_path)
 
-      display_swapped_gems(swapped_gems) if swapped_gems.any?
-      display_swapped_packages(swapped_packages) if swapped_packages.any?
+      display_swapped_dependencies(swapped_gems) if swapped_gems.any?
 
       puts "  Backups: #{backups.join(', ')}" if backups.any?
 
-      return unless swapped_gems.empty? && swapped_packages.empty?
+      return unless swapped_gems.empty?
 
       if backups.any?
         puts '  ℹ️  No currently swapped dependencies (backups available)'
@@ -313,18 +312,53 @@ module DemoScripts
       backups
     end
 
-    def display_swapped_gems(swapped_gems)
-      puts '  Gemfile:'
+    def display_swapped_dependencies(swapped_gems)
+      puts '  Dependencies:'
       swapped_gems.each do |gem|
-        puts "    ✓ #{gem[:name]} → #{gem[:path]}"
+        display_dependency_info(gem)
       end
     end
 
-    def display_swapped_packages(swapped_packages)
-      puts '  package.json:'
-      swapped_packages.each do |pkg|
-        puts "    ✓ #{pkg[:name]} → #{pkg[:path]}"
+    def display_dependency_info(gem)
+      # For GitHub specs, resolve to cache path and show repo info
+      if gem[:type] == 'github'
+        repo, ref = gem[:path].split('@', 2)
+        cache_path = github_cache_path(gem[:name], { repo: repo, branch: ref })
+        path = cache_path
+        branch_info = ref
+        source_indicator = "📦 #{repo}"
+      else
+        # Clean up path (remove trailing /. from npm packages)
+        path = gem[:path].sub(%r{/\.$}, '')
+        branch_info = nil
+        source_indicator = nil
       end
+
+      # Check if directory exists
+      expanded_path = File.expand_path(path)
+      exists = File.directory?(expanded_path)
+
+      # Get branch info from git if it's a local path
+      branch_info = detect_git_branch(expanded_path) if gem[:type] == 'local' && exists
+
+      # Build status line
+      status = exists ? '✓' : '⚠️ '
+      branch_text = branch_info ? " (#{branch_info})" : ''
+      source_text = source_indicator ? " [#{source_indicator}]" : ''
+      warning = exists ? '' : ' - DIRECTORY NOT FOUND'
+
+      puts "    #{status} #{gem[:name]} → #{path}#{branch_text}#{source_text}#{warning}"
+    end
+
+    def detect_git_branch(path)
+      # Check if it's a git repository (either directory or worktree)
+      return nil unless File.exist?(File.join(path, '.git'))
+
+      # Use git to get current branch name
+      output, status = Open3.capture2('git', '-C', path, 'rev-parse', '--abbrev-ref', 'HEAD')
+      status.success? ? output.strip : nil
+    rescue StandardError
+      nil
     end
 
     def cache_repo_dirs
@@ -616,14 +650,14 @@ module DemoScripts
                    repo, ref, ref_type = parse_github_spec(value)
                    {
                      repo: repo,
-                     branch: ref || 'main',
+                     branch: ref,
                      ref_type: ref_type || :branch
                    }
                  elsif value.is_a?(Hash)
                    # Hash format with repo and optional branch
                    {
                      repo: value['repo'] || value[:repo],
-                     branch: value['branch'] || value[:branch] || 'main',
+                     branch: value['branch'] || value[:branch],
                      ref_type: (value['ref_type'] || value[:ref_type] || :branch).to_sym
                    }
                  else
@@ -632,12 +666,40 @@ module DemoScripts
 
         # Use shared validation methods
         validate_github_repo(result[:repo])
+
+        # Auto-detect default branch if not specified
+        result[:branch] ||= detect_default_branch(result[:repo])
+
         validate_github_branch(result[:branch]) if result[:branch]
 
         result
       end
     end
     # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/MethodLength
+
+    # Auto-detect the default branch for a GitHub repository
+    # Called during initialization/validation phase for repos without explicit branch
+    # Note: This makes a network call during object construction, but it's intentional because:
+    # 1. The call is fast (git ls-remote with --symref is lightweight)
+    # 2. The repo is already validated before calling this
+    # 3. It happens once per unique repo, not per demo
+    # 4. Failing early during validation is better than failing later during clone
+    def detect_default_branch(repo)
+      puts "  🔍 Detecting default branch for #{repo}..."
+
+      # Use git ls-remote to find the default branch without cloning
+      # Use array form to avoid shell injection (repo is already validated by validate_github_repo)
+      output, status = Open3.capture2('git', 'ls-remote', '--symref', "https://github.com/#{repo}.git", 'HEAD')
+
+      if status.success? && output =~ %r{ref: refs/heads/(\S+)\s+HEAD}
+        branch = ::Regexp.last_match(1)
+        puts "     Detected: #{branch}"
+        branch
+      else
+        puts "     Could not detect, defaulting to 'main'"
+        'main'
+      end
+    end
 
     def validate_local_paths!
       gem_paths.each do |gem_name, path|
