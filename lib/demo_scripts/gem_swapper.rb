@@ -1009,16 +1009,16 @@ module DemoScripts
       end
     end
 
-    # rubocop:disable Metrics/MethodLength
+    # rubocop:disable Metrics/MethodLength, Metrics/AbcSize
     def run_bundle_install(demo_path, for_restore: false)
       return if dry_run
+
+      gems_to_update = find_supported_gems_in_gemfile(demo_path)
 
       if for_restore
         # For restore, we need to update the gems to fetch from rubygems
         # This ensures Gemfile.lock is properly updated
         puts '  Running bundle update (to restore gem sources)...'
-
-        gems_to_update = find_supported_gems_in_gemfile(demo_path)
 
         if gems_to_update.empty?
           # No supported gems found in Gemfile - this might indicate they were never swapped
@@ -1036,6 +1036,14 @@ module DemoScripts
             result
           end
         end
+      elsif gems_to_update.any?
+        # When swapping to local/GitHub dependencies, we need to update the gems
+        # to resolve potential lock file conflicts (e.g., version no longer available in new source)
+        puts '  Running bundle update (to resolve swapped gem sources)...'
+        puts "  Updating gems: #{gems_to_update.join(', ')}" if verbose
+        success = Dir.chdir(demo_path) do
+          system('bundle', 'update', *gems_to_update, '--quiet')
+        end
       else
         puts '  Running bundle install...'
         success = Dir.chdir(demo_path) do
@@ -1046,7 +1054,7 @@ module DemoScripts
       warn '  ⚠️  ERROR: bundle command failed' unless success
       success
     end
-    # rubocop:enable Metrics/MethodLength
+    # rubocop:enable Metrics/MethodLength, Metrics/AbcSize
 
     # rubocop:disable Metrics/MethodLength
     def run_npm_install(demo_path, for_restore: false)

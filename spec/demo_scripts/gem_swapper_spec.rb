@@ -772,7 +772,25 @@ RSpec.describe DemoScripts::DependencySwapper do
     end
 
     context 'when for_restore is false' do
-      it 'runs regular bundle install' do
+      it 'runs bundle update for swapped gems' do
+        gemfile_content = <<~GEMFILE
+          gem 'rails'
+          gem 'shakapacker', path: '/path/to/shakapacker'
+          gem 'react_on_rails', github: 'shakacode/react_on_rails'
+        GEMFILE
+
+        allow(File).to receive(:read).with(gemfile_path).and_return(gemfile_content)
+        expect(Dir).to receive(:chdir).with(demo_path).and_yield
+        expect(swapper).to receive(:system).with('bundle', 'update', 'shakapacker', 'react_on_rails',
+                                                 '--quiet').and_return(true)
+
+        swapper.send(:run_bundle_install, demo_path, for_restore: false)
+      end
+
+      it 'runs regular bundle install when no supported gems found' do
+        gemfile_content = "gem 'rails'\ngem 'pg'"
+
+        allow(File).to receive(:read).with(gemfile_path).and_return(gemfile_content)
         expect(Dir).to receive(:chdir).with(demo_path).and_yield
         expect(swapper).to receive(:system).with('bundle', 'install', '--quiet').and_return(true)
 
