@@ -32,7 +32,7 @@ module DemoScripts
       @clean_cache = false
       @clean_cache_gem = nil
       @show_status = false
-      @auto_update = false
+      @auto_update = true # Default to auto-update for convenience
     end
 
     # rubocop:disable Metrics/AbcSize, Metrics/MethodLength, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
@@ -319,8 +319,8 @@ module DemoScripts
           @show_status = true
         end
 
-        opts.on('--auto-update', 'Automatically update outdated GitHub repos (use with --status)') do
-          @auto_update = true
+        opts.on('--[no-]auto-update', 'Automatically update outdated GitHub repos (default: enabled)') do |v|
+          @auto_update = v
         end
 
         opts.on('--show-cache', 'Show cache location, size, and cached repositories') do

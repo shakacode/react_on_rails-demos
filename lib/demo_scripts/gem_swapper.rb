@@ -160,7 +160,7 @@ module DemoScripts
       else
         puts "\n💡 To update: Re-run your swap command to fetch latest changes"
         puts "   Example: bin/swap-deps --github '#{outdated_repos.first[:repo]}##{outdated_repos.first[:ref]}'"
-        puts '   Or use: bin/swap-deps --status --auto-update'
+        puts '   Or re-run: bin/swap-deps --status (auto-update is enabled by default)'
       end
     end
 
