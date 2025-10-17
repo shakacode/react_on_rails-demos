@@ -135,7 +135,8 @@ module DemoScripts
     # rubocop:enable Metrics/MethodLength
 
     # CLI entry point: Display current swapped dependencies status
-    def show_status
+    # @param auto_update [Boolean] Automatically update outdated repos if detected
+    def show_status(auto_update: false)
       puts '📊 Swapped dependencies status:'
 
       outdated_repos = []
@@ -152,8 +153,15 @@ module DemoScripts
         commits = repo_info[:commits_behind]
         puts "   #{repo_info[:gem_name]} (#{repo_info[:repo]}@#{repo_info[:ref]}) - #{commits} commit(s) behind"
       end
-      puts "\n💡 To update: Re-run your swap command to fetch latest changes"
-      puts "   Example: bin/swap-deps --github '#{outdated_repos.first[:repo]}##{outdated_repos.first[:ref]}'"
+
+      if auto_update
+        puts "\n🔄 Auto-updating outdated repositories..."
+        update_outdated_repos(outdated_repos.uniq)
+      else
+        puts "\n💡 To update: Re-run your swap command to fetch latest changes"
+        puts "   Example: bin/swap-deps --github '#{outdated_repos.first[:repo]}##{outdated_repos.first[:ref]}'"
+        puts '   Or use: bin/swap-deps --status --auto-update'
+      end
     end
 
     # CLI entry point: Display cache information including location, size, and cached repositories
@@ -417,6 +425,40 @@ module DemoScripts
     rescue StandardError
       nil
     end
+
+    # Update outdated GitHub repositories to latest
+    # rubocop:disable Metrics/AbcSize
+    def update_outdated_repos(outdated_repos)
+      outdated_repos.each do |repo_info|
+        gem_name = repo_info[:gem_name]
+        cache_path = github_cache_path(gem_name, { repo: repo_info[:repo], branch: repo_info[:ref] })
+
+        puts "  Updating #{gem_name} (#{repo_info[:repo]}@#{repo_info[:ref]})..."
+        update_github_repo(cache_path, { repo: repo_info[:repo], branch: repo_info[:ref] })
+
+        # Rebuild the npm package if it has one
+        npm_package_path = NPM_PACKAGE_PATHS[gem_name]
+        next if npm_package_path.nil? || skip_build
+
+        npm_path = File.join(cache_path, npm_package_path)
+        package_json = File.join(npm_path, 'package.json')
+        next unless File.exist?(package_json)
+
+        data = JSON.parse(File.read(package_json))
+        next unless data.dig('scripts', 'build')
+
+        puts "  Rebuilding #{gem_name}..."
+        success = Dir.chdir(npm_path) { system('npm', 'run', 'build') }
+        warn "  ⚠️  Warning: npm build failed for #{gem_name}" unless success
+      rescue JSON::ParserError
+        # Skip if package.json is malformed
+        nil
+      end
+
+      puts "\n✅ Updated #{outdated_repos.count} repository/repositories"
+      puts '💡 Changes are now available in your demos'
+    end
+    # rubocop:enable Metrics/AbcSize
 
     def cache_repo_dirs
       return [] unless File.directory?(CACHE_DIR)

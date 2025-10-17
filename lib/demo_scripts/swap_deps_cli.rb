@@ -10,7 +10,7 @@ module DemoScripts
 
     attr_reader :gem_paths, :github_repos, :dry_run, :verbose, :restore, :apply_config,
                 :skip_build, :watch_mode, :demo_filter, :demos_dir, :list_watch, :kill_watch,
-                :show_cache, :clean_cache, :clean_cache_gem, :show_status
+                :show_cache, :clean_cache, :clean_cache_gem, :show_status, :auto_update
 
     def initialize
       @gem_paths = {}
@@ -32,6 +32,7 @@ module DemoScripts
       @clean_cache = false
       @clean_cache_gem = nil
       @show_status = false
+      @auto_update = false
     end
 
     # rubocop:disable Metrics/AbcSize, Metrics/MethodLength, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
@@ -318,6 +319,10 @@ module DemoScripts
           @show_status = true
         end
 
+        opts.on('--auto-update', 'Automatically update outdated GitHub repos (use with --status)') do
+          @auto_update = true
+        end
+
         opts.on('--show-cache', 'Show cache location, size, and cached repositories') do
           @show_cache = true
         end
@@ -481,7 +486,7 @@ module DemoScripts
 
     def show_status_info
       swapper = create_swapper
-      swapper.show_status
+      swapper.show_status(auto_update: auto_update)
     end
 
     def apply_from_config
