@@ -138,9 +138,22 @@ module DemoScripts
     def show_status
       puts '📊 Swapped dependencies status:'
 
+      outdated_repos = []
+
       each_demo do |demo_path|
         show_demo_status(demo_path)
+        outdated_repos.concat(check_outdated_repos(demo_path))
       end
+
+      return unless outdated_repos.any?
+
+      puts "\n⚠️  Outdated GitHub repositories detected:"
+      outdated_repos.uniq.each do |repo_info|
+        commits = repo_info[:commits_behind]
+        puts "   #{repo_info[:gem_name]} (#{repo_info[:repo]}@#{repo_info[:ref]}) - #{commits} commit(s) behind"
+      end
+      puts "\n💡 To update: Re-run your swap command to fetch latest changes"
+      puts "   Example: bin/swap-deps --github '#{outdated_repos.first[:repo]}##{outdated_repos.first[:ref]}'"
     end
 
     # CLI entry point: Display cache information including location, size, and cached repositories
@@ -357,6 +370,50 @@ module DemoScripts
       # Use git to get current branch name
       output, status = Open3.capture2('git', '-C', path, 'rev-parse', '--abbrev-ref', 'HEAD')
       status.success? ? output.strip : nil
+    rescue StandardError
+      nil
+    end
+
+    # Check if any GitHub-based swapped gems are outdated
+    def check_outdated_repos(demo_path)
+      gemfile_path = File.join(demo_path, 'Gemfile')
+      return [] unless File.exist?(gemfile_path)
+
+      swapped_gems = detect_swapped_gems(gemfile_path)
+      outdated = []
+
+      swapped_gems.each do |gem|
+        next unless gem[:type] == 'github'
+
+        repo, ref = gem[:path].split('@', 2)
+        cache_path = github_cache_path(gem[:name], { repo: repo, branch: ref })
+
+        next unless File.directory?(cache_path)
+
+        commits_behind = check_commits_behind(cache_path, ref)
+        next unless commits_behind&.positive?
+
+        outdated << {
+          gem_name: gem[:name],
+          repo: repo,
+          ref: ref,
+          commits_behind: commits_behind
+        }
+      end
+
+      outdated
+    end
+
+    # Check how many commits behind the local cache is from the remote branch
+    def check_commits_behind(cache_path, branch)
+      Dir.chdir(cache_path) do
+        # Fetch latest without output
+        system('git', 'fetch', 'origin', branch, out: '/dev/null', err: '/dev/null')
+
+        # Count commits between local and remote
+        output, status = Open3.capture2('git', 'rev-list', '--count', "HEAD..origin/#{branch}")
+        return status.success? ? output.strip.to_i : nil
+      end
     rescue StandardError
       nil
     end
