@@ -1126,6 +1126,17 @@ module DemoScripts
         return
       end
 
+      # Install dependencies first if node_modules doesn't exist
+      node_modules = File.join(npm_path, 'node_modules')
+      unless File.directory?(node_modules)
+        puts "  Installing dependencies for #{gem_name}..."
+        success = Dir.chdir(npm_path) do
+          system('npm', 'install', out: '/dev/null', err: '/dev/null')
+        end
+        warn "  ⚠️  Warning: npm install failed for #{gem_name}" unless success
+        return unless success
+      end
+
       data = JSON.parse(File.read(package_json))
       build_script = data.dig('scripts', 'build')
 
