@@ -39,8 +39,9 @@ module DemoScripts
       detect_context!
       parse_options!
 
-      # Require bundler/setup only when actually running commands (not for --help)
-      require 'bundler/setup'
+      # Only require bundler/setup for commands that actually need gem dependencies
+      # Status, cache, and watch commands only use git/filesystem, not gems
+      require 'bundler/setup' unless read_only_command?
 
       if @show_status
         show_status_info
@@ -82,6 +83,11 @@ module DemoScripts
     }.freeze
 
     private
+
+    # Check if the command is read-only (doesn't need bundler/setup)
+    def read_only_command?
+      @show_status || @show_cache || @list_watch || @kill_watch || @clean_cache || @clean_cache_gem
+    end
 
     # rubocop:disable Lint/DuplicateBranch
     def process_gem_value(gem_name, value)
