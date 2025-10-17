@@ -1009,6 +1009,23 @@ module DemoScripts
       end
     end
 
+    # Removes stale gem entries from Gemfile.lock to prevent bundle update failures
+    # This is necessary when switching gem sources (rubygems <-> github <-> path)
+    # because the lock file may reference commits/versions that no longer exist
+    def clean_gemfile_lock(demo_path, gems_to_clean)
+      return unless gems_to_clean.any?
+
+      lock_file = File.join(demo_path, 'Gemfile.lock')
+      return unless File.exist?(lock_file)
+
+      puts "  Cleaning lock file entries for: #{gems_to_clean.join(', ')}" if verbose
+
+      # Simply remove the lock file and let bundle regenerate it
+      # This is the safest approach to avoid any inconsistencies
+      File.delete(lock_file)
+      puts '  Removed Gemfile.lock to force clean resolution' if verbose
+    end
+
     # rubocop:disable Metrics/MethodLength, Metrics/AbcSize
     def run_bundle_install(demo_path, for_restore: false)
       return if dry_run
@@ -1028,21 +1045,28 @@ module DemoScripts
             system('bundle', 'install', '--quiet')
           end
         else
+          # Clean lock file to prevent "Could not find gem" errors
+          clean_gemfile_lock(demo_path, gems_to_update)
+
           puts "  Updating gems: #{gems_to_update.join(', ')}" if verbose
           success = Dir.chdir(demo_path) do
-            # Update specific gems to pull from rubygems
-            result = system('bundle', 'update', *gems_to_update, '--quiet')
-            warn '  ⚠️  ERROR: Failed to update gems. Lock file may be inconsistent.' unless result
+            # Install from scratch since we removed the lock file
+            result = system('bundle', 'install', '--quiet')
+            warn '  ⚠️  ERROR: Failed to install gems. Check Gemfile for errors.' unless result
             result
           end
         end
       elsif gems_to_update.any?
         # When swapping to local/GitHub dependencies, we need to update the gems
         # to resolve potential lock file conflicts (e.g., version no longer available in new source)
-        puts '  Running bundle update (to resolve swapped gem sources)...'
-        puts "  Updating gems: #{gems_to_update.join(', ')}" if verbose
+        # Clean lock file to prevent "Could not find gem" errors
+        clean_gemfile_lock(demo_path, gems_to_update)
+
+        puts '  Running bundle install (to resolve swapped gem sources)...'
+        puts "  Installing gems: #{gems_to_update.join(', ')}" if verbose
         success = Dir.chdir(demo_path) do
-          system('bundle', 'update', *gems_to_update, '--quiet')
+          # Install from scratch since we removed the lock file
+          system('bundle', 'install', '--quiet')
         end
       else
         puts '  Running bundle install...'
