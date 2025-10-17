@@ -1194,7 +1194,9 @@ module DemoScripts
         puts '   - List: bin/swap-deps --list-watch'
         puts '   - Stop: bin/swap-deps --kill-watch'
       else
-        puts '   4. Rebuild packages when needed: cd <gem-path> && npm run build'
+        puts '   4. Rebuild packages when needed:'
+        puts '      - Manual: cd <gem-path> && npm run build'
+        puts '      - Auto: Add --watch flag to enable auto-rebuild on file changes'
       end
 
       puts "\n   To restore: bin/swap-deps --restore"
