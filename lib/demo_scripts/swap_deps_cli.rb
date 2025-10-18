@@ -160,6 +160,7 @@ module DemoScripts
       [repo, ref, ref_type]
     end
 
+    # rubocop:disable Metrics/MethodLength
     def detect_context!
       # Find project root by looking for .swap-deps.yml or bin/swap-deps
       project_root = find_project_root
@@ -169,8 +170,12 @@ module DemoScripts
         # Change to project root and detect if we were in a demo directory
         original_demo = detect_demo_from_path(current_dir, project_root)
 
-        Dir.chdir(project_root)
-        puts "📍 Changed to project root: #{project_root}"
+        begin
+          Dir.chdir(project_root)
+          puts "📍 Changed to project root: #{project_root}"
+        rescue SystemCallError => e
+          raise Error, "Failed to change to project root #{project_root}: #{e.message}"
+        end
 
         if original_demo
           @in_demo_dir = true
@@ -184,13 +189,21 @@ module DemoScripts
         @root_config_file = File.expand_path('.swap-deps.yml')
       end
     end
+    # rubocop:enable Metrics/MethodLength
 
     # Find the project root by walking up the directory tree
     def find_project_root(start_dir = Dir.pwd)
-      dir = start_dir
+      # Resolve symlinks to prevent attacks and circular references
+      dir = File.realpath(start_dir)
+      visited = Set.new
       max_depth = 10 # Prevent infinite loops
 
       max_depth.times do
+        # Check if we've seen this directory before (circular reference)
+        return nil if visited.include?(dir)
+
+        visited.add(dir)
+
         # Check for project markers
         return dir if File.exist?(File.join(dir, '.swap-deps.yml'))
         return dir if File.exist?(File.join(dir, 'bin', 'swap-deps'))
@@ -198,7 +211,11 @@ module DemoScripts
         parent = File.dirname(dir)
         break if parent == dir # Reached filesystem root
 
-        dir = parent
+        # Resolve symlinks in parent path
+        dir = File.realpath(parent)
+      rescue SystemCallError
+        # Path doesn't exist or permission denied
+        return nil
       end
 
       nil # Not found
