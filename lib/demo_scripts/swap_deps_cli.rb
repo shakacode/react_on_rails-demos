@@ -10,7 +10,7 @@ module DemoScripts
 
     attr_reader :gem_paths, :github_repos, :dry_run, :verbose, :restore, :apply_config,
                 :skip_build, :watch_mode, :demo_filter, :demos_dir, :list_watch, :kill_watch,
-                :show_cache, :clean_cache, :clean_cache_gem, :show_status
+                :show_cache, :clean_cache, :clean_cache_gem, :show_status, :auto_update
 
     def initialize
       @gem_paths = {}
@@ -32,6 +32,7 @@ module DemoScripts
       @clean_cache = false
       @clean_cache_gem = nil
       @show_status = false
+      @auto_update = true # Default to auto-update for convenience
     end
 
     # rubocop:disable Metrics/AbcSize, Metrics/MethodLength, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
@@ -39,8 +40,9 @@ module DemoScripts
       detect_context!
       parse_options!
 
-      # Require bundler/setup only when actually running commands (not for --help)
-      require 'bundler/setup'
+      # Only require bundler/setup for commands that actually need gem dependencies
+      # Status, cache, and watch commands only use git/filesystem, not gems
+      require 'bundler/setup' unless read_only_command?
 
       if @show_status
         show_status_info
@@ -82,6 +84,11 @@ module DemoScripts
     }.freeze
 
     private
+
+    # Check if the command is read-only (doesn't need bundler/setup)
+    def read_only_command?
+      @show_status || @show_cache || @list_watch || @kill_watch || @clean_cache || @clean_cache_gem
+    end
 
     # rubocop:disable Lint/DuplicateBranch
     def process_gem_value(gem_name, value)
@@ -153,26 +160,78 @@ module DemoScripts
       [repo, ref, ref_type]
     end
 
+    # rubocop:disable Metrics/MethodLength
     def detect_context!
-      # Check if we're in a demo directory by looking for Gemfile and presence of ../../.swap-deps.yml
-      if File.exist?('Gemfile') && File.exist?('../../.swap-deps.yml')
-        @in_demo_dir = true
-        @root_config_file = File.expand_path('../../.swap-deps.yml')
-        @current_demo = File.basename(Dir.pwd)
-        @auto_demos_dir = File.basename(File.expand_path('..')) # 'demos' or 'demos-scratch'
-        puts "📍 Detected demo directory context: #{@current_demo}"
-        puts "   Using config: #{@root_config_file}"
-        puts '   Auto-scoped to this demo only'
-      elsif File.exist?('Gemfile') && File.exist?('../../../.swap-deps.yml')
-        # Handle demos-scratch or other nested directories (3 levels deep)
-        @in_demo_dir = true
-        @root_config_file = File.expand_path('../../../.swap-deps.yml')
-        @current_demo = File.basename(Dir.pwd)
-        @auto_demos_dir = File.basename(File.expand_path('..'))
-        puts "📍 Detected demo directory context: #{@current_demo}"
-        puts "   Using config: #{@root_config_file}"
-        puts '   Auto-scoped to this demo only'
+      # Find project root by looking for .swap-deps.yml or bin/swap-deps
+      project_root = find_project_root
+      current_dir = Dir.pwd
+
+      if project_root && project_root != current_dir
+        # Change to project root and detect if we were in a demo directory
+        original_demo = detect_demo_from_path(current_dir, project_root)
+
+        begin
+          Dir.chdir(project_root)
+          puts "📍 Changed to project root: #{project_root}"
+        rescue SystemCallError => e
+          raise Error, "Failed to change to project root #{project_root}: #{e.message}"
+        end
+
+        if original_demo
+          @in_demo_dir = true
+          @current_demo = original_demo[:name]
+          @auto_demos_dir = original_demo[:demos_dir]
+          @root_config_file = File.join(project_root, '.swap-deps.yml') if File.exist?('.swap-deps.yml')
+          puts "   Detected you were in demo: #{@current_demo}"
+          puts '   Auto-scoped to this demo only'
+        end
+      elsif File.exist?('.swap-deps.yml')
+        @root_config_file = File.expand_path('.swap-deps.yml')
       end
+    end
+    # rubocop:enable Metrics/MethodLength
+
+    # Find the project root by walking up the directory tree
+    def find_project_root(start_dir = Dir.pwd)
+      # Resolve symlinks to prevent attacks and circular references
+      dir = File.realpath(start_dir)
+      visited = Set.new
+      max_depth = 10 # Prevent infinite loops
+
+      max_depth.times do
+        # Check if we've seen this directory before (circular reference)
+        return nil if visited.include?(dir)
+
+        visited.add(dir)
+
+        # Check for project markers
+        return dir if File.exist?(File.join(dir, '.swap-deps.yml'))
+        return dir if File.exist?(File.join(dir, 'bin', 'swap-deps'))
+
+        parent = File.dirname(dir)
+        break if parent == dir # Reached filesystem root
+
+        # Resolve symlinks in parent path
+        dir = File.realpath(parent)
+      rescue SystemCallError
+        # Path doesn't exist or permission denied
+        return nil
+      end
+
+      nil # Not found
+    end
+
+    # Detect if a path is inside a demo directory
+    def detect_demo_from_path(current_path, project_root)
+      return nil unless current_path.start_with?(project_root)
+
+      relative_path = current_path.sub("#{project_root}/", '')
+      parts = relative_path.split('/')
+
+      # Check if path matches demos/<demo-name> or demos-scratch/<demo-name>
+      return nil unless parts.length >= 2 && (parts[0] == 'demos' || parts[0] =~ /^demos-/)
+
+      { name: parts[1], demos_dir: parts[0] }
     end
 
     # rubocop:disable Metrics/AbcSize, Metrics/MethodLength, Metrics/BlockLength
@@ -275,6 +334,10 @@ module DemoScripts
 
         opts.on('--status', 'Show current swapped dependencies status') do
           @show_status = true
+        end
+
+        opts.on('--[no-]auto-update', 'Automatically update outdated GitHub repos (default: enabled)') do |v|
+          @auto_update = v
         end
 
         opts.on('--show-cache', 'Show cache location, size, and cached repositories') do
@@ -440,7 +503,7 @@ module DemoScripts
 
     def show_status_info
       swapper = create_swapper
-      swapper.show_status
+      swapper.show_status(auto_update: auto_update)
     end
 
     def apply_from_config

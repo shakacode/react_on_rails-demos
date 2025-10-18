@@ -135,11 +135,32 @@ module DemoScripts
     # rubocop:enable Metrics/MethodLength
 
     # CLI entry point: Display current swapped dependencies status
-    def show_status
+    # @param auto_update [Boolean] Automatically update outdated repos if detected
+    def show_status(auto_update: false)
       puts '📊 Swapped dependencies status:'
+
+      outdated_repos = []
 
       each_demo do |demo_path|
         show_demo_status(demo_path)
+        outdated_repos.concat(check_outdated_repos(demo_path))
+      end
+
+      return unless outdated_repos.any?
+
+      puts "\n⚠️  Outdated GitHub repositories detected:"
+      outdated_repos.uniq.each do |repo_info|
+        commits = repo_info[:commits_behind]
+        puts "   #{repo_info[:gem_name]} (#{repo_info[:repo]}@#{repo_info[:ref]}) - #{commits} commit(s) behind"
+      end
+
+      if auto_update
+        puts "\n🔄 Auto-updating outdated repositories..."
+        update_outdated_repos(outdated_repos.uniq)
+      else
+        puts "\n💡 To update: Re-run your swap command to fetch latest changes"
+        puts "   Example: bin/swap-deps --github '#{outdated_repos.first[:repo]}##{outdated_repos.first[:ref]}'"
+        puts '   Or re-run: bin/swap-deps --status (auto-update is enabled by default)'
       end
     end
 
@@ -360,6 +381,94 @@ module DemoScripts
     rescue StandardError
       nil
     end
+
+    # Check if any GitHub-based swapped gems are outdated
+    def check_outdated_repos(demo_path)
+      gemfile_path = File.join(demo_path, 'Gemfile')
+      return [] unless File.exist?(gemfile_path)
+
+      swapped_gems = detect_swapped_gems(gemfile_path)
+      outdated = []
+
+      swapped_gems.each do |gem|
+        next unless gem[:type] == 'github'
+
+        repo, ref = gem[:path].split('@', 2)
+        cache_path = github_cache_path(gem[:name], { repo: repo, branch: ref })
+
+        next unless File.directory?(cache_path)
+
+        commits_behind = check_commits_behind(cache_path, ref)
+        next unless commits_behind&.positive?
+
+        outdated << {
+          gem_name: gem[:name],
+          repo: repo,
+          ref: ref,
+          commits_behind: commits_behind
+        }
+      end
+
+      outdated
+    end
+
+    # Check how many commits behind the local cache is from the remote branch
+    def check_commits_behind(cache_path, branch)
+      Dir.chdir(cache_path) do
+        # Fetch latest without output
+        fetch_success = system('git', 'fetch', 'origin', branch, out: '/dev/null', err: '/dev/null')
+        unless fetch_success
+          warn "  ⚠️  Warning: Failed to fetch branch #{branch} from #{cache_path}" if verbose
+          return nil
+        end
+
+        # Count commits between local and remote
+        output, status = Open3.capture2('git', 'rev-list', '--count', "HEAD..origin/#{branch}")
+        unless status.success?
+          warn "  ⚠️  Warning: Failed to count commits for #{branch} in #{cache_path}" if verbose
+          return nil
+        end
+
+        output.strip.to_i
+      end
+    rescue StandardError => e
+      warn "  ⚠️  Warning: Error checking commits behind: #{e.message}" if verbose
+      nil
+    end
+
+    # Update outdated GitHub repositories to latest
+    # rubocop:disable Metrics/AbcSize
+    def update_outdated_repos(outdated_repos)
+      outdated_repos.each do |repo_info|
+        gem_name = repo_info[:gem_name]
+        cache_path = github_cache_path(gem_name, { repo: repo_info[:repo], branch: repo_info[:ref] })
+
+        puts "  Updating #{gem_name} (#{repo_info[:repo]}@#{repo_info[:ref]})..."
+        update_github_repo(cache_path, { repo: repo_info[:repo], branch: repo_info[:ref] })
+
+        # Rebuild the npm package if it has one
+        npm_package_path = NPM_PACKAGE_PATHS[gem_name]
+        next if npm_package_path.nil? || skip_build
+
+        npm_path = File.join(cache_path, npm_package_path)
+        package_json = File.join(npm_path, 'package.json')
+        next unless File.exist?(package_json)
+
+        data = JSON.parse(File.read(package_json))
+        next unless data.dig('scripts', 'build')
+
+        puts "  Rebuilding #{gem_name}..."
+        success = Dir.chdir(npm_path) { system('npm', 'run', 'build') }
+        warn "  ⚠️  Warning: npm build failed for #{gem_name}" unless success
+      rescue JSON::ParserError
+        # Skip if package.json is malformed
+        nil
+      end
+
+      puts "\n✅ Updated #{outdated_repos.count} repository/repositories"
+      puts '💡 Changes are now available in your demos'
+    end
+    # rubocop:enable Metrics/AbcSize
 
     def cache_repo_dirs
       return [] unless File.directory?(CACHE_DIR)
@@ -1009,11 +1118,53 @@ module DemoScripts
       end
     end
 
-    # rubocop:disable Metrics/MethodLength, Metrics/AbcSize
+    # Removes stale gem entries from Gemfile.lock to prevent bundle update failures
+    # This is necessary when switching gem sources (rubygems <-> github <-> path)
+    # because the lock file may reference commits/versions that no longer exist
+    # Returns the backup path if created, nil otherwise
+    def clean_gemfile_lock(demo_path, gems_to_clean)
+      return nil unless gems_to_clean.any?
+
+      lock_file = File.join(demo_path, 'Gemfile.lock')
+      return nil unless File.exist?(lock_file)
+
+      puts "  Cleaning lock file entries for: #{gems_to_clean.join(', ')}" if verbose
+
+      # Create backup before deleting in case bundle install fails
+      backup_lock = "#{lock_file}.pre-swap-backup"
+      FileUtils.cp(lock_file, backup_lock)
+      puts "  Created lock file backup: #{File.basename(backup_lock)}" if verbose
+
+      # Remove the lock file and let bundle regenerate it
+      File.delete(lock_file)
+      puts '  Removed Gemfile.lock to force clean resolution' if verbose
+
+      backup_lock
+    end
+
+    # Restore lock file backup if bundle install failed
+    def restore_lock_backup(backup_path)
+      return unless backup_path && File.exist?(backup_path)
+
+      lock_file = backup_path.sub('.pre-swap-backup', '')
+      FileUtils.mv(backup_path, lock_file)
+      puts '  Restored Gemfile.lock from backup due to bundle failure' if verbose
+    end
+
+    # Clean up lock file backup after successful install
+    def cleanup_lock_backup(backup_path)
+      return unless backup_path && File.exist?(backup_path)
+
+      FileUtils.rm(backup_path)
+      puts '  Removed lock file backup after successful install' if verbose
+    end
+
+    # rubocop:disable Metrics/MethodLength, Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
     def run_bundle_install(demo_path, for_restore: false)
       return if dry_run
 
       gems_to_update = find_supported_gems_in_gemfile(demo_path)
+      lock_backup = nil
 
       if for_restore
         # For restore, we need to update the gems to fetch from rubygems
@@ -1028,21 +1179,37 @@ module DemoScripts
             system('bundle', 'install', '--quiet')
           end
         else
+          # Clean lock file to prevent "Could not find gem" errors
+          lock_backup = clean_gemfile_lock(demo_path, gems_to_update)
+
           puts "  Updating gems: #{gems_to_update.join(', ')}" if verbose
           success = Dir.chdir(demo_path) do
-            # Update specific gems to pull from rubygems
-            result = system('bundle', 'update', *gems_to_update, '--quiet')
-            warn '  ⚠️  ERROR: Failed to update gems. Lock file may be inconsistent.' unless result
-            result
+            # Install from scratch since we removed the lock file
+            system('bundle', 'install', '--quiet')
+          end
+
+          unless success
+            warn '  ⚠️  ERROR: Failed to install gems. Restoring lock file backup.'
+            restore_lock_backup(lock_backup)
+            warn '  ⚠️  Check Gemfile for errors.'
           end
         end
       elsif gems_to_update.any?
         # When swapping to local/GitHub dependencies, we need to update the gems
         # to resolve potential lock file conflicts (e.g., version no longer available in new source)
-        puts '  Running bundle update (to resolve swapped gem sources)...'
-        puts "  Updating gems: #{gems_to_update.join(', ')}" if verbose
+        # Clean lock file to prevent "Could not find gem" errors
+        lock_backup = clean_gemfile_lock(demo_path, gems_to_update)
+
+        puts '  Running bundle install (to resolve swapped gem sources)...'
+        puts "  Installing gems: #{gems_to_update.join(', ')}" if verbose
         success = Dir.chdir(demo_path) do
-          system('bundle', 'update', *gems_to_update, '--quiet')
+          # Install from scratch since we removed the lock file
+          system('bundle', 'install', '--quiet')
+        end
+
+        unless success
+          restore_lock_backup(lock_backup)
+          warn '  ⚠️  ERROR: bundle command failed. Restored lock file backup.'
         end
       else
         puts '  Running bundle install...'
@@ -1051,10 +1218,13 @@ module DemoScripts
         end
       end
 
+      # Clean up backup on success
+      cleanup_lock_backup(lock_backup) if success && lock_backup
+
       warn '  ⚠️  ERROR: bundle command failed' unless success
       success
     end
-    # rubocop:enable Metrics/MethodLength, Metrics/AbcSize
+    # rubocop:enable Metrics/MethodLength, Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
 
     # rubocop:disable Metrics/MethodLength
     def run_npm_install(demo_path, for_restore: false)
@@ -1170,7 +1340,9 @@ module DemoScripts
         puts '   - List: bin/swap-deps --list-watch'
         puts '   - Stop: bin/swap-deps --kill-watch'
       else
-        puts '   4. Rebuild packages when needed: cd <gem-path> && npm run build'
+        puts '   4. Rebuild packages when needed:'
+        puts '      - See paths: bin/swap-deps --status'
+        puts '      - Auto-rebuild: Re-run with --watch flag for automatic rebuilds on file changes'
       end
 
       puts "\n   To restore: bin/swap-deps --restore"

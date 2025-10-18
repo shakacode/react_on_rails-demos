@@ -731,7 +731,7 @@ RSpec.describe DemoScripts::DependencySwapper do
     end
 
     context 'when for_restore is true' do
-      it 'runs bundle update for supported gems' do
+      it 'runs bundle install for supported gems after cleaning lock file' do
         gemfile_content = <<~GEMFILE
           gem 'rails'
           gem 'shakapacker', '~> 9.0'
@@ -739,9 +739,10 @@ RSpec.describe DemoScripts::DependencySwapper do
         GEMFILE
 
         allow(File).to receive(:read).with(gemfile_path).and_return(gemfile_content)
+        expect(swapper).to receive(:clean_gemfile_lock).with(demo_path, %w[shakapacker react_on_rails])
         expect(Dir).to receive(:chdir).with(demo_path).and_yield
         expect(swapper).to receive(:system)
-          .with('bundle', 'update', 'shakapacker', 'react_on_rails', '--quiet').and_return(true)
+          .with('bundle', 'install', '--quiet').and_return(true)
 
         result = swapper.send(:run_bundle_install, demo_path, for_restore: true)
         expect(result).to be true
@@ -761,9 +762,10 @@ RSpec.describe DemoScripts::DependencySwapper do
         gemfile_content = "gem 'shakapacker'"
 
         allow(File).to receive(:read).with(gemfile_path).and_return(gemfile_content)
+        expect(swapper).to receive(:clean_gemfile_lock).with(demo_path, %w[shakapacker])
         expect(Dir).to receive(:chdir).with(demo_path).and_yield
-        expect(swapper).to receive(:system).with('bundle', 'update', 'shakapacker', '--quiet').and_return(false)
-        expect(swapper).to receive(:warn).with(/ERROR: Failed to update gems/)
+        expect(swapper).to receive(:system).with('bundle', 'install', '--quiet').and_return(false)
+        expect(swapper).to receive(:warn).with(/ERROR: Failed to install gems/)
         expect(swapper).to receive(:warn).with(/ERROR: bundle command failed/)
 
         result = swapper.send(:run_bundle_install, demo_path, for_restore: true)
@@ -772,7 +774,7 @@ RSpec.describe DemoScripts::DependencySwapper do
     end
 
     context 'when for_restore is false' do
-      it 'runs bundle update for swapped gems' do
+      it 'runs bundle install for swapped gems after cleaning lock file' do
         gemfile_content = <<~GEMFILE
           gem 'rails'
           gem 'shakapacker', path: '/path/to/shakapacker'
@@ -780,9 +782,9 @@ RSpec.describe DemoScripts::DependencySwapper do
         GEMFILE
 
         allow(File).to receive(:read).with(gemfile_path).and_return(gemfile_content)
+        expect(swapper).to receive(:clean_gemfile_lock).with(demo_path, %w[shakapacker react_on_rails])
         expect(Dir).to receive(:chdir).with(demo_path).and_yield
-        expect(swapper).to receive(:system).with('bundle', 'update', 'shakapacker', 'react_on_rails',
-                                                 '--quiet').and_return(true)
+        expect(swapper).to receive(:system).with('bundle', 'install', '--quiet').and_return(true)
 
         swapper.send(:run_bundle_install, demo_path, for_restore: false)
       end
