@@ -20,7 +20,7 @@ module SwapShakacodeDeps
   # NPM package paths within each gem
   NPM_PACKAGE_PATHS = {
     'shakapacker' => '.',
-    'react_on_rails' => 'node_package',
+    'react_on_rails' => '.',
     'cypress-on-rails' => nil # Ruby-only gem
   }.freeze
 end
