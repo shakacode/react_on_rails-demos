@@ -1,0 +1,36 @@
+# Example configuration file for swap-shakacode-deps
+# Copy this file to .swap-deps.yml and customize for your environment
+# The .swap-deps.yml file should be git-ignored for local development
+
+# Local gem paths
+# These paths will be used when running: swap-shakacode-deps --apply
+gems:
+  # Path to your local shakapacker repository
+  shakapacker: ~/dev/shakapacker
+
+  # Path to your local react_on_rails repository
+  react_on_rails: ~/dev/react_on_rails
+
+  # Path to your local cypress-on-rails repository (if used)
+  # cypress-on-rails: ~/dev/cypress-on-rails
+
+# GitHub repositories
+# Use these for testing specific branches or tags
+# Uncomment and modify as needed
+# github:
+#   shakapacker:
+#     repo: shakacode/shakapacker
+#     branch: main  # or use a specific branch like 'feature-xyz'
+#
+#   react_on_rails:
+#     repo: shakacode/react_on_rails
+#     branch: main  # or use a tag with ref_type: tag
+#
+#   # Example using a tag instead of branch
+#   # cypress-on-rails:
+#   #   repo: shakacode/cypress-on-rails
+#   #   branch: v1.0.0
+#   #   ref_type: tag
+
+# Note: You can mix local paths and GitHub repos
+# Local paths take precedence when both are specified
