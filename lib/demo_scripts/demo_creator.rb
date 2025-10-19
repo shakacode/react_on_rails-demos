@@ -65,7 +65,6 @@ module DemoScripts
       create_readme
       cleanup_unnecessary_files
       create_metadata_file
-      run_automated_tests unless @dry_run
 
       print_completion_message
     end
