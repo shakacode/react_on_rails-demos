@@ -25,7 +25,7 @@ ReactOnRails.configure do |config|
   #
   # Alternately, you can remove the `ReactOnRails::TestHelper.configure_rspec_to_compile_assets`
   # and set the config/shakapacker.yml option for test to true.
-  config.build_test_command = "RAILS_ENV=test bin/shakapacker"
+  config.build_test_command = 'RAILS_ENV=test bin/shakapacker'
 
   ################################################################################
   ################################################################################
@@ -41,11 +41,11 @@ ReactOnRails.configure do |config|
   # different. You should have ONE server bundle which can create all of your server rendered
   # React components.
   #
-  config.server_bundle_js_file = "server-bundle.js"
+  config.server_bundle_js_file = 'server-bundle.js'
 
   # Configure where server bundles are output. Defaults to "ssr-generated".
   # This should match your webpack configuration for server bundles.
-  config.server_bundle_output_path = "ssr-generated"
+  config.server_bundle_output_path = 'ssr-generated'
 
   # Enforce that server bundles are only loaded from private (non-public) directories.
   # When true, server bundles will only be loaded from the configured server_bundle_output_path.
@@ -58,7 +58,7 @@ ReactOnRails.configure do |config|
   ################################################################################
   # `components_subdirectory`  is the name of the matching directories that contain automatically registered components
   # for use in the Rails views. The default is nil, you can enable the feature by updating it in the next line.
-  config.components_subdirectory = "ror_components"
+  config.components_subdirectory = 'ror_components'
   #
   # For automated component registry, `render_component` view helper method tries to load bundle for component from
   # generated directory. default is false, you can pass option at the time of individual usage or update the default
