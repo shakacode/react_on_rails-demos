@@ -20,8 +20,8 @@ module SwapShakacodeDeps
       pattern = /^(\s*)gem\s+(['"])#{Regexp.escape(gem_name)}\2(.*)$/
 
       gemfile_content.gsub(pattern) do |match|
-        # Skip if line already contains 'path:' or 'github:' - already swapped
-        next match if match.include?('path:') || match.include?('github:')
+        # Skip if line already contains 'path:', 'github:', or 'git:' - already swapped
+        next match if match.include?('path:') || match.include?('github:') || match.include?('git:')
 
         indent = Regexp.last_match(1)
         quote = Regexp.last_match(2)
@@ -39,13 +39,14 @@ module SwapShakacodeDeps
     end
 
     # Swaps a gem to use a GitHub repository in Gemfile
+    # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
     def swap_to_github(gemfile_content, gem_name, github_info)
       # Match gem lines for this gem name
       pattern = /^(\s*)gem\s+(['"])#{Regexp.escape(gem_name)}\2(.*)$/
 
       gemfile_content.gsub(pattern) do |match|
-        # Skip if line already contains 'path:' or 'github:' - already swapped
-        next match if match.include?('path:') || match.include?('github:')
+        # Skip if line already contains 'path:', 'github:', or 'git:' - already swapped
+        next match if match.include?('path:') || match.include?('github:') || match.include?('git:')
 
         indent = Regexp.last_match(1)
         quote = Regexp.last_match(2)
@@ -68,8 +69,10 @@ module SwapShakacodeDeps
         replacement
       end
     end
+    # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
 
     # Detects swapped gems in a Gemfile
+    # rubocop:disable Metrics/AbcSize
     def detect_swapped_gems(gemfile_path)
       return [] unless File.exist?(gemfile_path)
 
@@ -96,11 +99,15 @@ module SwapShakacodeDeps
 
       swapped_gems
     end
+    # rubocop:enable Metrics/AbcSize
 
     # Runs bundle install after swapping gems
     # @param swapped_gems [Array<String>] Optional list of gem names that were actually swapped
+    # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
     def run_bundle_install(path, for_restore: false, swapped_gems: nil)
       return if @dry_run
+
+      validate_path_security!(path)
 
       if for_restore
         # For restore, we need to update ONLY the gems that were actually swapped
@@ -135,6 +142,27 @@ module SwapShakacodeDeps
 
       warn '  ⚠️  ERROR: bundle command failed' unless success
       success
+    end
+    # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
+
+    private
+
+    def validate_path_security!(path)
+      # Expand to absolute path to prevent path traversal
+      expanded_path = File.expand_path(path)
+
+      # Ensure the path exists and is a directory
+      unless File.directory?(expanded_path)
+        raise ValidationError, "Invalid path: #{path} (does not exist or is not a directory)"
+      end
+
+      # Ensure path doesn't escape to system directories (basic check)
+      dangerous_prefixes = %w[/etc /var /usr/bin /usr/sbin /bin /sbin /sys /proc]
+      dangerous_prefixes.each do |prefix|
+        if expanded_path.start_with?(prefix)
+          raise ValidationError, "Invalid path: #{path} (system directory not allowed)"
+        end
+      end
     end
   end
 end

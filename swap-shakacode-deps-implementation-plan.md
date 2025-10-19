@@ -51,7 +51,7 @@ Create a globally installable Ruby gem `swap-shakacode-deps` that provides the d
 
 ## File Structure
 
-```
+```plaintext
 swap-shakacode-deps/
 ├── bin/
 │   └── swap-shakacode-deps         # Executable

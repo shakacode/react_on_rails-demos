@@ -26,10 +26,9 @@ module SwapShakacodeDeps
     # rubocop:enable Metrics/AbcSize
 
     # Main swap operation
-    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
     def swap!
       validate_local_paths!
-      # TODO: clone_github_repos! if github_repos.any?
+      validate_github_not_implemented!
 
       puts '🔄 Swapping to local gem versions...'
       projects = find_projects
@@ -48,10 +47,8 @@ module SwapShakacodeDeps
       puts '✅ Successfully swapped to local gem versions!'
       print_next_steps
     end
-    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
     # Restore operation
-    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
     def restore!
       puts '🔄 Restoring original gem versions...'
       restored_count = 0
@@ -72,7 +69,6 @@ module SwapShakacodeDeps
         puts "✅ Restored #{restored_count} file(s) from backups"
       end
     end
-    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
     # Load configuration from file
     # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
@@ -127,7 +123,7 @@ module SwapShakacodeDeps
       @npm_swapper.run_npm_install(project_path) if File.exist?(package_json_path)
     end
 
-    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+    # rubocop:disable Metrics/AbcSize
     def swap_gemfile(gemfile_path)
       return if @gem_paths.empty? && @github_repos.empty?
 
@@ -155,7 +151,7 @@ module SwapShakacodeDeps
         puts '  ✓ Updated Gemfile'
       end
     end
-    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
+    # rubocop:enable Metrics/AbcSize
 
     def swap_package_json(package_json_path)
       return if @gem_paths.empty?
@@ -166,7 +162,7 @@ module SwapShakacodeDeps
       puts '  ⊘ No npm packages found to swap' unless modified
     end
 
-    # rubocop:disable Metrics/MethodLength
+    # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
     def restore_project(project_path)
       restored = 0
       gemfile_path = File.join(project_path, 'Gemfile')
@@ -185,9 +181,7 @@ module SwapShakacodeDeps
         next unless @backup_manager.backup_exists?(file_path)
 
         puts "\n📦 Processing #{File.basename(project_path)}..."
-        if @backup_manager.restore_file(file_path)
-          restored += 1
-        end
+        restored += 1 if @backup_manager.restore_file(file_path)
       end
 
       if restored.positive?
@@ -200,8 +194,9 @@ module SwapShakacodeDeps
 
       restored
     end
-    # rubocop:enable Metrics/MethodLength
+    # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
 
+    # rubocop:disable Metrics/AbcSize
     def show_project_status(project_path)
       puts "\n📦 #{File.basename(project_path)}:"
 
@@ -224,6 +219,7 @@ module SwapShakacodeDeps
         puts '  ℹ️  No swapped dependencies'
       end
     end
+    # rubocop:enable Metrics/AbcSize
 
     def detect_backup_files(gemfile_path, package_json_path)
       backups = []
@@ -274,6 +270,7 @@ module SwapShakacodeDeps
       paths.transform_values { |path| File.expand_path(path) }
     end
 
+    # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
     def validate_github_repos(repos)
       return {} if repos.nil?
 
@@ -299,6 +296,7 @@ module SwapShakacodeDeps
         result
       end
     end
+    # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
 
     def validate_local_paths!
       @gem_paths.each do |gem_name, path|
@@ -314,6 +312,19 @@ module SwapShakacodeDeps
 
         raise ValidationError, error_msg
       end
+    end
+
+    def validate_github_not_implemented!
+      return if @github_repos.empty?
+
+      error_msg = "GitHub repository cloning is not yet implemented.\n\n"
+      error_msg += "Workaround:\n"
+      error_msg += "  1. Manually clone the repository locally\n"
+      error_msg += "  2. Use the local path instead:\n"
+      error_msg += "     swap-shakacode-deps --#{@github_repos.keys.first.tr('_', '-')} ~/path/to/local/repo\n\n"
+      error_msg += 'This feature is planned for v0.2.0.'
+
+      raise NotImplementedError, error_msg
     end
 
     def print_next_steps

@@ -14,6 +14,7 @@ module SwapShakacodeDeps
     end
 
     # Swaps npm packages to use local file paths in package.json
+    # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
     def swap_to_local(package_json_path, packages)
       return unless File.exist?(package_json_path)
 
@@ -25,6 +26,7 @@ module SwapShakacodeDeps
         npm_package_path = NPM_PACKAGE_PATHS[gem_name]
         next if npm_package_path.nil? # Skip Ruby-only gems
 
+        validate_path_security!(local_path, gem_name)
         full_npm_path = File.join(local_path, npm_package_path)
         npm_name = gem_name.tr('_', '-') # Convert snake_case to kebab-case
 
@@ -48,8 +50,10 @@ module SwapShakacodeDeps
 
       modified
     end
+    # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
 
     # Detects swapped npm packages in package.json
+    # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity
     def detect_swapped_packages(package_json_path)
       return [] unless File.exist?(package_json_path)
 
@@ -74,8 +78,10 @@ module SwapShakacodeDeps
         []
       end
     end
+    # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity
 
     # Runs npm install after swapping packages
+    # rubocop:disable Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
     def run_npm_install(path, for_restore: false)
       return if @dry_run
 
@@ -116,6 +122,7 @@ module SwapShakacodeDeps
       warn '  ⚠️  ERROR: npm install failed' unless success
       success
     end
+    # rubocop:enable Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
 
     # Builds npm packages
     def build_npm_packages(packages)
@@ -157,6 +164,27 @@ module SwapShakacodeDeps
         end
       else
         puts "  ⊘ No build script found for #{gem_name}"
+      end
+    end
+
+    private
+
+    def validate_path_security!(path, gem_name)
+      # Expand to absolute path to prevent path traversal
+      expanded_path = File.expand_path(path)
+
+      # Check for suspicious patterns that might indicate path traversal
+      # These are actually valid, but ensure they resolve to real directories
+      if (path.include?('..') || path.start_with?('~/')) && !File.directory?(expanded_path)
+        raise ValidationError, "Invalid path for #{gem_name}: #{path} (does not exist)"
+      end
+
+      # Ensure path doesn't escape to system directories (basic check)
+      dangerous_prefixes = %w[/etc /var /usr/bin /usr/sbin /bin /sbin /sys /proc]
+      dangerous_prefixes.each do |prefix|
+        if expanded_path.start_with?(prefix)
+          raise ValidationError, "Invalid path for #{gem_name}: #{path} (system directory not allowed)"
+        end
       end
     end
   end
