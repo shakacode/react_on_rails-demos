@@ -26,6 +26,7 @@ def current_bundler
   config.dig("default", "assets_bundler") || "webpack"
 end
 
+# rubocop:disable Metrics/MethodLength
 def load_dependencies
   if File.exist?(CUSTOM_DEPS_CONFIG)
     puts "📝 Using custom dependencies from #{CUSTOM_DEPS_CONFIG}"
@@ -49,6 +50,7 @@ def load_dependencies
     [DEFAULT_RSPACK_DEPS, DEFAULT_WEBPACK_DEPS]
   end
 end
+# rubocop:enable Metrics/MethodLength
 
 def create_config_file
   if File.exist?(CUSTOM_DEPS_CONFIG)
@@ -75,13 +77,14 @@ def create_config_file
   exit 0
 end
 
+# rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity, Style/OptionalBooleanParameter, Metrics/BlockNesting
 def install_dependencies(bundler, install_deps, switching_bundlers = true)
   rspack_deps, webpack_deps = load_dependencies
   deps_to_install = bundler == "rspack" ? rspack_deps : webpack_deps
   deps_to_remove = bundler == "rspack" ? webpack_deps : rspack_deps
 
+  puts ""
   if install_deps
-    puts ""
     puts "📦 Managing dependencies..."
 
     # Remove old bundler dependencies (only when switching)
@@ -133,7 +136,6 @@ def install_dependencies(bundler, install_deps, switching_bundlers = true)
 
     puts "   ✅ Dependencies updated"
   else
-    puts ""
     puts "⚠️  Dependencies not automatically installed (use --install-deps to auto-install)"
     puts ""
 
@@ -143,20 +145,20 @@ def install_dependencies(bundler, install_deps, switching_bundlers = true)
       puts "   npm install --save #{deps_to_install[:prod].join(' ')}"
       puts ""
       puts "🗑️  To remove webpack dependencies, run:"
-      puts "   npm uninstall #{deps_to_remove[:dev].join(' ')}"
-      puts "   npm uninstall #{deps_to_remove[:prod].join(' ')}"
     else
       puts "📦 To install webpack dependencies, run:"
       puts "   npm install --save-dev #{deps_to_install[:dev].join(' ')}"
       puts "   npm install --save #{deps_to_install[:prod].join(' ')}"
       puts ""
       puts "🗑️  To remove rspack dependencies, run:"
-      puts "   npm uninstall #{deps_to_remove[:dev].join(' ')}"
-      puts "   npm uninstall #{deps_to_remove[:prod].join(' ')}"
     end
+    puts "   npm uninstall #{deps_to_remove[:dev].join(' ')}"
+    puts "   npm uninstall #{deps_to_remove[:prod].join(' ')}"
   end
 end
+# rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity, Style/OptionalBooleanParameter, Metrics/BlockNesting
 
+# rubocop:disable Metrics/CyclomaticComplexity, Metrics/MethodLength
 def switch_to(bundler, install_deps)
   unless %w[webpack rspack].include?(bundler)
     puts "❌ Invalid bundler: #{bundler}"
@@ -204,6 +206,7 @@ def switch_to(bundler, install_deps)
   puts "💡 Tip: Both webpack and rspack can coexist in package.json during migration"
   puts "        Use --install-deps to automatically manage dependencies, or manage manually"
 end
+# rubocop:enable Metrics/CyclomaticComplexity, Metrics/MethodLength
 
 def show_usage
   current = current_bundler

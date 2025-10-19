@@ -48,16 +48,37 @@ pre-push:
 
         # Check for local gem paths in Gemfiles (in commits being pushed)
         if git diff --name-only "$remote_branch"...HEAD 2>/dev/null | grep -qE 'Gemfile$'; then
-          if git diff "$remote_branch"...HEAD -- '*/Gemfile' 'Gemfile' 2>/dev/null | grep -qE '^\+.*gem.*path:'; then
+          # Check for local gem paths, but exclude shakacode_demo_common which is intentionally local
+          local_gem_lines=$(git diff "$remote_branch"...HEAD -- '*/Gemfile' 'Gemfile' 2>/dev/null | grep -E '^\+.*gem.*path:' | grep -v 'shakacode_demo_common' || true)
+          if [ -n "$local_gem_lines" ]; then
             echo ""
+            echo "=========================================="
             echo "❌ ERROR: Found local gem paths in Gemfile(s)"
+            echo "=========================================="
             echo ""
             echo "You're trying to push changes with local gem paths (path: '...')."
             echo "This usually means you forgot to restore after using bin/swap-deps."
             echo ""
-            echo "To fix:"
-            echo "  1. Run: bin/swap-deps --restore"
-            echo "  2. Or manually edit the Gemfile(s) to use version constraints"
+            echo "📋 Detected local gem paths:"
+            echo "$local_gem_lines" | sed 's/^+/  /'
+            echo ""
+            echo "🔍 Affected files:"
+            git diff --name-only "$remote_branch"...HEAD -- '*/Gemfile' 'Gemfile' 2>/dev/null | sed 's/^/  /'
+            echo ""
+            echo "💡 To fix:"
+            echo "  1. Check if you used bin/swap-deps for local development:"
+            echo "     bin/swap-deps --status"
+            echo ""
+            echo "  2. If yes, restore the original dependencies:"
+            echo "     bin/swap-deps --restore"
+            echo ""
+            echo "  3. If you didn't use swap-deps, manually edit the Gemfile(s)"
+            echo "     to use version constraints instead of local paths"
+            echo ""
+            echo "  4. After fixing, stage the changes and try pushing again"
+            echo ""
+            echo "ℹ️  Note: shakacode_demo_common is allowed as a local path"
+            echo "=========================================="
             echo ""
             exit 1
           fi
@@ -65,19 +86,40 @@ pre-push:
 
         # Check for file: protocol in package.json files (in commits being pushed)
         if git diff --name-only "$remote_branch"...HEAD 2>/dev/null | grep -qE 'package\.json$'; then
-          if git diff "$remote_branch"...HEAD -- '*/package.json' 'package.json' 2>/dev/null | grep -qE '^\+.*"file:'; then
+          # Check for local file: paths, but exclude shakacode_demo_common which is intentionally local
+          local_npm_lines=$(git diff "$remote_branch"...HEAD -- '*/package.json' 'package.json' 2>/dev/null | grep -E '^\+.*"file:' | grep -v 'shakacode_demo_common' || true)
+          if [ -n "$local_npm_lines" ]; then
             echo ""
+            echo "=========================================="
             echo "❌ ERROR: Found local file: paths in package.json file(s)"
+            echo "=========================================="
             echo ""
             echo "You're trying to push changes with local npm package paths (file:...)."
             echo "This usually means you forgot to restore after using bin/swap-deps."
             echo ""
-            echo "To fix:"
-            echo "  1. Run: bin/swap-deps --restore"
-            echo "  2. Or manually edit the package.json file(s) to use version constraints"
+            echo "📋 Detected local file: paths:"
+            echo "$local_npm_lines" | sed 's/^+/  /'
+            echo ""
+            echo "🔍 Affected files:"
+            git diff --name-only "$remote_branch"...HEAD -- '*/package.json' 'package.json' 2>/dev/null | sed 's/^/  /'
+            echo ""
+            echo "💡 To fix:"
+            echo "  1. Check if you used bin/swap-deps for local development:"
+            echo "     bin/swap-deps --status"
+            echo ""
+            echo "  2. If yes, restore the original dependencies:"
+            echo "     bin/swap-deps --restore"
+            echo ""
+            echo "  3. If you didn't use swap-deps, manually edit the package.json file(s)"
+            echo "     to use version constraints instead of local file: paths"
+            echo ""
+            echo "  4. After fixing, stage the changes and try pushing again"
+            echo ""
+            echo "ℹ️  Note: shakacode_demo_common is allowed as a local path"
+            echo "=========================================="
             echo ""
             exit 1
           fi
         fi
 
-        echo "✅ No local gem paths found"
+        echo "✅ No local gem or file paths found (shakacode_demo_common excluded)"

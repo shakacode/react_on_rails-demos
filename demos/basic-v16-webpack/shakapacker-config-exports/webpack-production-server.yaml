@@ -1,0 +1,146 @@
+# =============================================================================
+# Webpack/Rspack Configuration Export
+# Generated: 2025-10-19T01:48:58.300Z
+# Environment: production
+# Bundler: webpack
+# Config Type: server
+# Total Configs: 2
+# =============================================================================
+
+# Controls webpack optimization: 'development' (fast builds, detailed errors), 'production' (optimized, minified), or 'none'
+mode: production
+# Configuration for output bundles
+output:
+  # Bundle name template. [name]=entry name, [contenthash]=content-based hash for caching, [chunkhash]=chunk hash
+  filename: server-bundle.js
+  # Global object reference for UMD builds (e.g., 'this', 'window', 'global')
+  globalObject: this
+  # Absolute directory path where bundles are written
+  path: ./ssr-generated
+# Entry points for the application - where webpack starts building the dependency graph
+entry:
+  server-bundle: ./app/javascript/packs/server-bundle.js
+# Module resolution configuration
+resolve:
+  # File extensions to try when resolving modules (e.g., ['.js', '.jsx', '.ts', '.tsx'])
+  extensions:
+
+      - .js
+      - .jsx
+      - .mjs
+      - .ts
+      - .tsx
+      - .coffee
+      - .css
+      - .ts
+      - .tsx
+  # Directories to search when resolving modules (e.g., ['node_modules', 'app/javascript'])
+  modules:
+
+      - ./app/javascript
+      - node_modules
+# Array of webpack plugins to apply (e.g., HtmlWebpackPlugin, MiniCssExtractPlugin)
+plugins:
+
+    -
+      options:
+        maxChunks: 1
+    -
+      {}
+    -
+      options:
+        test: {}
+        algorithm: gzip
+        compressionOptions:
+          level: 9
+        filename: [path][base].gz[query]
+        threshold: 0
+        minRatio: 0.8
+        deleteOriginalAssets: false
+      algorithm: "function asyncBufferWrapper(buffer, opts, callback) { if (typeof opts === 'function') { callback = opts; opts = {}; } return zlibBuffer(new ctor(opts), buffer, callback); }"
+    -
+      options:
+        test: {}
+        algorithm: brotliCompress
+        compressionOptions:
+          params:
+            1: 11
+        filename: [path][base].br[query]
+        threshold: 0
+        minRatio: 0.8
+        deleteOriginalAssets: false
+      algorithm: "function asyncBufferWrapper(buffer, opts, callback) { if (typeof opts === 'function') { callback = opts; opts = {}; } return zlibBuffer(new ctor(opts), buffer, callback); }"
+# Configuration for resolving loaders
+resolveLoader:
+  # Directories to search for loaders
+  modules:
+
+      - node_modules
+# Code optimization settings
+optimization:
+  # Enable/disable minification (true in production mode)
+  minimize: false
+# Configures how different file types are processed
+module:
+  # Array of rules defining loaders and processing for different file types
+  rules:
+
+      -
+        oneOf:
+            -
+              resourceQuery: {}
+              type: asset/source
+            -
+              test: {}
+              exclude: {}
+              type: asset/source
+      -
+        test: {}
+        exclude: {}
+        type: asset/resource
+        generator:
+          filename: "(pathData) => { // Guard against null/undefined pathData or filename if (!pathData || !pathData.filename) { return `static/[name]-[hash][ext][query]`; } const path = (0, path_1.normalize)((0, path_1.dirname)(pathData.filename)); const stripPaths = [...additionalPaths, sourcePath].map((p) => (0, path_1.normalize)(p)); const selectedStripPath = stripPaths.find((includePath) => path.startsWith(includePath)); if (!selectedStripPath) { return `static/[name]-[hash][ext][query]`; } // Split on both forward and backward slashes for cross-platform compatibility const folders = path .replace(selectedStripPath, \"\") .split(/[\\\\/]/) .filter(Boolean); const foldersWithStatic = [\"static\", ...folders].join(\"/\"); return `${foldersWithStatic}/[name]-[hash][ext][query]`; }"
+      -
+        test: {}
+        use:
+            -
+              loader: ./node_modules/css-loader/dist/cjs.js
+              options:
+                sourceMap: true
+                importLoaders: 2
+                modules:
+                  exportOnlyLocals: true
+      -
+        test: {}
+        use:
+            -
+              loader: ./node_modules/css-loader/dist/cjs.js
+              options:
+                sourceMap: true
+                importLoaders: 2
+                modules:
+                  exportOnlyLocals: true
+            -
+              loader: ./node_modules/sass-loader/dist/cjs.js
+              options:
+                sourceMap: true
+                sassOptions:
+                  loadPaths: []
+                  quietDeps: true
+      -
+        test: {}
+        include:
+            - ./app/javascript
+        exclude:
+            -
+              and:
+                  - ./node_modules
+              not:
+                  - ./app/javascript
+        use: ({ resource }) => getSwcLoaderConfig(resource)
+# Source map style: 'source-map' (full, slow), 'eval-source-map' (full, fast rebuild), 'cheap-source-map' (fast, less detail), false (none)
+devtool: eval
+# Controls bundle information display: 'normal', 'verbose', 'minimal', 'errors-only', 'none'
+stats: normal
+# Fail the build on first error (true) or continue and report all errors (false)
+bail: true

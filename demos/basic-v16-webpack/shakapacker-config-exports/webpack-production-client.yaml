@@ -1,0 +1,329 @@
+# =============================================================================
+# Webpack/Rspack Configuration Export
+# Generated: 2025-10-19T01:48:58.300Z
+# Environment: production
+# Bundler: webpack
+# Config Type: client
+# Total Configs: 2
+# =============================================================================
+
+# Controls webpack optimization: 'development' (fast builds, detailed errors), 'production' (optimized, minified), or 'none'
+mode: production
+# Configuration for output bundles
+output:
+  # Bundle name template. [name]=entry name, [contenthash]=content-based hash for caching, [chunkhash]=chunk hash
+  filename: js/[name]-[contenthash].js
+  # Template for non-entry chunk files created by code splitting
+  chunkFilename: js/[name]-[contenthash].chunk.js
+  hotUpdateChunkFilename: js/[id].[fullhash].hot-update.js
+  # Absolute directory path where bundles are written
+  path: ./public/packs
+  # URL prefix for loading assets in the browser (used by webpack for code splitting and asset loading)
+  publicPath: /packs/
+  # Cross-origin loading setting for script tags: 'anonymous', 'use-credentials', or false
+  crossOriginLoading: false
+# Entry points for the application - where webpack starts building the dependency graph
+entry:
+  application: ./app/javascript/packs/application.js
+# Module resolution configuration
+resolve:
+  # File extensions to try when resolving modules (e.g., ['.js', '.jsx', '.ts', '.tsx'])
+  extensions:
+
+      - .js
+      - .jsx
+      - .mjs
+      - .ts
+      - .tsx
+      - .coffee
+      - .css
+      - .ts
+      - .tsx
+  # Directories to search when resolving modules (e.g., ['node_modules', 'app/javascript'])
+  modules:
+
+      - ./app/javascript
+      - node_modules
+# Array of webpack plugins to apply (e.g., HtmlWebpackPlugin, MiniCssExtractPlugin)
+plugins:
+
+    -
+      {}
+    -
+      options:
+        enabled: true
+        assets: {}
+        output: ./public/packs/manifest.json
+        replacer: null
+        space: 2
+        writeToDisk: true
+        fileExtRegex: {}
+        sortManifest: true
+        merge: false
+        publicPath: /packs/
+        contextRelativeKeys: false
+        entrypoints: true
+        entrypointsKey: entrypoints
+        entrypointsUseAssets: true
+        integrity: false
+        integrityHashes:
+            - sha384
+        integrityPropertyName: integrity
+        extra: {}
+      assets: {}
+      assetNames: {}
+      hooks:
+        apply:
+          _args:
+              - manifest
+          taps: []
+          interceptors: []
+          _call: "function CALL_DELEGATE(...args) { this.call = this._createCall(\"sync\"); return this.call(...args); }"
+          call: "function CALL_DELEGATE(...args) { this.call = this._createCall(\"sync\"); return this.call(...args); }"
+          _callAsync: "function CALL_ASYNC_DELEGATE(...args) { this.callAsync = this._createCall(\"async\"); return this.callAsync(...args); }"
+          callAsync: "function CALL_ASYNC_DELEGATE(...args) { this.callAsync = this._createCall(\"async\"); return this.callAsync(...args); }"
+          _promise: "function PROMISE_DELEGATE(...args) { this.promise = this._createCall(\"promise\"); return this.promise(...args); }"
+          promise: "function PROMISE_DELEGATE(...args) { this.promise = this._createCall(\"promise\"); return this.promise(...args); }"
+          compile: function COMPILE(options) { factory.setup(this, options); return factory.create(options); }
+          tap: "tap(options, fn) { this._tap(\"sync\", options, fn); }"
+          tapAsync: "() => { throw new Error(\"tapAsync is not supported on a SyncHook\"); }"
+          tapPromise: "() => { throw new Error(\"tapPromise is not supported on a SyncHook\"); }"
+          constructor: function SyncHook(args = [], name = undefined) { const hook = new Hook(args, name); hook.constructor = SyncHook; hook.tapAsync = TAP_ASYNC; hook.tapPromise = TAP_PROMISE; hook.compile = COMPILE; return hook; }
+        customize:
+          _args:
+              - entry
+              - original
+              - manifest
+              - asset
+          taps: []
+          interceptors: []
+          _call: "function CALL_DELEGATE(...args) { this.call = this._createCall(\"sync\"); return this.call(...args); }"
+          call: "function CALL_DELEGATE(...args) { this.call = this._createCall(\"sync\"); return this.call(...args); }"
+          _callAsync: "function CALL_ASYNC_DELEGATE(...args) { this.callAsync = this._createCall(\"async\"); return this.callAsync(...args); }"
+          callAsync: "function CALL_ASYNC_DELEGATE(...args) { this.callAsync = this._createCall(\"async\"); return this.callAsync(...args); }"
+          _promise: "function PROMISE_DELEGATE(...args) { this.promise = this._createCall(\"promise\"); return this.promise(...args); }"
+          promise: "function PROMISE_DELEGATE(...args) { this.promise = this._createCall(\"promise\"); return this.promise(...args); }"
+          compile: function COMPILE(options) { factory.setup(this, options); return factory.create(options); }
+          tap: "tap(options, fn) { this._tap(\"sync\", options, fn); }"
+          tapAsync: "() => { throw new Error(\"tapAsync is not supported on a SyncWaterfallHook\"); }"
+          tapPromise: "() => { throw new Error(\"tapPromise is not supported on a SyncWaterfallHook\"); }"
+          constructor: "function SyncWaterfallHook(args = [], name = undefined) { if (args.length < 1) { throw new Error(\"Waterfall hooks must have at least one argument\"); } const hook = new Hook(args, name); hook.constructor = SyncWaterfallHook; hook.tapAsync = TAP_ASYNC; hook.tapPromise = TAP_PROMISE; hook.compile = COMPILE; return hook; }"
+        transform:
+          _args:
+              - assets
+              - manifest
+          taps:
+              -
+                type: sync
+                fn: "(assets) => { const { sortManifest } = this.options; return sortManifest ? (0, helpers_js_1.getSortedObject)(assets, typeof sortManifest === 'function' ? sortManifest.bind(this) : undefined) : assets; }"
+                name: WebpackAssetsManifest
+          interceptors: []
+          _call: "function CALL_DELEGATE(...args) { this.call = this._createCall(\"sync\"); return this.call(...args); }"
+          call: "function CALL_DELEGATE(...args) { this.call = this._createCall(\"sync\"); return this.call(...args); }"
+          _callAsync: "function CALL_ASYNC_DELEGATE(...args) { this.callAsync = this._createCall(\"async\"); return this.callAsync(...args); }"
+          callAsync: "function CALL_ASYNC_DELEGATE(...args) { this.callAsync = this._createCall(\"async\"); return this.callAsync(...args); }"
+          _promise: "function PROMISE_DELEGATE(...args) { this.promise = this._createCall(\"promise\"); return this.promise(...args); }"
+          promise: "function PROMISE_DELEGATE(...args) { this.promise = this._createCall(\"promise\"); return this.promise(...args); }"
+          compile: function COMPILE(options) { factory.setup(this, options); return factory.create(options); }
+          tap: "tap(options, fn) { this._tap(\"sync\", options, fn); }"
+          tapAsync: "() => { throw new Error(\"tapAsync is not supported on a SyncWaterfallHook\"); }"
+          tapPromise: "() => { throw new Error(\"tapPromise is not supported on a SyncWaterfallHook\"); }"
+          constructor: "function SyncWaterfallHook(args = [], name = undefined) { if (args.length < 1) { throw new Error(\"Waterfall hooks must have at least one argument\"); } const hook = new Hook(args, name); hook.constructor = SyncWaterfallHook; hook.tapAsync = TAP_ASYNC; hook.tapPromise = TAP_PROMISE; hook.compile = COMPILE; return hook; }"
+        done:
+          _args:
+              - manifest
+              - stats
+          taps: []
+          interceptors: []
+          _callAsync: "function CALL_ASYNC_DELEGATE(...args) { this.callAsync = this._createCall(\"async\"); return this.callAsync(...args); }"
+          callAsync: "function CALL_ASYNC_DELEGATE(...args) { this.callAsync = this._createCall(\"async\"); return this.callAsync(...args); }"
+          _promise: "function PROMISE_DELEGATE(...args) { this.promise = this._createCall(\"promise\"); return this.promise(...args); }"
+          promise: "function PROMISE_DELEGATE(...args) { this.promise = this._createCall(\"promise\"); return this.promise(...args); }"
+          compile: function COMPILE(options) { factory.setup(this, options); return factory.create(options); }
+          tap: "tap(options, fn) { this._tap(\"sync\", options, fn); }"
+          tapAsync: "tapAsync(options, fn) { this._tap(\"async\", options, fn); }"
+          tapPromise: "tapPromise(options, fn) { this._tap(\"promise\", options, fn); }"
+          constructor: function AsyncSeriesHook(args = [], name = undefined) { const hook = new Hook(args, name); hook.constructor = AsyncSeriesHook; hook.compile = COMPILE; hook._call = undefined; hook.call = undefined; return hook; }
+        options:
+          _args:
+              - options
+          taps: []
+          interceptors: []
+          _call: "function CALL_DELEGATE(...args) { this.call = this._createCall(\"sync\"); return this.call(...args); }"
+          call: "function CALL_DELEGATE(...args) { this.call = this._createCall(\"sync\"); return this.call(...args); }"
+          _callAsync: "function CALL_ASYNC_DELEGATE(...args) { this.callAsync = this._createCall(\"async\"); return this.callAsync(...args); }"
+          callAsync: "function CALL_ASYNC_DELEGATE(...args) { this.callAsync = this._createCall(\"async\"); return this.callAsync(...args); }"
+          _promise: "function PROMISE_DELEGATE(...args) { this.promise = this._createCall(\"promise\"); return this.promise(...args); }"
+          promise: "function PROMISE_DELEGATE(...args) { this.promise = this._createCall(\"promise\"); return this.promise(...args); }"
+          compile: function COMPILE(options) { factory.setup(this, options); return factory.create(options); }
+          tap: "tap(options, fn) { this._tap(\"sync\", options, fn); }"
+          tapAsync: "() => { throw new Error(\"tapAsync is not supported on a SyncWaterfallHook\"); }"
+          tapPromise: "() => { throw new Error(\"tapPromise is not supported on a SyncWaterfallHook\"); }"
+          constructor: "function SyncWaterfallHook(args = [], name = undefined) { if (args.length < 1) { throw new Error(\"Waterfall hooks must have at least one argument\"); } const hook = new Hook(args, name); hook.constructor = SyncWaterfallHook; hook.tapAsync = TAP_ASYNC; hook.tapPromise = TAP_PROMISE; hook.compile = COMPILE; return hook; }"
+        afterOptions:
+          _args:
+              - options
+              - manifest
+          taps:
+              -
+                type: sync
+                fn: "(options, manifest) => { manifest.options = Object.assign(manifest.defaultOptions, options); (0, schema_utils_1.validate)(options_schema_js_1.optionsSchema, manifest.options, { name: PLUGIN_NAME }); manifest.options.output = (0, node_path_1.normalize)(manifest.options.output); manifest.assets = Object.assign(manifest.options.assets, manifest.assets, manifest.options.assets); manifest.options.apply && manifest.hooks.apply.tap(PLUGIN_NAME, manifest.options.apply); manifest.options.customize && manifest.hooks.customize.tap(PLUGIN_NAME, manifest.options.customize); manifest.options.transform && manifest.hooks.transform.tap(PLUGIN_NAME, manifest.options.transform); manifest.options.done && manifest.hooks.done.tapPromise(PLUGIN_NAME, manifest.options.done); }"
+                name: WebpackAssetsManifest
+          interceptors: []
+          _call: "function CALL_DELEGATE(...args) { this.call = this._createCall(\"sync\"); return this.call(...args); }"
+          call: "function CALL_DELEGATE(...args) { this.call = this._createCall(\"sync\"); return this.call(...args); }"
+          _callAsync: "function CALL_ASYNC_DELEGATE(...args) { this.callAsync = this._createCall(\"async\"); return this.callAsync(...args); }"
+          callAsync: "function CALL_ASYNC_DELEGATE(...args) { this.callAsync = this._createCall(\"async\"); return this.callAsync(...args); }"
+          _promise: "function PROMISE_DELEGATE(...args) { this.promise = this._createCall(\"promise\"); return this.promise(...args); }"
+          promise: "function PROMISE_DELEGATE(...args) { this.promise = this._createCall(\"promise\"); return this.promise(...args); }"
+          compile: function COMPILE(options) { factory.setup(this, options); return factory.create(options); }
+          tap: "tap(options, fn) { this._tap(\"sync\", options, fn); }"
+          tapAsync: "() => { throw new Error(\"tapAsync is not supported on a SyncHook\"); }"
+          tapPromise: "() => { throw new Error(\"tapPromise is not supported on a SyncHook\"); }"
+          constructor: function SyncHook(args = [], name = undefined) { const hook = new Hook(args, name); hook.constructor = SyncHook; hook.tapAsync = TAP_ASYNC; hook.tapPromise = TAP_PROMISE; hook.compile = COMPILE; return hook; }
+    -
+      _sortedModulesCache: {}
+      options:
+        filename: "css/[name]-[contenthash:8].css"
+        ignoreOrder: false
+        runtime: true
+        chunkFilename: "css/[id]-[contenthash:8].css"
+      runtimeOptions:
+        linkType: text/css
+    -
+      options:
+        test: {}
+        algorithm: gzip
+        compressionOptions:
+          level: 9
+        filename: [path][base].gz[query]
+        threshold: 0
+        minRatio: 0.8
+        deleteOriginalAssets: false
+      algorithm: "function asyncBufferWrapper(buffer, opts, callback) { if (typeof opts === 'function') { callback = opts; opts = {}; } return zlibBuffer(new ctor(opts), buffer, callback); }"
+    -
+      options:
+        test: {}
+        algorithm: brotliCompress
+        compressionOptions:
+          params:
+            1: 11
+        filename: [path][base].br[query]
+        threshold: 0
+        minRatio: 0.8
+        deleteOriginalAssets: false
+      algorithm: "function asyncBufferWrapper(buffer, opts, callback) { if (typeof opts === 'function') { callback = opts; opts = {}; } return zlibBuffer(new ctor(opts), buffer, callback); }"
+# Configuration for resolving loaders
+resolveLoader:
+  # Directories to search for loaders
+  modules:
+
+      - node_modules
+# Code optimization settings
+optimization:
+  # Code splitting configuration - extracts common dependencies into separate chunks
+  splitChunks:
+    chunks: all
+  # Extract webpack runtime into separate chunk: 'single' (one runtime for all), true (one per entry), false (inline)
+  runtimeChunk: single
+  # Array of minimizer plugins (e.g., TerserPlugin, CssMinimizerPlugin)
+  minimizer:
+
+      -
+        options:
+          test: {}
+          warningsFilter: () => true
+          parallel: true
+          minimizer:
+            implementation: "async function cssnanoMinify(input, sourceMap, minimizerOptions = { preset: \"default\" }) { /** * @template T * @param {string} module * @returns {Promise<T>} */ const load = async module => { let exports; try { // eslint-disable-next-line import/no-dynamic-require, global-require exports = require(module); return exports; } catch (requireError) { let importESM; try { // eslint-disable-next-line no-new-func importESM = new Function(\"id\", \"return import(id);\"); } catch (e) { importESM = null; } if ( /** @type {Error & {code: string}} */ requireError.code === \"ERR_REQUIRE_ESM\" && importESM) { exports = await importESM(module); return exports.default; } throw requireError; } }; const [[name, code]] = Object.entries(input); /** @type {ProcessOptions} */ const postcssOptions = { from: name, ...minimizerOptions.processorOptions }; if (typeof postcssOptions.parser === \"string\") { try { postcssOptions.parser = await load(postcssOptions.parser); } catch (error) { throw new Error(`Loading PostCSS \"${postcssOptions.parser}\" parser failed: ${/** @type {Error} */error.message}\\n\\n(@${name})`); } } if (typeof postcssOptions.stringifier === \"string\") { try { postcssOptions.stringifier = await load(postcssOptions.stringifier); } catch (error) { throw new Error(`Loading PostCSS \"${postcssOptions.stringifier}\" stringifier failed: ${/** @type {Error} */error.message}\\n\\n(@${name})`); } } if (typeof postcssOptions.syntax === \"string\") { try { postcssOptions.syntax = await load(postcssOptions.syntax); } catch (error) { throw new Error(`Loading PostCSS \"${postcssOptions.syntax}\" syntax failed: ${/** @type {Error} */error.message}\\n\\n(@${name})`); } } if (sourceMap) { postcssOptions.map = { annotation: false }; } /** @type {Postcss} */ // eslint-disable-next-line global-require const postcss = require(\"postcss\").default; // @ts-ignore // eslint-disable-next-line global-require const cssnano = require(\"cssnano\"); // @ts-ignore // Types are broken const result = await postcss([cssnano(minimizerOptions)]).process(code, postcssOptions); return { code: result.css, // @ts-ignore map: result.map ? result.map.toJSON() : // eslint-disable-next-line no-undefined undefined, warnings: result.warnings().map(String) }; }"
+            options: {}
+      -
+        options:
+          test: {}
+          extractComments: true
+          parallel: true
+          minimizer:
+            implementation: "async function terserMinify(input, sourceMap, minimizerOptions, extractComments) { /** * @param {any} value * @returns {boolean} */ const isObject = value => { const type = typeof value; return value != null && (type === \"object\" || type === \"function\"); }; /** * @param {import(\"terser\").MinifyOptions & { sourceMap: undefined } & ({ output: import(\"terser\").FormatOptions & { beautify: boolean } } | { format: import(\"terser\").FormatOptions & { beautify: boolean } })} terserOptions * @param {ExtractedComments} extractedComments * @returns {ExtractCommentsFunction} */ const buildComments = (terserOptions, extractedComments) => { /** @type {{ [index: string]: ExtractCommentsCondition }} */ const condition = {}; let comments; if (terserOptions.format) { ({ comments } = terserOptions.format); } else if (terserOptions.output) { ({ comments } = terserOptions.output); } condition.preserve = typeof comments !== \"undefined\" ? comments : false; if (typeof extractComments === \"boolean\" && extractComments) { condition.extract = \"some\"; } else if (typeof extractComments === \"string\" || extractComments instanceof RegExp) { condition.extract = extractComments; } else if (typeof extractComments === \"function\") { condition.extract = extractComments; } else if (extractComments && isObject(extractComments)) { condition.extract = typeof extractComments.condition === \"boolean\" && extractComments.condition ? \"some\" : typeof extractComments.condition !== \"undefined\" ? extractComments.condition : \"some\"; } else { // No extract // Preserve using \"commentsOpts\" or \"some\" condition.preserve = typeof comments !== \"undefined\" ? comments : \"some\"; condition.extract = false; } // Ensure that both conditions are functions [\"preserve\", \"extract\"].forEach(key => { /** @type {undefined | string} */ let regexStr; /** @type {undefined | RegExp} */ let regex; switch (typeof condition[key]) { case \"boolean\": condition[key] = condition[key] ? () => true : () => false; break; case \"function\": break; case \"string\": if (condition[key] === \"all\") { condition[key] = () => true; break; } if (condition[key] === \"some\") { condition[key] = /** @type {ExtractCommentsFunction} */ (astNode, comment) => (comment.type === \"comment2\" || comment.type === \"comment1\") && /@preserve|@lic|@cc_on|^\\**!/i.test(comment.value); break; } regexStr = /** @type {string} */condition[key]; condition[key] = /** @type {ExtractCommentsFunction} */ (astNode, comment) => new RegExp( /** @type {string} */regexStr).test(comment.value); break; default: regex = /** @type {RegExp} */condition[key]; condition[key] = /** @type {ExtractCommentsFunction} */ (astNode, comment) => /** @type {RegExp} */regex.test(comment.value); } }); // Redefine the comments function to extract and preserve // comments according to the two conditions return (astNode, comment) => { if ( /** @type {{ extract: ExtractCommentsFunction }} */ condition.extract(astNode, comment)) { const commentText = comment.type === \"comment2\" ? `/*${comment.value}*/` : `//${comment.value}`; // Don't include duplicate comments if (!extractedComments.includes(commentText)) { extractedComments.push(commentText); } } return /** @type {{ preserve: ExtractCommentsFunction }} */condition.preserve(astNode, comment); }; }; /** * @param {PredefinedOptions<import(\"terser\").MinifyOptions> & import(\"terser\").MinifyOptions} [terserOptions={}] * @returns {import(\"terser\").MinifyOptions & { sourceMap: undefined } & { compress: import(\"terser\").CompressOptions } & ({ output: import(\"terser\").FormatOptions & { beautify: boolean } } | { format: import(\"terser\").FormatOptions & { beautify: boolean } })} */ const buildTerserOptions = (terserOptions = {}) => { // Need deep copy objects to avoid https://github.com/terser/terser/issues/366 return { ...terserOptions, compress: typeof terserOptions.compress === \"boolean\" ? terserOptions.compress ? {} : false : { ...terserOptions.compress }, // ecma: terserOptions.ecma, // ie8: terserOptions.ie8, // keep_classnames: terserOptions.keep_classnames, // keep_fnames: terserOptions.keep_fnames, mangle: terserOptions.mangle == null ? true : typeof terserOptions.mangle === \"boolean\" ? terserOptions.mangle : { ...terserOptions.mangle }, // module: terserOptions.module, // nameCache: { ...terserOptions.toplevel }, // the `output` option is deprecated ...(terserOptions.format ? { format: { beautify: false, ...terserOptions.format } } : { output: { beautify: false, ...terserOptions.output } }), parse: { ...terserOptions.parse }, // safari10: terserOptions.safari10, // Ignoring sourceMap from options // eslint-disable-next-line no-undefined sourceMap: undefined // toplevel: terserOptions.toplevel }; }; // eslint-disable-next-line global-require const { minify } = require(\"terser\"); // Copy `terser` options const terserOptions = buildTerserOptions(minimizerOptions); // Let terser generate a SourceMap if (sourceMap) { // @ts-ignore terserOptions.sourceMap = { asObject: true }; } /** @type {ExtractedComments} */ const extractedComments = []; if (terserOptions.output) { terserOptions.output.comments = buildComments(terserOptions, extractedComments); } else if (terserOptions.format) { terserOptions.format.comments = buildComments(terserOptions, extractedComments); } if (terserOptions.compress) { // More optimizations if (typeof terserOptions.compress.ecma === \"undefined\") { terserOptions.compress.ecma = terserOptions.ecma; } // https://github.com/webpack/webpack/issues/16135 if (terserOptions.ecma === 5 && typeof terserOptions.compress.arrows === \"undefined\") { terserOptions.compress.arrows = false; } } const [[filename, code]] = Object.entries(input); const result = await minify({ [filename]: code }, terserOptions); return { code: ( /** @type {string} **/result.code), // @ts-ignore // eslint-disable-next-line no-undefined map: result.map ? ( /** @type {SourceMapInput} **/result.map) : undefined, extractedComments }; }"
+            options:
+              parse:
+                ecma: 8
+              compress:
+                ecma: 5
+                warnings: false
+                comparisons: false
+              mangle:
+                safari10: true
+              output:
+                ecma: 5
+                comments: false
+                ascii_only: true
+# Configures how different file types are processed
+module:
+  # Array of rules defining loaders and processing for different file types
+  rules:
+
+      -
+        oneOf:
+            -
+              resourceQuery: {}
+              type: asset/source
+            -
+              test: {}
+              exclude: {}
+              type: asset/source
+      -
+        test: {}
+        exclude: {}
+        type: asset/resource
+        generator:
+          filename: "(pathData) => { // Guard against null/undefined pathData or filename if (!pathData || !pathData.filename) { return `static/[name]-[hash][ext][query]`; } const path = (0, path_1.normalize)((0, path_1.dirname)(pathData.filename)); const stripPaths = [...additionalPaths, sourcePath].map((p) => (0, path_1.normalize)(p)); const selectedStripPath = stripPaths.find((includePath) => path.startsWith(includePath)); if (!selectedStripPath) { return `static/[name]-[hash][ext][query]`; } // Split on both forward and backward slashes for cross-platform compatibility const folders = path .replace(selectedStripPath, \"\") .split(/[\\\\/]/) .filter(Boolean); const foldersWithStatic = [\"static\", ...folders].join(\"/\"); return `${foldersWithStatic}/[name]-[hash][ext][query]`; }"
+      -
+        test: {}
+        use:
+            - ./node_modules/mini-css-extract-plugin/dist/loader.js
+            -
+              loader: ./node_modules/css-loader/dist/cjs.js
+              options:
+                sourceMap: true
+                importLoaders: 2
+                modules:
+                  auto: true
+                  namedExport: true
+                  exportLocalsConvention: camelCaseOnly
+      -
+        test: {}
+        use:
+            - ./node_modules/mini-css-extract-plugin/dist/loader.js
+            -
+              loader: ./node_modules/css-loader/dist/cjs.js
+              options:
+                sourceMap: true
+                importLoaders: 2
+                modules:
+                  auto: true
+                  namedExport: true
+                  exportLocalsConvention: camelCaseOnly
+            -
+              loader: ./node_modules/sass-loader/dist/cjs.js
+              options:
+                sourceMap: true
+                sassOptions:
+                  loadPaths: []
+                  quietDeps: true
+      -
+        test: {}
+        include:
+            - ./app/javascript
+        exclude:
+            -
+              and:
+                  - ./node_modules
+              not:
+                  - ./app/javascript
+        use: ({ resource }) => getSwcLoaderConfig(resource)
+# Source map style: 'source-map' (full, slow), 'eval-source-map' (full, fast rebuild), 'cheap-source-map' (fast, less detail), false (none)
+devtool: source-map
+# Controls bundle information display: 'normal', 'verbose', 'minimal', 'errors-only', 'none'
+stats: normal
+# Fail the build on first error (true) or continue and report all errors (false)
+bail: true
