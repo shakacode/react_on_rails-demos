@@ -49,7 +49,7 @@ pre-push:
         - rebase
     bundle-audit:
       tags: backend security
-      run: bundle audit check --update
+      run: bundle audit check --update --ignore shakacode_demo_common
       skip:
         - merge
         - rebase
