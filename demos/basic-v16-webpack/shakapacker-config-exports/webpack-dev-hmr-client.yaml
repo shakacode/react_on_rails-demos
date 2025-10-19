@@ -1,9 +1,9 @@
 # =============================================================================
 # Webpack/Rspack Configuration Export
-# Generated: 2025-10-19T01:48:58.265Z
+# Generated: 2025-10-19T02:52:54.831Z
 # Environment: development
 # Bundler: webpack
-# Config Type: all
+# Config Type: client
 # =============================================================================
 
 # Controls webpack optimization: 'development' (fast builds, detailed errors), 'production' (optimized, minified), or 'none'
