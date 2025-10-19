@@ -1,0 +1,309 @@
+# =============================================================================
+# Webpack/Rspack Configuration Export
+# Generated: 2025-10-19T01:48:58.265Z
+# Environment: development
+# Bundler: webpack
+# Config Type: all
+# =============================================================================
+
+# Controls webpack optimization: 'development' (fast builds, detailed errors), 'production' (optimized, minified), or 'none'
+mode: development
+# Configuration for output bundles
+output:
+  # Bundle name template. [name]=entry name, [contenthash]=content-based hash for caching, [chunkhash]=chunk hash
+  filename: js/[name].js
+  # Template for non-entry chunk files created by code splitting
+  chunkFilename: js/[name].chunk.js
+  hotUpdateChunkFilename: js/[id].[fullhash].hot-update.js
+  # Absolute directory path where bundles are written
+  path: ./public/packs
+  # URL prefix for loading assets in the browser (used by webpack for code splitting and asset loading)
+  publicPath: /packs/
+  # Cross-origin loading setting for script tags: 'anonymous', 'use-credentials', or false
+  crossOriginLoading: false
+# Entry points for the application - where webpack starts building the dependency graph
+entry:
+  application: ./app/javascript/packs/application.js
+# Module resolution configuration
+resolve:
+  # File extensions to try when resolving modules (e.g., ['.js', '.jsx', '.ts', '.tsx'])
+  extensions:
+
+      - .js
+      - .jsx
+      - .mjs
+      - .ts
+      - .tsx
+      - .coffee
+      - .css
+      - .ts
+      - .tsx
+  # Directories to search when resolving modules (e.g., ['node_modules', 'app/javascript'])
+  modules:
+
+      - ./app/javascript
+      - node_modules
+# Array of webpack plugins to apply (e.g., HtmlWebpackPlugin, MiniCssExtractPlugin)
+plugins:
+
+    -
+      {}
+    -
+      options:
+        enabled: true
+        assets: {}
+        output: ./public/packs/manifest.json
+        replacer: null
+        space: 2
+        writeToDisk: true
+        fileExtRegex: {}
+        sortManifest: true
+        merge: false
+        publicPath: /packs/
+        contextRelativeKeys: false
+        entrypoints: true
+        entrypointsKey: entrypoints
+        entrypointsUseAssets: true
+        integrity: false
+        integrityHashes:
+            - sha384
+        integrityPropertyName: integrity
+        extra: {}
+      assets: {}
+      assetNames: {}
+      hooks:
+        apply:
+          _args:
+              - manifest
+          taps: []
+          interceptors: []
+          _call: "function CALL_DELEGATE(...args) { this.call = this._createCall(\"sync\"); return this.call(...args); }"
+          call: "function CALL_DELEGATE(...args) { this.call = this._createCall(\"sync\"); return this.call(...args); }"
+          _callAsync: "function CALL_ASYNC_DELEGATE(...args) { this.callAsync = this._createCall(\"async\"); return this.callAsync(...args); }"
+          callAsync: "function CALL_ASYNC_DELEGATE(...args) { this.callAsync = this._createCall(\"async\"); return this.callAsync(...args); }"
+          _promise: "function PROMISE_DELEGATE(...args) { this.promise = this._createCall(\"promise\"); return this.promise(...args); }"
+          promise: "function PROMISE_DELEGATE(...args) { this.promise = this._createCall(\"promise\"); return this.promise(...args); }"
+          compile: function COMPILE(options) { factory.setup(this, options); return factory.create(options); }
+          tap: "tap(options, fn) { this._tap(\"sync\", options, fn); }"
+          tapAsync: "() => { throw new Error(\"tapAsync is not supported on a SyncHook\"); }"
+          tapPromise: "() => { throw new Error(\"tapPromise is not supported on a SyncHook\"); }"
+          constructor: function SyncHook(args = [], name = undefined) { const hook = new Hook(args, name); hook.constructor = SyncHook; hook.tapAsync = TAP_ASYNC; hook.tapPromise = TAP_PROMISE; hook.compile = COMPILE; return hook; }
+        customize:
+          _args:
+              - entry
+              - original
+              - manifest
+              - asset
+          taps: []
+          interceptors: []
+          _call: "function CALL_DELEGATE(...args) { this.call = this._createCall(\"sync\"); return this.call(...args); }"
+          call: "function CALL_DELEGATE(...args) { this.call = this._createCall(\"sync\"); return this.call(...args); }"
+          _callAsync: "function CALL_ASYNC_DELEGATE(...args) { this.callAsync = this._createCall(\"async\"); return this.callAsync(...args); }"
+          callAsync: "function CALL_ASYNC_DELEGATE(...args) { this.callAsync = this._createCall(\"async\"); return this.callAsync(...args); }"
+          _promise: "function PROMISE_DELEGATE(...args) { this.promise = this._createCall(\"promise\"); return this.promise(...args); }"
+          promise: "function PROMISE_DELEGATE(...args) { this.promise = this._createCall(\"promise\"); return this.promise(...args); }"
+          compile: function COMPILE(options) { factory.setup(this, options); return factory.create(options); }
+          tap: "tap(options, fn) { this._tap(\"sync\", options, fn); }"
+          tapAsync: "() => { throw new Error(\"tapAsync is not supported on a SyncWaterfallHook\"); }"
+          tapPromise: "() => { throw new Error(\"tapPromise is not supported on a SyncWaterfallHook\"); }"
+          constructor: "function SyncWaterfallHook(args = [], name = undefined) { if (args.length < 1) { throw new Error(\"Waterfall hooks must have at least one argument\"); } const hook = new Hook(args, name); hook.constructor = SyncWaterfallHook; hook.tapAsync = TAP_ASYNC; hook.tapPromise = TAP_PROMISE; hook.compile = COMPILE; return hook; }"
+        transform:
+          _args:
+              - assets
+              - manifest
+          taps:
+              -
+                type: sync
+                fn: "(assets) => { const { sortManifest } = this.options; return sortManifest ? (0, helpers_js_1.getSortedObject)(assets, typeof sortManifest === 'function' ? sortManifest.bind(this) : undefined) : assets; }"
+                name: WebpackAssetsManifest
+          interceptors: []
+          _call: "function CALL_DELEGATE(...args) { this.call = this._createCall(\"sync\"); return this.call(...args); }"
+          call: "function CALL_DELEGATE(...args) { this.call = this._createCall(\"sync\"); return this.call(...args); }"
+          _callAsync: "function CALL_ASYNC_DELEGATE(...args) { this.callAsync = this._createCall(\"async\"); return this.callAsync(...args); }"
+          callAsync: "function CALL_ASYNC_DELEGATE(...args) { this.callAsync = this._createCall(\"async\"); return this.callAsync(...args); }"
+          _promise: "function PROMISE_DELEGATE(...args) { this.promise = this._createCall(\"promise\"); return this.promise(...args); }"
+          promise: "function PROMISE_DELEGATE(...args) { this.promise = this._createCall(\"promise\"); return this.promise(...args); }"
+          compile: function COMPILE(options) { factory.setup(this, options); return factory.create(options); }
+          tap: "tap(options, fn) { this._tap(\"sync\", options, fn); }"
+          tapAsync: "() => { throw new Error(\"tapAsync is not supported on a SyncWaterfallHook\"); }"
+          tapPromise: "() => { throw new Error(\"tapPromise is not supported on a SyncWaterfallHook\"); }"
+          constructor: "function SyncWaterfallHook(args = [], name = undefined) { if (args.length < 1) { throw new Error(\"Waterfall hooks must have at least one argument\"); } const hook = new Hook(args, name); hook.constructor = SyncWaterfallHook; hook.tapAsync = TAP_ASYNC; hook.tapPromise = TAP_PROMISE; hook.compile = COMPILE; return hook; }"
+        done:
+          _args:
+              - manifest
+              - stats
+          taps: []
+          interceptors: []
+          _callAsync: "function CALL_ASYNC_DELEGATE(...args) { this.callAsync = this._createCall(\"async\"); return this.callAsync(...args); }"
+          callAsync: "function CALL_ASYNC_DELEGATE(...args) { this.callAsync = this._createCall(\"async\"); return this.callAsync(...args); }"
+          _promise: "function PROMISE_DELEGATE(...args) { this.promise = this._createCall(\"promise\"); return this.promise(...args); }"
+          promise: "function PROMISE_DELEGATE(...args) { this.promise = this._createCall(\"promise\"); return this.promise(...args); }"
+          compile: function COMPILE(options) { factory.setup(this, options); return factory.create(options); }
+          tap: "tap(options, fn) { this._tap(\"sync\", options, fn); }"
+          tapAsync: "tapAsync(options, fn) { this._tap(\"async\", options, fn); }"
+          tapPromise: "tapPromise(options, fn) { this._tap(\"promise\", options, fn); }"
+          constructor: function AsyncSeriesHook(args = [], name = undefined) { const hook = new Hook(args, name); hook.constructor = AsyncSeriesHook; hook.compile = COMPILE; hook._call = undefined; hook.call = undefined; return hook; }
+        options:
+          _args:
+              - options
+          taps: []
+          interceptors: []
+          _call: "function CALL_DELEGATE(...args) { this.call = this._createCall(\"sync\"); return this.call(...args); }"
+          call: "function CALL_DELEGATE(...args) { this.call = this._createCall(\"sync\"); return this.call(...args); }"
+          _callAsync: "function CALL_ASYNC_DELEGATE(...args) { this.callAsync = this._createCall(\"async\"); return this.callAsync(...args); }"
+          callAsync: "function CALL_ASYNC_DELEGATE(...args) { this.callAsync = this._createCall(\"async\"); return this.callAsync(...args); }"
+          _promise: "function PROMISE_DELEGATE(...args) { this.promise = this._createCall(\"promise\"); return this.promise(...args); }"
+          promise: "function PROMISE_DELEGATE(...args) { this.promise = this._createCall(\"promise\"); return this.promise(...args); }"
+          compile: function COMPILE(options) { factory.setup(this, options); return factory.create(options); }
+          tap: "tap(options, fn) { this._tap(\"sync\", options, fn); }"
+          tapAsync: "() => { throw new Error(\"tapAsync is not supported on a SyncWaterfallHook\"); }"
+          tapPromise: "() => { throw new Error(\"tapPromise is not supported on a SyncWaterfallHook\"); }"
+          constructor: "function SyncWaterfallHook(args = [], name = undefined) { if (args.length < 1) { throw new Error(\"Waterfall hooks must have at least one argument\"); } const hook = new Hook(args, name); hook.constructor = SyncWaterfallHook; hook.tapAsync = TAP_ASYNC; hook.tapPromise = TAP_PROMISE; hook.compile = COMPILE; return hook; }"
+        afterOptions:
+          _args:
+              - options
+              - manifest
+          taps:
+              -
+                type: sync
+                fn: "(options, manifest) => { manifest.options = Object.assign(manifest.defaultOptions, options); (0, schema_utils_1.validate)(options_schema_js_1.optionsSchema, manifest.options, { name: PLUGIN_NAME }); manifest.options.output = (0, node_path_1.normalize)(manifest.options.output); manifest.assets = Object.assign(manifest.options.assets, manifest.assets, manifest.options.assets); manifest.options.apply && manifest.hooks.apply.tap(PLUGIN_NAME, manifest.options.apply); manifest.options.customize && manifest.hooks.customize.tap(PLUGIN_NAME, manifest.options.customize); manifest.options.transform && manifest.hooks.transform.tap(PLUGIN_NAME, manifest.options.transform); manifest.options.done && manifest.hooks.done.tapPromise(PLUGIN_NAME, manifest.options.done); }"
+                name: WebpackAssetsManifest
+          interceptors: []
+          _call: "function CALL_DELEGATE(...args) { this.call = this._createCall(\"sync\"); return this.call(...args); }"
+          call: "function CALL_DELEGATE(...args) { this.call = this._createCall(\"sync\"); return this.call(...args); }"
+          _callAsync: "function CALL_ASYNC_DELEGATE(...args) { this.callAsync = this._createCall(\"async\"); return this.callAsync(...args); }"
+          callAsync: "function CALL_ASYNC_DELEGATE(...args) { this.callAsync = this._createCall(\"async\"); return this.callAsync(...args); }"
+          _promise: "function PROMISE_DELEGATE(...args) { this.promise = this._createCall(\"promise\"); return this.promise(...args); }"
+          promise: "function PROMISE_DELEGATE(...args) { this.promise = this._createCall(\"promise\"); return this.promise(...args); }"
+          compile: function COMPILE(options) { factory.setup(this, options); return factory.create(options); }
+          tap: "tap(options, fn) { this._tap(\"sync\", options, fn); }"
+          tapAsync: "() => { throw new Error(\"tapAsync is not supported on a SyncHook\"); }"
+          tapPromise: "() => { throw new Error(\"tapPromise is not supported on a SyncHook\"); }"
+          constructor: function SyncHook(args = [], name = undefined) { const hook = new Hook(args, name); hook.constructor = SyncHook; hook.tapAsync = TAP_ASYNC; hook.tapPromise = TAP_PROMISE; hook.compile = COMPILE; return hook; }
+    -
+      _sortedModulesCache: {}
+      options:
+        filename: css/[name].css
+        ignoreOrder: false
+        runtime: true
+        chunkFilename: css/[id].css
+      runtimeOptions:
+        linkType: text/css
+    -
+      options:
+        exclude: {}
+        include: {}
+        overlay:
+          entry: ./node_modules/@pmmmwh/react-refresh-webpack-plugin/client/ErrorOverlayEntry.js
+          module: ./node_modules/@pmmmwh/react-refresh-webpack-plugin/overlay/index.js
+          sockIntegration: wds
+    -
+      options:
+        exclude: {}
+        include: {}
+        overlay:
+          entry: ./node_modules/@pmmmwh/react-refresh-webpack-plugin/client/ErrorOverlayEntry.js
+          module: ./node_modules/@pmmmwh/react-refresh-webpack-plugin/overlay/index.js
+          sockIntegration: wds
+# Configuration for resolving loaders
+resolveLoader:
+  # Directories to search for loaders
+  modules:
+
+      - node_modules
+# Code optimization settings
+optimization:
+  # Code splitting configuration - extracts common dependencies into separate chunks
+  splitChunks:
+    chunks: all
+  # Extract webpack runtime into separate chunk: 'single' (one runtime for all), true (one per entry), false (inline)
+  runtimeChunk: single
+# Configures how different file types are processed
+module:
+  # Array of rules defining loaders and processing for different file types
+  rules:
+
+      -
+        oneOf:
+            -
+              resourceQuery: {}
+              type: asset/source
+            -
+              test: {}
+              exclude: {}
+              type: asset/source
+      -
+        test: {}
+        exclude: {}
+        type: asset/resource
+        generator:
+          filename: "(pathData) => { // Guard against null/undefined pathData or filename if (!pathData || !pathData.filename) { return `static/[name]-[hash][ext][query]`; } const path = (0, path_1.normalize)((0, path_1.dirname)(pathData.filename)); const stripPaths = [...additionalPaths, sourcePath].map((p) => (0, path_1.normalize)(p)); const selectedStripPath = stripPaths.find((includePath) => path.startsWith(includePath)); if (!selectedStripPath) { return `static/[name]-[hash][ext][query]`; } // Split on both forward and backward slashes for cross-platform compatibility const folders = path .replace(selectedStripPath, \"\") .split(/[\\\\/]/) .filter(Boolean); const foldersWithStatic = [\"static\", ...folders].join(\"/\"); return `${foldersWithStatic}/[name]-[hash][ext][query]`; }"
+      -
+        test: {}
+        use:
+            - style-loader
+            -
+              loader: ./node_modules/css-loader/dist/cjs.js
+              options:
+                sourceMap: true
+                importLoaders: 2
+                modules:
+                  auto: true
+                  namedExport: true
+                  exportLocalsConvention: camelCaseOnly
+      -
+        test: {}
+        use:
+            - style-loader
+            -
+              loader: ./node_modules/css-loader/dist/cjs.js
+              options:
+                sourceMap: true
+                importLoaders: 2
+                modules:
+                  auto: true
+                  namedExport: true
+                  exportLocalsConvention: camelCaseOnly
+            -
+              loader: ./node_modules/sass-loader/dist/cjs.js
+              options:
+                sourceMap: true
+                sassOptions:
+                  loadPaths: []
+                  quietDeps: true
+      -
+        test: {}
+        include:
+            - ./app/javascript
+        exclude:
+            -
+              and:
+                  - ./node_modules
+              not:
+                  - ./app/javascript
+        use: ({ resource }) => getSwcLoaderConfig(resource)
+# Source map style: 'source-map' (full, slow), 'eval-source-map' (full, fast rebuild), 'cheap-source-map' (fast, less detail), false (none)
+devtool: cheap-module-source-map
+# Webpack dev server configuration (HMR, proxying, HTTPS, etc.)
+devServer:
+  devMiddleware:
+    publicPath: /packs/
+  # Enable Hot Module Replacement (HMR)
+  hot: true
+  liveReload: false
+  historyApiFallback:
+    disableDotRule: true
+  static:
+    publicPath: ./public/packs
+    watch:
+      ignored: **/node_modules/**
+  client:
+    overlay: true
+  # Host for dev server (e.g., 'localhost', '0.0.0.0')
+  host: localhost
+  # Port number for dev server (default: 8080)
+  port: 3035
+  compress: true
+  allowedHosts: auto
+  headers:
+    Access-Control-Allow-Origin: *
