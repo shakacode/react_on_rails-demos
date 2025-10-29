@@ -101,18 +101,36 @@ RSpec.describe DemoScripts::DependencySwapper do
     context 'when already swapped with path' do
       let(:gemfile_content) { "gem 'shakapacker', path: '/other/path'\n" }
 
-      it 'skips the swap' do
+      it 're-swaps to the new path' do
         result = swapper.send(:swap_gem_in_gemfile, gemfile_content, 'shakapacker', local_path)
-        expect(result).to eq("gem 'shakapacker', path: '/other/path'\n")
+        expect(result).to eq("gem 'shakapacker', path: '/Users/test/dev/shakapacker'\n")
       end
     end
 
     context 'when already swapped with github' do
       let(:gemfile_content) { "gem 'shakapacker', github: 'user/repo'\n" }
 
-      it 'skips the swap' do
+      it 're-swaps from github to local path' do
         result = swapper.send(:swap_gem_in_gemfile, gemfile_content, 'shakapacker', local_path)
-        expect(result).to eq("gem 'shakapacker', github: 'user/repo'\n")
+        expect(result).to eq("gem 'shakapacker', path: '/Users/test/dev/shakapacker'\n")
+      end
+    end
+
+    context 'when already swapped with github and branch' do
+      let(:gemfile_content) { "gem 'shakapacker', github: 'user/repo', branch: 'feature-x'\n" }
+
+      it 're-swaps from github branch to local path' do
+        result = swapper.send(:swap_gem_in_gemfile, gemfile_content, 'shakapacker', local_path)
+        expect(result).to eq("gem 'shakapacker', path: '/Users/test/dev/shakapacker'\n")
+      end
+    end
+
+    context 'when already swapped with path and has options' do
+      let(:gemfile_content) { "gem 'shakapacker', path: '/other/path', require: false\n" }
+
+      it 're-swaps to new path and preserves options' do
+        result = swapper.send(:swap_gem_in_gemfile, gemfile_content, 'shakapacker', local_path)
+        expect(result).to eq("gem 'shakapacker', path: '/Users/test/dev/shakapacker', require: false\n")
       end
     end
 
@@ -203,6 +221,26 @@ RSpec.describe DemoScripts::DependencySwapper do
       it 'omits branch parameter for master (like main)' do
         result = swapper.send(:swap_gem_to_github, gemfile_content, 'shakapacker', github_info)
         expect(result).to eq("gem 'shakapacker', github: 'shakacode/shakapacker'\n")
+      end
+    end
+
+    context 'when already swapped with different branch' do
+      let(:gemfile_content) { "gem 'shakapacker', github: 'shakacode/shakapacker', branch: 'old-branch'\n" }
+      let(:github_info) { { repo: 'shakacode/shakapacker', branch: 'new-branch' } }
+
+      it 're-swaps to new branch' do
+        result = swapper.send(:swap_gem_to_github, gemfile_content, 'shakapacker', github_info)
+        expect(result).to eq("gem 'shakapacker', github: 'shakacode/shakapacker', branch: 'new-branch'\n")
+      end
+    end
+
+    context 'when already swapped with local path' do
+      let(:gemfile_content) { "gem 'shakapacker', path: '/some/local/path'\n" }
+      let(:github_info) { { repo: 'shakacode/shakapacker', branch: 'feature-x' } }
+
+      it 're-swaps from local path to github branch' do
+        result = swapper.send(:swap_gem_to_github, gemfile_content, 'shakapacker', github_info)
+        expect(result).to eq("gem 'shakapacker', github: 'shakacode/shakapacker', branch: 'feature-x'\n")
       end
     end
   end
