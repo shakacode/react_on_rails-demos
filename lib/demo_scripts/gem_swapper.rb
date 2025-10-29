@@ -816,7 +816,9 @@ module DemoScripts
       gem_paths.each do |gem_name, path|
         next if File.directory?(path)
 
-        # Skip validation for GitHub-managed repos (they're cloned on demand)
+        # Skip validation for GitHub-managed repos (they're cloned on demand by clone_github_repos!)
+        # Note: github_repos take precedence - if a gem is in both gem_paths and github_repos,
+        # clone_github_repos! will overwrite the gem_paths entry with the cloned cache path
         next if github_repos.key?(gem_name)
 
         missing_paths << { gem_name: gem_name, path: path }
@@ -911,9 +913,9 @@ module DemoScripts
         # Skip if this gem came from GitHub (already in gem_paths via clone_github_repos!)
         next if github_repos.key?(gem_name)
 
-        # Skip missing local paths (they were warned about in validate_local_paths!)
+        # Skip missing local paths (user was already warned by validate_local_paths!)
         unless File.directory?(local_path)
-          puts "  ⊘ Skipping #{gem_name} (path does not exist: #{local_path})"
+          puts "  ⊘ Skipping #{gem_name} - path does not exist: #{local_path}"
           next
         end
 
@@ -1018,9 +1020,9 @@ module DemoScripts
         npm_package_path = NPM_PACKAGE_PATHS[gem_name]
         next if npm_package_path.nil?
 
-        # Skip missing local paths (they were warned about in validate_local_paths!)
+        # Skip missing local paths (user was already warned by validate_local_paths!)
         unless File.directory?(local_path)
-          puts "  ⊘ Skipping #{gem_name} npm package (path does not exist: #{local_path})"
+          puts "  ⊘ Skipping #{gem_name} npm package - path does not exist: #{local_path}"
           next
         end
 
@@ -1314,9 +1316,9 @@ module DemoScripts
         npm_package_path = NPM_PACKAGE_PATHS[gem_name]
         next if npm_package_path.nil?
 
-        # Skip missing local paths
+        # Skip missing local paths (user was already warned by validate_local_paths!)
         unless File.directory?(local_path)
-          puts "  ⊘ Skipping #{gem_name} (path does not exist)"
+          puts "  ⊘ Skipping #{gem_name} build - path does not exist: #{local_path}"
           next
         end
 

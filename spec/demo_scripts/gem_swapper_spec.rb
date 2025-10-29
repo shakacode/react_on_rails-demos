@@ -296,6 +296,32 @@ RSpec.describe DemoScripts::DependencySwapper do
         end.not_to raise_error
       end
     end
+
+    context 'integration: validation and subsequent skip behavior' do
+      it 'warns about missing path, then skips during swap operations' do
+        gemfile_path = '/path/to/Gemfile'
+        gemfile_content = "gem 'shakapacker', '~> 9.0.0'\n"
+
+        # Mock missing directory
+        allow(File).to receive(:directory?).with('/Users/test/dev/shakapacker').and_return(false)
+        allow(File).to receive(:directory?).with(anything).and_call_original
+        allow(swapper).to receive(:dry_run).and_return(false)
+
+        # Validation should warn
+        expect do
+          swapper.send(:validate_local_paths!)
+        end.to output(/⚠️  Warning: Some local paths do not exist/).to_stdout
+
+        # Swap operations should skip with message
+        allow(File).to receive(:read).with(gemfile_path).and_return(gemfile_content)
+        allow(swapper).to receive(:backup_file)
+        allow(swapper).to receive(:write_file)
+
+        expect do
+          swapper.send(:swap_gemfile, gemfile_path)
+        end.to output(/⊘ Skipping shakapacker - path does not exist/).to_stdout
+      end
+    end
   end
 
   describe '#validate_github_repos' do
