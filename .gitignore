@@ -67,3 +67,4 @@ commit_message.txt
 # Local development configuration
 .swap-deps.yml
 *.backup
+swap-shakacode-deps/.rspec_status
