@@ -811,19 +811,28 @@ module DemoScripts
     end
 
     def validate_local_paths!
+      missing_paths = []
+
       gem_paths.each do |gem_name, path|
         next if File.directory?(path)
 
-        error_msg = "Local path for #{gem_name} does not exist: #{path}\n\n"
-        error_msg += "This usually means:\n"
-        error_msg += "  1. The path in .swap-deps.yml is outdated\n"
-        error_msg += "  2. You moved or deleted the local repository\n\n"
-        error_msg += "To fix:\n"
-        error_msg += "  - Update .swap-deps.yml with the correct path\n"
-        error_msg += '  - Or use --restore to restore original dependencies'
+        # Skip validation for GitHub-managed repos (they're cloned on demand)
+        next if github_repos.key?(gem_name)
 
-        raise Error, error_msg
+        missing_paths << { gem_name: gem_name, path: path }
       end
+
+      return if missing_paths.empty?
+
+      # Show warnings for missing paths but don't fail
+      # This allows graceful handling of deleted Conductor workspaces or stale references
+      puts "\n⚠️  Warning: Some local paths do not exist:"
+      missing_paths.each do |missing|
+        puts "   #{missing[:gem_name]}: #{missing[:path]}"
+      end
+      puts "\n   These paths will be skipped. To fix:"
+      puts '   - Update .swap-deps.yml with correct paths'
+      puts "   - Or use --restore to restore original dependencies\n\n"
     end
 
     def clone_github_repos!
@@ -889,6 +898,7 @@ module DemoScripts
       run_npm_install(demo_path) if File.exist?(package_json_path)
     end
 
+    # rubocop:disable Metrics/MethodLength
     def swap_gemfile(gemfile_path)
       return if gem_paths.empty? && github_repos.empty?
 
@@ -900,6 +910,12 @@ module DemoScripts
       gem_paths.each do |gem_name, local_path|
         # Skip if this gem came from GitHub (already in gem_paths via clone_github_repos!)
         next if github_repos.key?(gem_name)
+
+        # Skip missing local paths (they were warned about in validate_local_paths!)
+        unless File.directory?(local_path)
+          puts "  ⊘ Skipping #{gem_name} (path does not exist: #{local_path})"
+          next
+        end
 
         content = swap_gem_in_gemfile(content, gem_name, local_path)
       end
@@ -916,6 +932,7 @@ module DemoScripts
         puts '  ✓ Updated Gemfile'
       end
     end
+    # rubocop:enable Metrics/MethodLength
 
     def swap_gem_in_gemfile(content, gem_name, local_path)
       # Match variations:
@@ -978,7 +995,7 @@ module DemoScripts
       end
     end
 
-    # rubocop:disable Metrics/AbcSize
+    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
     def swap_package_json(package_json_path)
       npm_gems = gem_paths.select { |gem_name, _| NPM_PACKAGE_PATHS[gem_name] }
       return if npm_gems.empty?
@@ -991,6 +1008,12 @@ module DemoScripts
       npm_gems.each do |gem_name, local_path|
         npm_package_path = NPM_PACKAGE_PATHS[gem_name]
         next if npm_package_path.nil?
+
+        # Skip missing local paths (they were warned about in validate_local_paths!)
+        unless File.directory?(local_path)
+          puts "  ⊘ Skipping #{gem_name} npm package (path does not exist: #{local_path})"
+          next
+        end
 
         full_npm_path = File.join(local_path, npm_package_path)
         npm_name = gem_name.tr('_', '-') # Convert snake_case to kebab-case
@@ -1006,7 +1029,7 @@ module DemoScripts
 
       write_file(package_json_path, "#{JSON.pretty_generate(data)}\n") if modified
     end
-    # rubocop:enable Metrics/AbcSize
+    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
     # rubocop:disable Metrics/MethodLength
     def restore_demo(demo_path)
@@ -1281,6 +1304,12 @@ module DemoScripts
       gem_paths.each do |gem_name, local_path|
         npm_package_path = NPM_PACKAGE_PATHS[gem_name]
         next if npm_package_path.nil?
+
+        # Skip missing local paths
+        unless File.directory?(local_path)
+          puts "  ⊘ Skipping #{gem_name} (path does not exist)"
+          next
+        end
 
         build_npm_package(gem_name, local_path, npm_package_path)
       end

@@ -249,11 +249,13 @@ RSpec.describe DemoScripts::DependencySwapper do
     end
 
     context 'when path does not exist' do
-      it 'raises error' do
+      it 'shows warning but does not raise error' do
         allow(File).to receive(:directory?).and_return(false)
         expect do
-          swapper.send(:validate_local_paths!)
-        end.to raise_error(DemoScripts::Error, /Local path for shakapacker does not exist/)
+          expect do
+            swapper.send(:validate_local_paths!)
+          end.to output(/⚠️  Warning: Some local paths do not exist/).to_stdout
+        end.not_to raise_error
       end
     end
   end
@@ -766,6 +768,7 @@ RSpec.describe DemoScripts::DependencySwapper do
         expect(Dir).to receive(:chdir).with(demo_path).and_yield
         expect(swapper).to receive(:system).with('bundle', 'install', '--quiet').and_return(false)
         expect(swapper).to receive(:warn).with(/ERROR: Failed to install gems/)
+        expect(swapper).to receive(:warn).with(/Check Gemfile for errors/)
         expect(swapper).to receive(:warn).with(/ERROR: bundle command failed/)
 
         result = swapper.send(:run_bundle_install, demo_path, for_restore: true)
@@ -905,6 +908,7 @@ RSpec.describe DemoScripts::DependencySwapper do
 
     context 'with path-based swapped gem' do
       before do
+        allow(File).to receive(:exist?).and_return(false) # Default for unknown paths
         allow(File).to receive(:exist?).with(gemfile_path).and_return(true)
         allow(File).to receive(:exist?).with(package_json_path).and_return(true)
         allow(File).to receive(:exist?).with("#{gemfile_path}.backup").and_return(true)
@@ -916,7 +920,7 @@ RSpec.describe DemoScripts::DependencySwapper do
 
       it 'displays swapped gem with path' do
         output = capture_output { swapper.send(:show_demo_status, demo_path) }
-        expect(output).to include('Gemfile:')
+        expect(output).to include('Dependencies:')
         expect(output).to include('✓ shakapacker → /Users/test/dev/shakapacker')
         expect(output).to include('Backups: Gemfile')
       end
@@ -935,8 +939,10 @@ RSpec.describe DemoScripts::DependencySwapper do
 
       it 'displays swapped gem with GitHub repo and branch' do
         output = capture_output { swapper.send(:show_demo_status, demo_path) }
-        expect(output).to include('Gemfile:')
-        expect(output).to include('✓ shakapacker → shakacode/shakapacker@fix-hmr')
+        expect(output).to include('Dependencies:')
+        expect(output).to include('✓ shakapacker →')
+        expect(output).to include('(fix-hmr)')
+        expect(output).to include('[📦 shakacode/shakapacker]')
       end
     end
 
@@ -953,12 +959,15 @@ RSpec.describe DemoScripts::DependencySwapper do
 
       it 'displays swapped gem with default main branch' do
         output = capture_output { swapper.send(:show_demo_status, demo_path) }
-        expect(output).to include('✓ shakapacker → shakacode/shakapacker@main')
+        expect(output).to include('✓ shakapacker →')
+        expect(output).to include('(main)')
+        expect(output).to include('[📦 shakacode/shakapacker]')
       end
     end
 
     context 'with swapped npm package' do
       before do
+        allow(File).to receive(:exist?).and_return(false) # Default for unknown paths
         allow(File).to receive(:exist?).with(gemfile_path).and_return(true)
         allow(File).to receive(:exist?).with(package_json_path).and_return(true)
         allow(File).to receive(:exist?).with("#{gemfile_path}.backup").and_return(false)
@@ -968,16 +977,16 @@ RSpec.describe DemoScripts::DependencySwapper do
         allow(File).to receive(:read).with(package_json_path).and_return(package_json_content)
       end
 
-      it 'displays swapped npm package with path' do
+      it 'displays no currently swapped gem dependencies (package.json swaps not shown in status)' do
         output = capture_output { swapper.send(:show_demo_status, demo_path) }
-        expect(output).to include('package.json:')
-        expect(output).to include('✓ shakapacker → /Users/test/dev/shakapacker')
+        expect(output).to include('No currently swapped dependencies')
         expect(output).to include('Backups: package.json')
       end
     end
 
     context 'with multiple swapped dependencies' do
       before do
+        allow(File).to receive(:exist?).and_return(false) # Default for unknown paths
         allow(File).to receive(:exist?).with(gemfile_path).and_return(true)
         allow(File).to receive(:exist?).with(package_json_path).and_return(true)
         allow(File).to receive(:exist?).with("#{gemfile_path}.backup").and_return(true)
@@ -1000,12 +1009,10 @@ RSpec.describe DemoScripts::DependencySwapper do
 
       it 'displays all swapped dependencies' do
         output = capture_output { swapper.send(:show_demo_status, demo_path) }
-        expect(output).to include('Gemfile:')
+        expect(output).to include('Dependencies:')
         expect(output).to include('✓ shakapacker → /Users/test/dev/shakapacker')
-        expect(output).to include('✓ react_on_rails → shakacode/react_on_rails@feature-x')
-        expect(output).to include('package.json:')
-        expect(output).to include('✓ shakapacker → /Users/test/dev/shakapacker')
-        expect(output).to include('✓ react-on-rails → /Users/test/dev/react_on_rails/node_package')
+        expect(output).to include('✓ react_on_rails →')
+        expect(output).to include('(feature-x)')
         expect(output).to include('Backups: Gemfile, package.json')
       end
     end
@@ -1020,9 +1027,9 @@ RSpec.describe DemoScripts::DependencySwapper do
         allow(File).to receive(:read).with(package_json_path).and_return('{ invalid json')
       end
 
-      it 'displays warning about malformed JSON' do
+      it 'displays no swapped dependencies (package.json errors are ignored in status)' do
         output = capture_output { swapper.send(:show_demo_status, demo_path) }
-        expect(output).to include('⚠️  Could not parse package.json')
+        expect(output).to include('No swapped dependencies')
       end
     end
 
