@@ -953,15 +953,16 @@ module DemoScripts
         quote = Regexp.last_match(2)
         rest = Regexp.last_match(3)
 
-        # Extract options after version/path/github (if any)
-        # Match: , 'version', options OR , path: '...', options OR , github: '...', options OR , options OR nothing
-        # Remove version, path, github, branch, tag if present
+        # Extract options after version/path/github/git (if any)
+        # Remove all source specification parameters to replace with new path:
         options = rest.dup
         options = options.sub(/^\s*,\s*(['"])[^'"]*\1/, '') # Remove version if present
         options = options.sub(/,\s*path:\s*(['"])[^'"]*\1/, '') # Remove path: if present
         options = options.sub(/,\s*github:\s*(['"])[^'"]*\1/, '') # Remove github: if present
+        options = options.sub(/,\s*git:\s*(['"])[^'"]*\1/, '') # Remove git: if present
         options = options.sub(/,\s*branch:\s*(['"])[^'"]*\1/, '') # Remove branch: if present
         options = options.sub(/,\s*tag:\s*(['"])[^'"]*\1/, '') # Remove tag: if present
+        options = options.sub(/,\s*ref:\s*(['"])[^'"]*\1/, '') # Remove ref: if present
 
         # Build replacement: gem 'name', path: 'local_path' [, options...]
         replacement = "#{indent}gem #{quote}#{gem_name}#{quote}, path: #{quote}#{local_path}#{quote}"
@@ -970,7 +971,7 @@ module DemoScripts
       end
     end
 
-    # rubocop:disable Metrics/AbcSize
+    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
     def swap_gem_to_github(content, gem_name, info)
       # Match gem lines for this gem name
       pattern = /^(\s*)gem\s+(['"])#{Regexp.escape(gem_name)}\2(.*)$/
@@ -980,14 +981,16 @@ module DemoScripts
         quote = Regexp.last_match(2)
         rest = Regexp.last_match(3)
 
-        # Extract options after version/path/github (if any)
-        # Remove version, path, github, branch, tag if present
+        # Extract options after version/path/github/git (if any)
+        # Remove all source specification parameters to replace with new github:
         options = rest.dup
         options = options.sub(/^\s*,\s*(['"])[^'"]*\1/, '') # Remove version if present
         options = options.sub(/,\s*path:\s*(['"])[^'"]*\1/, '') # Remove path: if present
         options = options.sub(/,\s*github:\s*(['"])[^'"]*\1/, '') # Remove github: if present
+        options = options.sub(/,\s*git:\s*(['"])[^'"]*\1/, '') # Remove git: if present
         options = options.sub(/,\s*branch:\s*(['"])[^'"]*\1/, '') # Remove branch: if present
         options = options.sub(/,\s*tag:\s*(['"])[^'"]*\1/, '') # Remove tag: if present
+        options = options.sub(/,\s*ref:\s*(['"])[^'"]*\1/, '') # Remove ref: if present
 
         # Use tag: for tags, branch: for branches (default to :branch if not specified)
         ref_type = info[:ref_type] || :branch
@@ -1004,7 +1007,7 @@ module DemoScripts
         replacement
       end
     end
-    # rubocop:enable Metrics/AbcSize
+    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
     # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
     def swap_package_json(package_json_path)

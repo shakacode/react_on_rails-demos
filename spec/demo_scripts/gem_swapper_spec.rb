@@ -150,6 +150,44 @@ RSpec.describe DemoScripts::DependencySwapper do
         expect(result).to include("gem 'react_on_rails', '~> 16.0'\n")
       end
     end
+
+    context 'when swapped from git url with ref' do
+      let(:gemfile_content) { "gem 'shakapacker', git: 'https://github.com/user/repo.git', ref: 'abc123'\n" }
+
+      it 'removes git and ref when converting to path' do
+        result = swapper.send(:swap_gem_in_gemfile, gemfile_content, 'shakapacker', local_path)
+        expect(result).to eq("gem 'shakapacker', path: '/Users/test/dev/shakapacker'\n")
+      end
+    end
+
+    context 'when swapped from git url without ref' do
+      let(:gemfile_content) { "gem 'shakapacker', git: 'https://github.com/user/repo.git'\n" }
+
+      it 'removes git when converting to path' do
+        result = swapper.send(:swap_gem_in_gemfile, gemfile_content, 'shakapacker', local_path)
+        expect(result).to eq("gem 'shakapacker', path: '/Users/test/dev/shakapacker'\n")
+      end
+    end
+
+    context 'when swapped from git url with branch' do
+      let(:gemfile_content) { "gem 'shakapacker', git: 'https://github.com/user/repo.git', branch: 'main'\n" }
+
+      it 'removes git and branch when converting to path' do
+        result = swapper.send(:swap_gem_in_gemfile, gemfile_content, 'shakapacker', local_path)
+        expect(result).to eq("gem 'shakapacker', path: '/Users/test/dev/shakapacker'\n")
+      end
+    end
+
+    context 'when swapped from git url with ref and options' do
+      let(:gemfile_content) do
+        "gem 'shakapacker', git: 'https://github.com/user/repo.git', ref: 'abc123', require: false\n"
+      end
+
+      it 'removes git and ref but preserves other options' do
+        result = swapper.send(:swap_gem_in_gemfile, gemfile_content, 'shakapacker', local_path)
+        expect(result).to eq("gem 'shakapacker', path: '/Users/test/dev/shakapacker', require: false\n")
+      end
+    end
   end
 
   describe '#swap_gem_to_github' do
@@ -241,6 +279,39 @@ RSpec.describe DemoScripts::DependencySwapper do
       it 're-swaps from local path to github branch' do
         result = swapper.send(:swap_gem_to_github, gemfile_content, 'shakapacker', github_info)
         expect(result).to eq("gem 'shakapacker', github: 'shakacode/shakapacker', branch: 'feature-x'\n")
+      end
+    end
+
+    context 'when swapped from git url with ref' do
+      let(:gemfile_content) { "gem 'shakapacker', git: 'https://github.com/user/repo.git', ref: 'abc123'\n" }
+      let(:github_info) { { repo: 'shakacode/shakapacker', branch: 'feature-x' } }
+
+      it 'removes git and ref when converting to github' do
+        result = swapper.send(:swap_gem_to_github, gemfile_content, 'shakapacker', github_info)
+        expect(result).to eq("gem 'shakapacker', github: 'shakacode/shakapacker', branch: 'feature-x'\n")
+      end
+    end
+
+    context 'when swapped from git url with branch' do
+      let(:gemfile_content) { "gem 'shakapacker', git: 'https://github.com/user/repo.git', branch: 'old'\n" }
+      let(:github_info) { { repo: 'shakacode/shakapacker', branch: 'new' } }
+
+      it 'removes git and old branch when converting to github' do
+        result = swapper.send(:swap_gem_to_github, gemfile_content, 'shakapacker', github_info)
+        expect(result).to eq("gem 'shakapacker', github: 'shakacode/shakapacker', branch: 'new'\n")
+      end
+    end
+
+    context 'when swapped from git url with ref and options' do
+      let(:gemfile_content) do
+        "gem 'shakapacker', git: 'https://github.com/user/repo.git', ref: 'abc123', require: false\n"
+      end
+      let(:github_info) { { repo: 'shakacode/shakapacker', branch: 'feature-x' } }
+
+      it 'removes git and ref but preserves other options' do
+        result = swapper.send(:swap_gem_to_github, gemfile_content, 'shakapacker', github_info)
+        expected = "gem 'shakapacker', github: 'shakacode/shakapacker', branch: 'feature-x', require: false\n"
+        expect(result).to eq(expected)
       end
     end
   end
