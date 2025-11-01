@@ -393,6 +393,50 @@ RSpec.describe DemoScripts::DependencySwapper do
         end.to output(/⊘ Skipping shakapacker - path does not exist/).to_stdout
       end
     end
+
+    context 'integration: mixed valid and invalid paths' do
+      let(:swapper) do
+        described_class.new(
+          gem_paths: {
+            'shakapacker' => '/Users/test/dev/shakapacker',
+            'react_on_rails' => '/Users/test/dev/react_on_rails'
+          }
+        )
+      end
+
+      it 'processes valid paths and skips invalid ones' do
+        gemfile_path = '/path/to/Gemfile'
+        gemfile_content = "gem 'shakapacker', '~> 9.0.0'\ngem 'react_on_rails', '~> 16.0'\n"
+
+        # Mock one valid, one invalid directory
+        allow(File).to receive(:directory?).and_return(false) # default
+        allow(File).to receive(:directory?).with('/Users/test/dev/shakapacker').and_return(true)
+        allow(swapper).to receive(:dry_run).and_return(false)
+
+        # Validation should warn about react_on_rails only
+        expect do
+          swapper.send(:validate_local_paths!)
+        end.to output(/⚠️  Warning: Some local paths do not exist.*react_on_rails/m).to_stdout
+
+        # Swap operations: shakapacker should process, react_on_rails should skip
+        allow(File).to receive(:read).with(gemfile_path).and_return(gemfile_content)
+        allow(swapper).to receive(:backup_file)
+
+        result_content = nil
+        expect(swapper).to receive(:write_file) do |_path, content|
+          result_content = content
+        end
+
+        expect do
+          swapper.send(:swap_gemfile, gemfile_path)
+        end.to output(/⊘ Skipping react_on_rails - path does not exist/).to_stdout
+
+        # Verify shakapacker was swapped but react_on_rails wasn't
+        expect(result_content).not_to be_nil
+        expect(result_content).to include("gem 'shakapacker', path: '/Users/test/dev/shakapacker'")
+        expect(result_content).to include("gem 'react_on_rails', '~> 16.0'") # unchanged
+      end
+    end
   end
 
   describe '#validate_github_repos' do

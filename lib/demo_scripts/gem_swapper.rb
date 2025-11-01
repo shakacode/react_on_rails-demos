@@ -38,6 +38,7 @@ module DemoScripts
       @skip_build = skip_build
       @watch_mode = watch_mode
       @spawned_pids = [] # Track PIDs for cleanup on failure
+      @skipped_gems = [] # Track gems skipped due to missing paths
     end
 
     def swap!
@@ -51,7 +52,7 @@ module DemoScripts
 
       build_local_packages! unless skip_build
 
-      puts '✅ Successfully swapped to local gem versions!'
+      print_swap_summary
       print_next_steps
     rescue StandardError
       # Cleanup spawned watch processes on failure
@@ -900,7 +901,7 @@ module DemoScripts
       run_npm_install(demo_path) if File.exist?(package_json_path)
     end
 
-    # rubocop:disable Metrics/MethodLength
+    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
     def swap_gemfile(gemfile_path)
       return if gem_paths.empty? && github_repos.empty?
 
@@ -916,6 +917,7 @@ module DemoScripts
         # Skip missing local paths (user was already warned by validate_local_paths!)
         unless File.directory?(local_path)
           puts "  ⊘ Skipping #{gem_name} - path does not exist: #{local_path}"
+          @skipped_gems << gem_name unless @skipped_gems.include?(gem_name)
           next
         end
 
@@ -934,7 +936,24 @@ module DemoScripts
         puts '  ✓ Updated Gemfile'
       end
     end
-    # rubocop:enable Metrics/MethodLength
+    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
+
+    # Strips all source specification parameters (version, path, github, git, branch, tag, ref)
+    # from a gem line's rest string, leaving only other options (like require: false)
+    # Returns empty string if no options remain, or the options with leading comma if any remain
+    def strip_gem_source_params(rest)
+      options = rest.dup
+      options = options.sub(/^\s*,\s*(['"])[^'"]*\1/, '') # Remove version if present
+      options = options.sub(/,\s*path:\s*(['"])[^'"]*\1/, '') # Remove path: if present
+      options = options.sub(/,\s*github:\s*(['"])[^'"]*\1/, '') # Remove github: if present
+      options = options.sub(/,\s*git:\s*(['"])[^'"]*\1/, '') # Remove git: if present
+      options = options.sub(/,\s*branch:\s*(['"])[^'"]*\1/, '') # Remove branch: if present
+      options = options.sub(/,\s*tag:\s*(['"])[^'"]*\1/, '') # Remove tag: if present
+      options = options.sub(/,\s*ref:\s*(['"])[^'"]*\1/, '') # Remove ref: if present
+
+      # Return empty string if only whitespace/commas remain, otherwise return with leading comma
+      options.strip.empty? ? '' : options
+    end
 
     def swap_gem_in_gemfile(content, gem_name, local_path)
       # Match variations:
@@ -953,25 +972,16 @@ module DemoScripts
         quote = Regexp.last_match(2)
         rest = Regexp.last_match(3)
 
-        # Extract options after version/path/github/git (if any)
-        # Remove all source specification parameters to replace with new path:
-        options = rest.dup
-        options = options.sub(/^\s*,\s*(['"])[^'"]*\1/, '') # Remove version if present
-        options = options.sub(/,\s*path:\s*(['"])[^'"]*\1/, '') # Remove path: if present
-        options = options.sub(/,\s*github:\s*(['"])[^'"]*\1/, '') # Remove github: if present
-        options = options.sub(/,\s*git:\s*(['"])[^'"]*\1/, '') # Remove git: if present
-        options = options.sub(/,\s*branch:\s*(['"])[^'"]*\1/, '') # Remove branch: if present
-        options = options.sub(/,\s*tag:\s*(['"])[^'"]*\1/, '') # Remove tag: if present
-        options = options.sub(/,\s*ref:\s*(['"])[^'"]*\1/, '') # Remove ref: if present
+        # Extract options after stripping all source specification parameters
+        options = strip_gem_source_params(rest)
 
         # Build replacement: gem 'name', path: 'local_path' [, options...]
         replacement = "#{indent}gem #{quote}#{gem_name}#{quote}, path: #{quote}#{local_path}#{quote}"
-        replacement += options unless options.strip.empty?
+        replacement += options unless options.empty?
         replacement
       end
     end
 
-    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
     def swap_gem_to_github(content, gem_name, info)
       # Match gem lines for this gem name
       pattern = /^(\s*)gem\s+(['"])#{Regexp.escape(gem_name)}\2(.*)$/
@@ -981,16 +991,8 @@ module DemoScripts
         quote = Regexp.last_match(2)
         rest = Regexp.last_match(3)
 
-        # Extract options after version/path/github/git (if any)
-        # Remove all source specification parameters to replace with new github:
-        options = rest.dup
-        options = options.sub(/^\s*,\s*(['"])[^'"]*\1/, '') # Remove version if present
-        options = options.sub(/,\s*path:\s*(['"])[^'"]*\1/, '') # Remove path: if present
-        options = options.sub(/,\s*github:\s*(['"])[^'"]*\1/, '') # Remove github: if present
-        options = options.sub(/,\s*git:\s*(['"])[^'"]*\1/, '') # Remove git: if present
-        options = options.sub(/,\s*branch:\s*(['"])[^'"]*\1/, '') # Remove branch: if present
-        options = options.sub(/,\s*tag:\s*(['"])[^'"]*\1/, '') # Remove tag: if present
-        options = options.sub(/,\s*ref:\s*(['"])[^'"]*\1/, '') # Remove ref: if present
+        # Extract options after stripping all source specification parameters
+        options = strip_gem_source_params(rest)
 
         # Use tag: for tags, branch: for branches (default to :branch if not specified)
         ref_type = info[:ref_type] || :branch
@@ -1003,13 +1005,12 @@ module DemoScripts
         # Build replacement: gem 'name', github: 'user/repo', branch/tag: 'ref-name' [, options...]
         replacement = "#{indent}gem #{quote}#{gem_name}#{quote}, github: #{quote}#{info[:repo]}#{quote}"
         replacement += ", #{param_name}: #{quote}#{info[:branch]}#{quote}" unless should_omit_ref
-        replacement += options unless options.strip.empty?
+        replacement += options unless options.empty?
         replacement
       end
     end
-    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
-    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+    # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength
     def swap_package_json(package_json_path)
       npm_gems = gem_paths.select { |gem_name, _| NPM_PACKAGE_PATHS[gem_name] }
       return if npm_gems.empty?
@@ -1026,6 +1027,7 @@ module DemoScripts
         # Skip missing local paths (user was already warned by validate_local_paths!)
         unless File.directory?(local_path)
           puts "  ⊘ Skipping #{gem_name} npm package - path does not exist: #{local_path}"
+          @skipped_gems << gem_name unless @skipped_gems.include?(gem_name)
           next
         end
 
@@ -1043,7 +1045,7 @@ module DemoScripts
 
       write_file(package_json_path, "#{JSON.pretty_generate(data)}\n") if modified
     end
-    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
+    # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength
 
     # rubocop:disable Metrics/MethodLength
     def restore_demo(demo_path)
@@ -1322,6 +1324,7 @@ module DemoScripts
         # Skip missing local paths (user was already warned by validate_local_paths!)
         unless File.directory?(local_path)
           puts "  ⊘ Skipping #{gem_name} build - path does not exist: #{local_path}"
+          @skipped_gems << gem_name unless @skipped_gems.include?(gem_name)
           next
         end
 
@@ -1368,6 +1371,20 @@ module DemoScripts
       end
     end
     # rubocop:enable Metrics/MethodLength
+
+    def print_swap_summary
+      swapped_gems = gem_paths.keys - @skipped_gems
+
+      puts "\n✅ Successfully swapped to local gem versions!"
+      puts "\n📊 Summary:"
+      puts "   ✓ Swapped: #{swapped_gems.size} gem(s)"
+      swapped_gems.each { |gem| puts "     - #{gem}" } if swapped_gems.any?
+
+      return unless @skipped_gems.any?
+
+      puts "   ⊘ Skipped: #{@skipped_gems.size} gem(s) (missing paths)"
+      @skipped_gems.each { |gem| puts "     - #{gem}" }
+    end
 
     def print_next_steps
       puts "\n📝 Next steps:"
