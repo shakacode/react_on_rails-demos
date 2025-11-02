@@ -1,10 +1,11 @@
 // The source code including full typescript support is available at: 
 // https://github.com/shakacode/react_on_rails_demo_ssr_hmr/blob/master/config/webpack/serverWebpackConfig.js
 
-const { merge, config } = require('shakapacker');
+const { merge: _merge, config: _config } = require('shakapacker');
+const webpack = require('webpack');
+
 const commonWebpackConfig = require('./commonWebpackConfig');
 
-const webpack = require('webpack');
 
 const configureServer = () => {
   // We need to use "merge" because the clientConfigObject, EVEN after running
