@@ -19,11 +19,13 @@ export default defineConfig({
     },
   ],
 
-  webServer: process.env.SKIP_WEB_SERVER ? undefined : {
-    command: 'bin/dev',
-    url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
-    stdout: 'ignore',
-    stderr: 'pipe',
-  },
+  webServer: process.env.SKIP_WEB_SERVER
+    ? undefined
+    : {
+        command: 'bin/dev',
+        url: 'http://localhost:3000',
+        reuseExistingServer: !process.env.CI,
+        stdout: 'ignore',
+        stderr: 'pipe',
+      },
 });

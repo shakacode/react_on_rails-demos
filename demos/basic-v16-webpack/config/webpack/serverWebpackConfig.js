@@ -1,11 +1,10 @@
-// The source code including full typescript support is available at: 
+// The source code including full typescript support is available at:
 // https://github.com/shakacode/react_on_rails_demo_ssr_hmr/blob/master/config/webpack/serverWebpackConfig.js
 
 const { merge: _merge, config: _config } = require('shakapacker');
 const webpack = require('webpack');
 
 const commonWebpackConfig = require('./commonWebpackConfig');
-
 
 const configureServer = () => {
   // We need to use "merge" because the clientConfigObject, EVEN after running
@@ -21,7 +20,7 @@ const configureServer = () => {
 
   if (!serverEntry['server-bundle']) {
     throw new Error(
-      "Create a pack with the file name 'server-bundle.js' containing all the server rendering files",
+      "Create a pack with the file name 'server-bundle.js' containing all the server rendering files"
     );
   }
 
@@ -33,7 +32,7 @@ const configureServer = () => {
   serverWebpackConfig.module.rules.forEach((loader) => {
     if (loader.use && loader.use.filter) {
       loader.use = loader.use.filter(
-        (item) => !(typeof item === 'string' && item.match(/mini-css-extract-plugin/)),
+        (item) => !(typeof item === 'string' && item.match(/mini-css-extract-plugin/))
       );
     }
   });
@@ -63,7 +62,7 @@ const configureServer = () => {
     (plugin) =>
       plugin.constructor.name !== 'WebpackAssetsManifest' &&
       plugin.constructor.name !== 'MiniCssExtractPlugin' &&
-      plugin.constructor.name !== 'ForkTsCheckerWebpackPlugin',
+      plugin.constructor.name !== 'ForkTsCheckerWebpackPlugin'
   );
 
   // Configure loader rules for SSR
@@ -99,7 +98,10 @@ const configureServer = () => {
       }
 
       // Skip writing image files during SSR by setting emitFile to false
-    } else if (rule.use && (rule.use.loader === 'url-loader' || rule.use.loader === 'file-loader')) {
+    } else if (
+      rule.use &&
+      (rule.use.loader === 'url-loader' || rule.use.loader === 'file-loader')
+    ) {
       rule.use.options.emitFile = false;
     }
   });

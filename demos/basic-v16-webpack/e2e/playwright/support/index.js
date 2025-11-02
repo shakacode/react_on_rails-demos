@@ -14,7 +14,7 @@
 // ***********************************************************
 
 // Import commands.js using ES2015 syntax:
-import './on-rails'
+import './on-rails';
 // import 'cypress-on-rails/support/index'
 
 // Alternatively you can use CommonJS syntax:
