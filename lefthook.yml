@@ -25,6 +25,42 @@ pre-commit:
       run: bundle exec rubocop --force-exclusion {staged_files}
       stage_fixed: true
 
+    eslint:
+      glob: '*.{js,jsx,ts,tsx}'
+      exclude: 'node_modules/**/*'
+      run: |
+        # Run ESLint on staged files in demos
+        demo_files=$(echo "{staged_files}" | tr ' ' '\n' | grep '^demos/' || true)
+        if [ -n "$demo_files" ]; then
+          for file in $demo_files; do
+            # Determine which demo this file belongs to
+            demo_dir=$(echo "$file" | cut -d'/' -f1-2)
+            rel_file=$(echo "$file" | sed "s|^$demo_dir/||")
+            if [ -f "$demo_dir/package.json" ]; then
+              echo "Running ESLint in $demo_dir for $rel_file"
+              (cd "$demo_dir" && npx eslint --fix "$rel_file" && git add "$rel_file")
+            fi
+          done
+        fi
+
+    prettier:
+      glob: '*.{js,jsx,ts,tsx,json,css,scss,md}'
+      exclude: 'node_modules/**/*'
+      run: |
+        # Run Prettier on staged files in demos
+        demo_files=$(echo "{staged_files}" | tr ' ' '\n' | grep '^demos/' || true)
+        if [ -n "$demo_files" ]; then
+          for file in $demo_files; do
+            # Determine which demo this file belongs to
+            demo_dir=$(echo "$file" | cut -d'/' -f1-2)
+            rel_file=$(echo "$file" | sed "s|^$demo_dir/||")
+            if [ -f "$demo_dir/package.json" ]; then
+              echo "Running Prettier in $demo_dir for $rel_file"
+              (cd "$demo_dir" && npx prettier --write "$rel_file" && git add "$rel_file")
+            fi
+          done
+        fi
+
 commit-msg:
   commands:
     check-message:

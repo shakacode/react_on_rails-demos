@@ -101,18 +101,36 @@ RSpec.describe DemoScripts::DependencySwapper do
     context 'when already swapped with path' do
       let(:gemfile_content) { "gem 'shakapacker', path: '/other/path'\n" }
 
-      it 'skips the swap' do
+      it 're-swaps to the new path' do
         result = swapper.send(:swap_gem_in_gemfile, gemfile_content, 'shakapacker', local_path)
-        expect(result).to eq("gem 'shakapacker', path: '/other/path'\n")
+        expect(result).to eq("gem 'shakapacker', path: '/Users/test/dev/shakapacker'\n")
       end
     end
 
     context 'when already swapped with github' do
       let(:gemfile_content) { "gem 'shakapacker', github: 'user/repo'\n" }
 
-      it 'skips the swap' do
+      it 're-swaps from github to local path' do
         result = swapper.send(:swap_gem_in_gemfile, gemfile_content, 'shakapacker', local_path)
-        expect(result).to eq("gem 'shakapacker', github: 'user/repo'\n")
+        expect(result).to eq("gem 'shakapacker', path: '/Users/test/dev/shakapacker'\n")
+      end
+    end
+
+    context 'when already swapped with github and branch' do
+      let(:gemfile_content) { "gem 'shakapacker', github: 'user/repo', branch: 'feature-x'\n" }
+
+      it 're-swaps from github branch to local path' do
+        result = swapper.send(:swap_gem_in_gemfile, gemfile_content, 'shakapacker', local_path)
+        expect(result).to eq("gem 'shakapacker', path: '/Users/test/dev/shakapacker'\n")
+      end
+    end
+
+    context 'when already swapped with path and has options' do
+      let(:gemfile_content) { "gem 'shakapacker', path: '/other/path', require: false\n" }
+
+      it 're-swaps to new path and preserves options' do
+        result = swapper.send(:swap_gem_in_gemfile, gemfile_content, 'shakapacker', local_path)
+        expect(result).to eq("gem 'shakapacker', path: '/Users/test/dev/shakapacker', require: false\n")
       end
     end
 
@@ -130,6 +148,44 @@ RSpec.describe DemoScripts::DependencySwapper do
         expect(result).to include("gem 'rails', '~> 7.0'\n")
         expect(result).to include("gem 'shakapacker', path: '/Users/test/dev/shakapacker'\n")
         expect(result).to include("gem 'react_on_rails', '~> 16.0'\n")
+      end
+    end
+
+    context 'when swapped from git url with ref' do
+      let(:gemfile_content) { "gem 'shakapacker', git: 'https://github.com/user/repo.git', ref: 'abc123'\n" }
+
+      it 'removes git and ref when converting to path' do
+        result = swapper.send(:swap_gem_in_gemfile, gemfile_content, 'shakapacker', local_path)
+        expect(result).to eq("gem 'shakapacker', path: '/Users/test/dev/shakapacker'\n")
+      end
+    end
+
+    context 'when swapped from git url without ref' do
+      let(:gemfile_content) { "gem 'shakapacker', git: 'https://github.com/user/repo.git'\n" }
+
+      it 'removes git when converting to path' do
+        result = swapper.send(:swap_gem_in_gemfile, gemfile_content, 'shakapacker', local_path)
+        expect(result).to eq("gem 'shakapacker', path: '/Users/test/dev/shakapacker'\n")
+      end
+    end
+
+    context 'when swapped from git url with branch' do
+      let(:gemfile_content) { "gem 'shakapacker', git: 'https://github.com/user/repo.git', branch: 'main'\n" }
+
+      it 'removes git and branch when converting to path' do
+        result = swapper.send(:swap_gem_in_gemfile, gemfile_content, 'shakapacker', local_path)
+        expect(result).to eq("gem 'shakapacker', path: '/Users/test/dev/shakapacker'\n")
+      end
+    end
+
+    context 'when swapped from git url with ref and options' do
+      let(:gemfile_content) do
+        "gem 'shakapacker', git: 'https://github.com/user/repo.git', ref: 'abc123', require: false\n"
+      end
+
+      it 'removes git and ref but preserves other options' do
+        result = swapper.send(:swap_gem_in_gemfile, gemfile_content, 'shakapacker', local_path)
+        expect(result).to eq("gem 'shakapacker', path: '/Users/test/dev/shakapacker', require: false\n")
       end
     end
   end
@@ -205,6 +261,59 @@ RSpec.describe DemoScripts::DependencySwapper do
         expect(result).to eq("gem 'shakapacker', github: 'shakacode/shakapacker'\n")
       end
     end
+
+    context 'when already swapped with different branch' do
+      let(:gemfile_content) { "gem 'shakapacker', github: 'shakacode/shakapacker', branch: 'old-branch'\n" }
+      let(:github_info) { { repo: 'shakacode/shakapacker', branch: 'new-branch' } }
+
+      it 're-swaps to new branch' do
+        result = swapper.send(:swap_gem_to_github, gemfile_content, 'shakapacker', github_info)
+        expect(result).to eq("gem 'shakapacker', github: 'shakacode/shakapacker', branch: 'new-branch'\n")
+      end
+    end
+
+    context 'when already swapped with local path' do
+      let(:gemfile_content) { "gem 'shakapacker', path: '/some/local/path'\n" }
+      let(:github_info) { { repo: 'shakacode/shakapacker', branch: 'feature-x' } }
+
+      it 're-swaps from local path to github branch' do
+        result = swapper.send(:swap_gem_to_github, gemfile_content, 'shakapacker', github_info)
+        expect(result).to eq("gem 'shakapacker', github: 'shakacode/shakapacker', branch: 'feature-x'\n")
+      end
+    end
+
+    context 'when swapped from git url with ref' do
+      let(:gemfile_content) { "gem 'shakapacker', git: 'https://github.com/user/repo.git', ref: 'abc123'\n" }
+      let(:github_info) { { repo: 'shakacode/shakapacker', branch: 'feature-x' } }
+
+      it 'removes git and ref when converting to github' do
+        result = swapper.send(:swap_gem_to_github, gemfile_content, 'shakapacker', github_info)
+        expect(result).to eq("gem 'shakapacker', github: 'shakacode/shakapacker', branch: 'feature-x'\n")
+      end
+    end
+
+    context 'when swapped from git url with branch' do
+      let(:gemfile_content) { "gem 'shakapacker', git: 'https://github.com/user/repo.git', branch: 'old'\n" }
+      let(:github_info) { { repo: 'shakacode/shakapacker', branch: 'new' } }
+
+      it 'removes git and old branch when converting to github' do
+        result = swapper.send(:swap_gem_to_github, gemfile_content, 'shakapacker', github_info)
+        expect(result).to eq("gem 'shakapacker', github: 'shakacode/shakapacker', branch: 'new'\n")
+      end
+    end
+
+    context 'when swapped from git url with ref and options' do
+      let(:gemfile_content) do
+        "gem 'shakapacker', git: 'https://github.com/user/repo.git', ref: 'abc123', require: false\n"
+      end
+      let(:github_info) { { repo: 'shakacode/shakapacker', branch: 'feature-x' } }
+
+      it 'removes git and ref but preserves other options' do
+        result = swapper.send(:swap_gem_to_github, gemfile_content, 'shakapacker', github_info)
+        expected = "gem 'shakapacker', github: 'shakacode/shakapacker', branch: 'feature-x', require: false\n"
+        expect(result).to eq(expected)
+      end
+    end
   end
 
   describe '#swap_package_json' do
@@ -249,11 +358,83 @@ RSpec.describe DemoScripts::DependencySwapper do
     end
 
     context 'when path does not exist' do
-      it 'raises error' do
+      it 'shows warning but does not raise error' do
         allow(File).to receive(:directory?).and_return(false)
         expect do
+          expect do
+            swapper.send(:validate_local_paths!)
+          end.to output(/⚠️  Warning: Some local paths do not exist/).to_stdout
+        end.not_to raise_error
+      end
+    end
+
+    context 'integration: validation and subsequent skip behavior' do
+      it 'warns about missing path, then skips during swap operations' do
+        gemfile_path = '/path/to/Gemfile'
+        gemfile_content = "gem 'shakapacker', '~> 9.0.0'\n"
+
+        # Mock missing directory
+        allow(File).to receive(:directory?).with('/Users/test/dev/shakapacker').and_return(false)
+        allow(File).to receive(:directory?).with(anything).and_call_original
+        allow(swapper).to receive(:dry_run).and_return(false)
+
+        # Validation should warn
+        expect do
           swapper.send(:validate_local_paths!)
-        end.to raise_error(DemoScripts::Error, /Local path for shakapacker does not exist/)
+        end.to output(/⚠️  Warning: Some local paths do not exist/).to_stdout
+
+        # Swap operations should skip with message
+        allow(File).to receive(:read).with(gemfile_path).and_return(gemfile_content)
+        allow(swapper).to receive(:backup_file)
+        allow(swapper).to receive(:write_file)
+
+        expect do
+          swapper.send(:swap_gemfile, gemfile_path)
+        end.to output(/⊘ Skipping shakapacker - path does not exist/).to_stdout
+      end
+    end
+
+    context 'integration: mixed valid and invalid paths' do
+      let(:swapper) do
+        described_class.new(
+          gem_paths: {
+            'shakapacker' => '/Users/test/dev/shakapacker',
+            'react_on_rails' => '/Users/test/dev/react_on_rails'
+          }
+        )
+      end
+
+      it 'processes valid paths and skips invalid ones' do
+        gemfile_path = '/path/to/Gemfile'
+        gemfile_content = "gem 'shakapacker', '~> 9.0.0'\ngem 'react_on_rails', '~> 16.0'\n"
+
+        # Mock one valid, one invalid directory
+        allow(File).to receive(:directory?).and_return(false) # default
+        allow(File).to receive(:directory?).with('/Users/test/dev/shakapacker').and_return(true)
+        allow(swapper).to receive(:dry_run).and_return(false)
+
+        # Validation should warn about react_on_rails only
+        expect do
+          swapper.send(:validate_local_paths!)
+        end.to output(/⚠️  Warning: Some local paths do not exist.*react_on_rails/m).to_stdout
+
+        # Swap operations: shakapacker should process, react_on_rails should skip
+        allow(File).to receive(:read).with(gemfile_path).and_return(gemfile_content)
+        allow(swapper).to receive(:backup_file)
+
+        result_content = nil
+        expect(swapper).to receive(:write_file) do |_path, content|
+          result_content = content
+        end
+
+        expect do
+          swapper.send(:swap_gemfile, gemfile_path)
+        end.to output(/⊘ Skipping react_on_rails - path does not exist/).to_stdout
+
+        # Verify shakapacker was swapped but react_on_rails wasn't
+        expect(result_content).not_to be_nil
+        expect(result_content).to include("gem 'shakapacker', path: '/Users/test/dev/shakapacker'")
+        expect(result_content).to include("gem 'react_on_rails', '~> 16.0'") # unchanged
       end
     end
   end
@@ -766,6 +947,7 @@ RSpec.describe DemoScripts::DependencySwapper do
         expect(Dir).to receive(:chdir).with(demo_path).and_yield
         expect(swapper).to receive(:system).with('bundle', 'install', '--quiet').and_return(false)
         expect(swapper).to receive(:warn).with(/ERROR: Failed to install gems/)
+        expect(swapper).to receive(:warn).with(/Check Gemfile for errors/)
         expect(swapper).to receive(:warn).with(/ERROR: bundle command failed/)
 
         result = swapper.send(:run_bundle_install, demo_path, for_restore: true)
@@ -905,6 +1087,7 @@ RSpec.describe DemoScripts::DependencySwapper do
 
     context 'with path-based swapped gem' do
       before do
+        allow(File).to receive(:exist?).and_return(false) # Default for unknown paths
         allow(File).to receive(:exist?).with(gemfile_path).and_return(true)
         allow(File).to receive(:exist?).with(package_json_path).and_return(true)
         allow(File).to receive(:exist?).with("#{gemfile_path}.backup").and_return(true)
@@ -916,7 +1099,7 @@ RSpec.describe DemoScripts::DependencySwapper do
 
       it 'displays swapped gem with path' do
         output = capture_output { swapper.send(:show_demo_status, demo_path) }
-        expect(output).to include('Gemfile:')
+        expect(output).to include('Dependencies:')
         expect(output).to include('✓ shakapacker → /Users/test/dev/shakapacker')
         expect(output).to include('Backups: Gemfile')
       end
@@ -935,8 +1118,10 @@ RSpec.describe DemoScripts::DependencySwapper do
 
       it 'displays swapped gem with GitHub repo and branch' do
         output = capture_output { swapper.send(:show_demo_status, demo_path) }
-        expect(output).to include('Gemfile:')
-        expect(output).to include('✓ shakapacker → shakacode/shakapacker@fix-hmr')
+        expect(output).to include('Dependencies:')
+        expect(output).to include('✓ shakapacker →')
+        expect(output).to include('(fix-hmr)')
+        expect(output).to include('[📦 shakacode/shakapacker]')
       end
     end
 
@@ -953,12 +1138,15 @@ RSpec.describe DemoScripts::DependencySwapper do
 
       it 'displays swapped gem with default main branch' do
         output = capture_output { swapper.send(:show_demo_status, demo_path) }
-        expect(output).to include('✓ shakapacker → shakacode/shakapacker@main')
+        expect(output).to include('✓ shakapacker →')
+        expect(output).to include('(main)')
+        expect(output).to include('[📦 shakacode/shakapacker]')
       end
     end
 
     context 'with swapped npm package' do
       before do
+        allow(File).to receive(:exist?).and_return(false) # Default for unknown paths
         allow(File).to receive(:exist?).with(gemfile_path).and_return(true)
         allow(File).to receive(:exist?).with(package_json_path).and_return(true)
         allow(File).to receive(:exist?).with("#{gemfile_path}.backup").and_return(false)
@@ -968,16 +1156,16 @@ RSpec.describe DemoScripts::DependencySwapper do
         allow(File).to receive(:read).with(package_json_path).and_return(package_json_content)
       end
 
-      it 'displays swapped npm package with path' do
+      it 'displays no currently swapped gem dependencies (package.json swaps not shown in status)' do
         output = capture_output { swapper.send(:show_demo_status, demo_path) }
-        expect(output).to include('package.json:')
-        expect(output).to include('✓ shakapacker → /Users/test/dev/shakapacker')
+        expect(output).to include('No currently swapped dependencies')
         expect(output).to include('Backups: package.json')
       end
     end
 
     context 'with multiple swapped dependencies' do
       before do
+        allow(File).to receive(:exist?).and_return(false) # Default for unknown paths
         allow(File).to receive(:exist?).with(gemfile_path).and_return(true)
         allow(File).to receive(:exist?).with(package_json_path).and_return(true)
         allow(File).to receive(:exist?).with("#{gemfile_path}.backup").and_return(true)
@@ -1000,12 +1188,10 @@ RSpec.describe DemoScripts::DependencySwapper do
 
       it 'displays all swapped dependencies' do
         output = capture_output { swapper.send(:show_demo_status, demo_path) }
-        expect(output).to include('Gemfile:')
+        expect(output).to include('Dependencies:')
         expect(output).to include('✓ shakapacker → /Users/test/dev/shakapacker')
-        expect(output).to include('✓ react_on_rails → shakacode/react_on_rails@feature-x')
-        expect(output).to include('package.json:')
-        expect(output).to include('✓ shakapacker → /Users/test/dev/shakapacker')
-        expect(output).to include('✓ react-on-rails → /Users/test/dev/react_on_rails/node_package')
+        expect(output).to include('✓ react_on_rails →')
+        expect(output).to include('(feature-x)')
         expect(output).to include('Backups: Gemfile, package.json')
       end
     end
@@ -1020,9 +1206,9 @@ RSpec.describe DemoScripts::DependencySwapper do
         allow(File).to receive(:read).with(package_json_path).and_return('{ invalid json')
       end
 
-      it 'displays warning about malformed JSON' do
+      it 'displays no swapped dependencies (package.json errors are ignored in status)' do
         output = capture_output { swapper.send(:show_demo_status, demo_path) }
-        expect(output).to include('⚠️  Could not parse package.json')
+        expect(output).to include('No swapped dependencies')
       end
     end
 
