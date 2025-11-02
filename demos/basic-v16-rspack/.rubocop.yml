@@ -1,1 +1,12 @@
-../../packages/shakacode_demo_common/configs/rubocop.yml
+# Inherit from Rails Omakase style
+inherit_gem:
+  rubocop-rails-omakase: rubocop.yml
+
+# Demo-specific adjustments
+AllCops:
+  NewCops: enable
+  SuggestExtensions: false
+  Exclude:
+    - 'node_modules/**/*'
+    - 'tmp/**/*'
+    - 'vendor/**/*'
