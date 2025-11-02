@@ -41,7 +41,7 @@ group :development do
   gem "web-console"
 end
 
-gem "shakapacker", "~> 9.0.0"
+gem "shakapacker", "~> 9.3.0"
 
 gem "react_on_rails", "~> 16.1"
 
