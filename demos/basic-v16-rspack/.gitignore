@@ -23,6 +23,7 @@ coverage/
 # Shakapacker compiled assets
 /public/packs/
 /public/packs-test/
+/shakapacker-config-exports/
 
 # Node
 /node_modules/
