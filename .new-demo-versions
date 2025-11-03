@@ -15,7 +15,7 @@ RAILS_VERSION="8.0.3"
 #   SHAKAPACKER_VERSION="github:shakacode/shakapacker"    # GitHub main branch (default)
 #   SHAKAPACKER_VERSION="github:shakacode/shakapacker#fix-hmr"  # GitHub branch (use #)
 #   SHAKAPACKER_VERSION="github:shakacode/shakapacker@v9.0.0"   # GitHub tag (use @)
-SHAKAPACKER_VERSION="github:shakacode/shakapacker"
+SHAKAPACKER_VERSION="~> 9.3.0"
 
 # React on Rails version (use ~> for compatibility range, or specific version)
 # Examples:

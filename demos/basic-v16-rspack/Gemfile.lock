@@ -275,7 +275,7 @@ GEM
     ruby-progressbar (1.13.0)
     securerandom (0.4.1)
     semantic_range (3.1.0)
-    shakapacker (9.0.0)
+    shakapacker (9.3.0)
       activesupport (>= 5.2)
       package_json
       rack-proxy (>= 0.6.1)
@@ -332,7 +332,7 @@ DEPENDENCIES
   react_on_rails (~> 16.1)
   rubocop-rails-omakase
   shakacode_demo_common!
-  shakapacker (~> 9.0.0)
+  shakapacker (~> 9.3.0)
   thruster
   tzinfo-data
   web-console
