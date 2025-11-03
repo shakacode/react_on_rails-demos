@@ -20,7 +20,7 @@
     "react-dom": "^19.2.0",
     "react-on-rails": "^16.1.1",
     "sass-loader": "^16.0.5",
-    "shakapacker": "9.3.0",
+    "shakapacker": "^9.3.0",
     "style-loader": "^4.0.0",
     "swc-loader": "^0.2.6",
     "terser-webpack-plugin": "^5.3.14",
