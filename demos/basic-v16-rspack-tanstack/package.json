@@ -29,6 +29,7 @@
     "webpack-subresource-integrity": "^5.1.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.57.0",
     "@rspack/cli": "1.7.2",
     "@rspack/plugin-react-refresh": "1.6.0",
     "@swc/core": "1.15.8",
