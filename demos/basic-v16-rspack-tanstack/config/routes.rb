@@ -1,15 +1,17 @@
+# frozen_string_literal: true
+
 Rails.application.routes.draw do
-  get 'hello_world', to: 'hello_world#index'
-  # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
+  # Root routes to TanStack app
+  root "tanstack_app#index"
 
-  # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
-  # Can be used by load balancers and uptime monitors to verify that the app is live.
+  # Direct routes for SSR support
+  get "about", to: "tanstack_app#index"
+  get "search", to: "tanstack_app#index"
+  get "users", to: "tanstack_app#index"
+  get "users/:userId", to: "tanstack_app#index"
+  get "demo/nested", to: "tanstack_app#index"
+  get "demo/nested/deep", to: "tanstack_app#index"
+
+  # Health check
   get "up" => "rails/health#show", as: :rails_health_check
-
-  # Render dynamic PWA files from app/views/pwa/* (remember to link manifest in application.html.erb)
-  # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
-  # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
-
-  # Defines the root path route ("/")
-  # root "posts#index"
 end
