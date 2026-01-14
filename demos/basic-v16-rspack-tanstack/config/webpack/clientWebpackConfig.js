@@ -14,21 +14,30 @@ const configureClient = () => {
   // client config is going to try to load chunks.
   delete clientConfig.entry['server-bundle'];
 
-  // Add TanStack Router plugin for file-based routing (Rspack only)
+  // Add TanStack Router plugin for file-based routing
+  const routerPluginConfig = {
+    target: 'react',
+    autoCodeSplitting: true,
+    routesDirectory: path.resolve(__dirname, '../../app/javascript/src/routes'),
+    generatedRouteTree: path.resolve(__dirname, '../../app/javascript/src/routeTree.gen.ts'),
+  };
+
+  clientConfig.plugins = clientConfig.plugins || [];
+
   if (config.assets_bundler === 'rspack') {
     try {
       const { TanStackRouterRspack } = require('@tanstack/router-plugin/rspack');
-      clientConfig.plugins = clientConfig.plugins || [];
-      clientConfig.plugins.push(
-        TanStackRouterRspack({
-          target: 'react',
-          autoCodeSplitting: true,
-          routesDirectory: path.resolve(__dirname, '../../app/javascript/src/routes'),
-          generatedRouteTree: path.resolve(__dirname, '../../app/javascript/src/routeTree.gen.ts'),
-        })
-      );
+      clientConfig.plugins.push(TanStackRouterRspack(routerPluginConfig));
     } catch (e) {
-      console.warn('TanStack Router plugin not available:', e.message);
+      console.warn('TanStack Router Rspack plugin not available:', e.message);
+    }
+  } else {
+    // Webpack bundler
+    try {
+      const { TanStackRouterWebpack } = require('@tanstack/router-plugin/webpack');
+      clientConfig.plugins.push(TanStackRouterWebpack(routerPluginConfig));
+    } catch (e) {
+      console.warn('TanStack Router Webpack plugin not available:', e.message);
     }
   }
 
