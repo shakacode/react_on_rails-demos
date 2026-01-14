@@ -1,0 +1,41 @@
+{
+  "packageManager": "npm@11.6.2",
+  "name": "app",
+  "private": true,
+  "version": "0.1.0",
+  "browserslist": [
+    "defaults"
+  ],
+  "dependencies": {
+    "@rspack/core": "1.7.2",
+    "compression-webpack-plugin": "^11.1.0",
+    "css-loader": "7.1.2",
+    "css-minimizer-webpack-plugin": "7.0.4",
+    "mini-css-extract-plugin": "2.9.4",
+    "prop-types": "15.8.1",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-on-rails": "16.2.0-rc.1",
+    "rspack-manifest-plugin": "5.2.0",
+    "sass-loader": "^16.0.6",
+    "shakapacker": "9.3.4",
+    "style-loader": "4.0.0",
+    "terser-webpack-plugin": "^5.3.16",
+    "webpack": "^5.104.1",
+    "webpack-assets-manifest": "^6.5.0",
+    "webpack-cli": "^6.0.1",
+    "webpack-merge": "^6.0.1",
+    "webpack-subresource-integrity": "^5.1.0"
+  },
+  "devDependencies": {
+    "@rspack/cli": "1.7.2",
+    "@rspack/plugin-react-refresh": "1.6.0",
+    "@swc/core": "1.15.8",
+    "@types/react": "19.2.8",
+    "@types/react-dom": "19.2.3",
+    "react-refresh": "0.18.0",
+    "swc-loader": "0.2.6",
+    "typescript": "5.9.3",
+    "webpack-dev-server": "^5.2.3"
+  }
+}
