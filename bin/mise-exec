@@ -14,4 +14,10 @@
 #
 # See: https://github.com/shakacode/react_on_rails-demos/issues/105
 
+if ! command -v mise &> /dev/null; then
+    echo "Error: mise is not installed or not in PATH" >&2
+    echo "Install: https://mise.jdx.dev/getting-started.html" >&2
+    exit 1
+fi
+
 exec mise exec -- "$@"
