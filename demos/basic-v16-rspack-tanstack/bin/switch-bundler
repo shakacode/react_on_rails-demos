@@ -96,25 +96,25 @@ class BundlerSwitcher
 
     # Install dependencies using array form to prevent command injection
     success = case package_manager
-              when "yarn"
+    when "yarn"
                 system("yarn", "add", *deps[:dependencies])
-              when "pnpm"
+    when "pnpm"
                 system("pnpm", "add", *deps[:dependencies])
-              else
+    else
                 system("npm", "install", *deps[:dependencies])
-              end
+    end
 
     abort("❌ Failed to install dependencies") unless success
 
     # Install dev dependencies using array form to prevent command injection
     success = case package_manager
-              when "yarn"
+    when "yarn"
                 system("yarn", "add", "-D", *deps[:dev_dependencies])
-              when "pnpm"
+    when "pnpm"
                 system("pnpm", "add", "-D", *deps[:dev_dependencies])
-              else
+    else
                 system("npm", "install", "--save-dev", *deps[:dev_dependencies])
-              end
+    end
 
     abort("❌ Failed to install dev dependencies") unless success
 
