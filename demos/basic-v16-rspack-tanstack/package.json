@@ -6,6 +6,11 @@
   "browserslist": [
     "defaults"
   ],
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:headed": "playwright test --headed"
+  },
   "dependencies": {
     "@rspack/core": "1.7.2",
     "@tanstack/react-router": "^1.149.3",

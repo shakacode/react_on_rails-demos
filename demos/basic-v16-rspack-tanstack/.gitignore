@@ -17,6 +17,12 @@ tmp/*
 
 # Ignore TanStack Router generated files
 app/javascript/src/routeTree.gen.ts
+app/javascript/generated/
+app/javascript/packs/generated/
+
+# Ignore Playwright test results
+test-results/
+playwright-report/
 
 # Ignore environment files
 .env*

@@ -26,6 +26,9 @@ gem "shakapacker", "~> 9.3.0"
 # React integration for Rails with SSR support
 gem "react_on_rails", "16.2.0.rc1"
 
+# Colored terminal output for build scripts
+gem "rainbow"
+
 # Add HTTP asset caching/compression and X-Sendfile acceleration to Puma [https://github.com/basecamp/thruster/]
 gem "thruster", require: false
 

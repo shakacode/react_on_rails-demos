@@ -45,8 +45,9 @@ test.describe('TanStack Router SSR Demo', () => {
     test('navigation works after hydration', async ({ page }) => {
       await page.goto('/');
 
-      // Wait for hydration
-      await page.waitForLoadState('networkidle');
+      // Wait for interactive elements to be ready (better than networkidle with HMR)
+      await page.waitForLoadState('domcontentloaded');
+      await expect(page.locator('a[href="/about"]')).toBeVisible();
 
       // Click navigation link
       await page.click('a[href="/about"]');
@@ -59,11 +60,12 @@ test.describe('TanStack Router SSR Demo', () => {
     test('search params update client-side', async ({ page }) => {
       await page.goto('/search');
 
-      // Wait for hydration
-      await page.waitForLoadState('networkidle');
+      // Wait for the form to be interactive
+      await page.waitForLoadState('domcontentloaded');
+      const input = page.locator('input[type="text"]');
+      await expect(input).toBeVisible();
 
       // Type in search input and submit
-      const input = page.locator('input[type="text"]');
       await input.fill('test query');
       await page.click('button[type="submit"]');
 
@@ -73,7 +75,10 @@ test.describe('TanStack Router SSR Demo', () => {
 
     test('URL params navigation works', async ({ page }) => {
       await page.goto('/users');
-      await page.waitForLoadState('networkidle');
+
+      // Wait for navigation links to be ready
+      await page.waitForLoadState('domcontentloaded');
+      await expect(page.locator('a[href="/users/42"]')).toBeVisible();
 
       // Click on a user link
       await page.click('a[href="/users/42"]');
@@ -84,7 +89,10 @@ test.describe('TanStack Router SSR Demo', () => {
 
     test('nested routes navigation works', async ({ page }) => {
       await page.goto('/demo/nested');
-      await page.waitForLoadState('networkidle');
+
+      // Wait for navigation links to be ready
+      await page.waitForLoadState('domcontentloaded');
+      await expect(page.locator('a[href="/demo/nested/deep"]')).toBeVisible();
 
       // Click on deep nested link
       await page.click('a[href="/demo/nested/deep"]');
@@ -104,7 +112,13 @@ test.describe('TanStack Router SSR Demo', () => {
       });
 
       await page.goto('/');
-      await page.waitForLoadState('networkidle');
+
+      // Wait for DOM to be ready and content to be visible
+      await page.waitForLoadState('domcontentloaded');
+      await expect(page.locator('h1')).toBeVisible();
+
+      // Give React time to hydrate and log any errors
+      await page.waitForTimeout(1000);
 
       // Check for hydration errors
       const hydrationErrors = consoleLogs.filter(

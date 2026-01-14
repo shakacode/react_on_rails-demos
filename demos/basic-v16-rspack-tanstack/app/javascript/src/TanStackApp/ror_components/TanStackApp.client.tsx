@@ -6,9 +6,9 @@ interface TanStackAppProps {
   initialUrl?: string;
 }
 
-const TanStackApp: React.FC<TanStackAppProps> = () => {
-  // Create router once on the client
-  const [router] = React.useState(() => createRouter());
+const TanStackApp: React.FC<TanStackAppProps> = ({ initialUrl }) => {
+  // Create router once on the client, passing initialUrl for hydration consistency
+  const [router] = React.useState(() => createRouter({ initialUrl }));
 
   return <RouterProvider router={router} />;
 };

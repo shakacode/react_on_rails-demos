@@ -319,6 +319,7 @@ DEPENDENCIES
   propshaft
   puma (>= 5.0)
   rails (~> 8.0.3)
+  rainbow
   react_on_rails (= 16.2.0.rc1)
   rubocop-rails-omakase
   shakapacker (~> 9.3.0)

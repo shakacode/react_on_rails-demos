@@ -48,7 +48,7 @@ class BundlerSwitcher
     abort "❌ #{@shakapacker_config} not found" unless File.exist?(@shakapacker_config)
 
     puts "📝 Updating #{@shakapacker_config}..."
-    config = YAML.load_file(@shakapacker_config)
+    config = YAML.safe_load(File.read(@shakapacker_config), permitted_classes: [Symbol], aliases: true)
 
     config["default"] ||= {}
     config["default"]["assets_bundler"] = @target_bundler

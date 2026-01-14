@@ -14,7 +14,7 @@ export const Route = createFileRoute('/search')({
         typeof search.page === 'number'
           ? search.page
           : typeof search.page === 'string'
-            ? parseInt(search.page, 10)
+            ? parseInt(search.page, 10) || 1
             : 1,
     };
   },
@@ -25,6 +25,11 @@ function SearchPage() {
   const { q, page } = Route.useSearch();
   const navigate = useNavigate();
   const [inputValue, setInputValue] = React.useState(q || '');
+
+  // Sync input value with URL when navigating (e.g., browser back/forward)
+  React.useEffect(() => {
+    setInputValue(q || '');
+  }, [q]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,9 +49,7 @@ function SearchPage() {
   return (
     <div>
       <h1>Search Params Demo</h1>
-      <p>
-        This page demonstrates type-safe search parameters with TanStack Router.
-      </p>
+      <p>This page demonstrates type-safe search parameters with TanStack Router.</p>
 
       <form onSubmit={handleSearch} style={{ marginBottom: '1rem' }}>
         <input
