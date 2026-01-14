@@ -34,7 +34,7 @@ pre-commit:
         done
         if [ -n "$root_files" ]; then
           echo "Running RuboCop on root files..."
-          bin/mise-exec bundle exec rubocop --force-exclusion $root_files
+          bin/mise-exec bundle exec rubocop --autocorrect --force-exclusion $root_files
         fi
 
         # Run RuboCop on demo files from within each demo directory
@@ -45,7 +45,7 @@ pre-commit:
             rel_file=$(echo "$file" | sed "s|^$demo_dir/||")
             if [ -f "$demo_dir/Gemfile" ]; then
               echo "Running RuboCop in $demo_dir for $rel_file"
-              (cd "$demo_dir" && ../../bin/mise-exec bundle exec rubocop --force-exclusion "$rel_file" && git add "$rel_file")
+              (cd "$demo_dir" && ../../bin/mise-exec bundle exec rubocop --autocorrect --force-exclusion "$rel_file" && git add "$rel_file")
             fi
           done
         fi
