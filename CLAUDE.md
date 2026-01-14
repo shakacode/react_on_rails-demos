@@ -106,3 +106,42 @@ bin/swap-deps --restore
 ```
 
 **Remember**: Local dependencies should NEVER be committed or pushed.
+
+## Using Conductor with mise/asdf Version Managers
+
+When running commands in [Conductor](https://conductor.build), the shell environment doesn't activate mise (or asdf) version managers automatically. This causes commands to use system Ruby/Node instead of the versions specified in `.tool-versions`.
+
+### The Problem
+
+Conductor runs commands in a non-interactive shell that doesn't source `.zshrc`. The mise shell hook that normally reorders PATH based on `.tool-versions` files never runs.
+
+### The Solution: `bin/mise-exec`
+
+Use the `bin/mise-exec` wrapper script for commands that need the correct tool versions:
+
+```bash
+# Ruby commands
+bin/mise-exec ruby --version          # Uses .tool-versions Ruby
+bin/mise-exec bundle install          # Correct Ruby for bundler
+bin/mise-exec bundle exec rubocop     # Correct Ruby for linting
+bin/mise-exec bundle exec rspec       # Correct Ruby for tests
+
+# Node commands
+bin/mise-exec npm install             # Uses .tool-versions Node
+bin/mise-exec npm run build           # Correct Node for builds
+
+# Git commands (for pre-commit hooks)
+bin/mise-exec git commit -m "msg"     # Pre-commit hooks work correctly
+```
+
+### Impact Without the Workaround
+
+Without `bin/mise-exec`:
+1. Wrong Ruby/Node versions are used for running tests, linting, etc.
+2. Pre-commit hooks (lefthook) may fail or use wrong tool versions
+3. Bundle commands fail if gems require newer Ruby
+4. Node-based tools may behave differently than expected
+
+### Related Issue
+
+See: https://github.com/shakacode/react_on_rails-demos/issues/105

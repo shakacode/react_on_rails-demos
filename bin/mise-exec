@@ -1,0 +1,17 @@
+#!/usr/bin/env zsh
+# Wrapper script to run commands with mise-managed tool versions
+# Usage: bin/mise-exec <command> [args...]
+#
+# This is needed because Conductor (and other non-interactive shells) don't
+# source .zshrc, so mise's PATH ordering based on .tool-versions isn't active
+# by default.
+#
+# Examples:
+#   bin/mise-exec ruby --version          # Uses .tool-versions Ruby
+#   bin/mise-exec bundle exec rubocop     # Correct Ruby for linting
+#   bin/mise-exec git commit -m "msg"     # Pre-commit hooks work correctly
+#   bin/mise-exec npm install             # Uses .tool-versions Node
+#
+# See: https://github.com/shakacode/react_on_rails-demos/issues/105
+
+exec mise exec -- "$@"
