@@ -3,7 +3,9 @@
   "entrypoints": {
     "server-bundle": {
       "assets": {
-        "js": ["/packs/server-bundle.js"],
+        "js": [
+          "/packs/server-bundle.js"
+        ],
         "css": []
       }
     }
