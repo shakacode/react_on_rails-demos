@@ -5,6 +5,9 @@ test.describe('TanStack Router SSR Demo', () => {
     test('home page is server-rendered', async ({ page }) => {
       await page.goto('/');
 
+      // Wait for page to load
+      await page.waitForLoadState('domcontentloaded');
+
       // Content should be visible (proves SSR)
       await expect(page.locator('h1')).toContainText('TanStack Router Demo');
       await expect(page.locator('nav')).toBeVisible();
@@ -13,6 +16,9 @@ test.describe('TanStack Router SSR Demo', () => {
     test('about page is server-rendered at correct route', async ({ page }) => {
       await page.goto('/about');
 
+      // Wait for the page to fully load
+      await page.waitForLoadState('domcontentloaded');
+
       // Check page contains About content
       await expect(page.locator('h1')).toContainText('About This Demo');
     });
@@ -20,12 +26,18 @@ test.describe('TanStack Router SSR Demo', () => {
     test('URL params are server-rendered correctly', async ({ page }) => {
       await page.goto('/users/123');
 
+      // Wait for page to load
+      await page.waitForLoadState('domcontentloaded');
+
       // User ID should be rendered by server
       await expect(page.locator('text=User ID: 123')).toBeVisible();
     });
 
     test('search params are server-rendered correctly', async ({ page }) => {
       await page.goto('/search?q=hello&page=2');
+
+      // Wait for page to load
+      await page.waitForLoadState('domcontentloaded');
 
       // Query params should be rendered by server
       await expect(page.locator('text=Query: hello')).toBeVisible();
@@ -35,9 +47,13 @@ test.describe('TanStack Router SSR Demo', () => {
     test('nested routes are server-rendered', async ({ page }) => {
       await page.goto('/demo/nested/deep');
 
+      // Wait for page to load
+      await page.waitForLoadState('domcontentloaded');
+
       // Both parent and child content should be present
       await expect(page.locator('.nested-layout')).toBeVisible();
-      await expect(page.locator('text=Deep Nested')).toBeVisible();
+      // Use h3 selector to specifically target the page heading, not the nav link
+      await expect(page.locator('h3:text("Deep Nested Page")')).toBeVisible();
     });
   });
 
@@ -98,7 +114,8 @@ test.describe('TanStack Router SSR Demo', () => {
       await page.click('a[href="/demo/nested/deep"]');
 
       await expect(page).toHaveURL('/demo/nested/deep');
-      await expect(page.locator('text=Deep Nested')).toBeVisible();
+      // Use h3 selector to specifically target the page heading, not the nav link
+      await expect(page.locator('h3:text("Deep Nested Page")')).toBeVisible();
     });
   });
 
@@ -117,10 +134,16 @@ test.describe('TanStack Router SSR Demo', () => {
       await page.waitForLoadState('domcontentloaded');
       await expect(page.locator('h1')).toBeVisible();
 
-      // Give React time to hydrate and log any errors
-      await page.waitForTimeout(1000);
+      // Wait for React hydration to complete by checking that navigation works
+      // This is more reliable than a fixed timeout as it confirms React is interactive
+      const aboutLink = page.locator('a[href="/about"]');
+      await expect(aboutLink).toBeVisible();
 
-      // Check for hydration errors
+      // Click and verify navigation works (proves hydration is complete)
+      await aboutLink.click();
+      await expect(page).toHaveURL('/about');
+
+      // Check for hydration errors that may have been logged
       const hydrationErrors = consoleLogs.filter(
         (log) => log.includes('hydrat') || log.includes('mismatch')
       );

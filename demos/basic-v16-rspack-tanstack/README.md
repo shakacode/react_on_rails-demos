@@ -2,6 +2,8 @@
 
 A React on Rails demo application showcasing **TanStack Router** integration with **Rspack** and **server-side rendering (SSR)**.
 
+> **⚠️ React on Rails Pro Required**: This demo requires [React on Rails Pro](https://www.shakacode.com/react-on-rails-pro/) with its **Node server renderer**. TanStack Router uses Node.js APIs (`setTimeout`, `clearTimeout`, etc.) that are not available in the default ExecJS environment. The Node renderer provides a proper Node.js runtime for SSR.
+
 ## Gem Versions
 
 This demo uses:
@@ -105,14 +107,39 @@ The following directories contain generated files and are **gitignored**:
 
 ### SSR Configuration
 
-The SSR bundle output path is configured in `config/shakapacker.yml`:
+This demo requires **React on Rails Pro's Node server renderer** because TanStack Router uses Node.js APIs (`setTimeout`, `clearTimeout`, etc.) internally for route loading. These APIs are not available in the default ExecJS environment used by the open-source React on Rails gem.
 
-```yaml
-default:
-  private_output_path: ssr-generated
-```
+#### Why Node Renderer?
 
-The server bundle configuration in `config/webpack/serverWebpackConfig.js` automatically uses this path.
+The default ExecJS-based SSR in React on Rails runs JavaScript in a limited environment (typically via MiniRacer or ExecJS) that lacks:
+
+- Timer functions (`setTimeout`, `clearTimeout`, `setInterval`, `clearInterval`)
+- Full `console` API
+- Other Node.js built-in modules
+
+TanStack Router's internal implementation relies on these APIs, making the Node renderer essential.
+
+#### Configuration
+
+1. **Configure React on Rails Pro** in `config/initializers/react_on_rails.rb`:
+
+   ```ruby
+   ReactOnRails.configure do |config|
+     config.server_render_method = "NodeJS"
+     # ... other configuration
+   end
+   ```
+
+2. **Webpack/Rspack target**: The server bundle is configured with `target: 'node'` in `config/webpack/serverWebpackConfig.js`
+
+3. **Output path**: Configured in `config/shakapacker.yml`:
+
+   ```yaml
+   default:
+     private_output_path: ssr-generated
+   ```
+
+For more information on React on Rails Pro and the Node renderer, see the [React on Rails Pro documentation](https://www.shakacode.com/react-on-rails-pro/).
 
 ## Scripts
 
@@ -144,15 +171,43 @@ npm run test:headed
 SKIP_WEB_SERVER=true npm test
 ```
 
-## SSR Limitations
+## Limitations
 
-This demo uses synchronous SSR compatible with React on Rails. **Async route loaders are not supported** in this configuration. The `router.load()` call happens synchronously.
+### Route Synchronization
+
+Each TanStack Router route that requires SSR must have a corresponding Rails route defined in `config/routes.rb`. This ensures the Rails server can handle direct URL requests and render the correct initial HTML.
+
+```ruby
+# config/routes.rb
+get "about", to: "tanstack_app#index"
+get "users/:userId", to: "tanstack_app#index"
+# ... add routes for each TanStack route
+```
+
+For production apps with many routes, consider a catch-all route (with API route exclusions):
+
+```ruby
+get '*path', to: 'tanstack_app#index', constraints: ->(req) { !req.path.start_with?('/api') }
+```
+
+### React on Rails Pro Required
+
+This demo **requires React on Rails Pro** with the Node server renderer. The open-source ExecJS-based renderer cannot run TanStack Router due to missing Node.js APIs.
+
+### Synchronous SSR Only
+
+This demo uses synchronous SSR. **Async route loaders are not supported** in this configuration. The `router.load()` call happens synchronously.
 
 For async data fetching, consider:
 
 1. Passing data as props from the Rails controller
-2. Using React on Rails' `renderFunction` pattern for async support
+2. Using React on Rails Pro's streaming SSR for async support
 3. Using client-side data fetching with loading states
+
+### Development-Only Features
+
+- **TanStack Router DevTools** are only available in development mode
+- **React Fast Refresh** (HMR) is only active when running `bin/dev`
 
 ## Deployment
 

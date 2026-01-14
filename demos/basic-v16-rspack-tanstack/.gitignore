@@ -28,6 +28,10 @@ playwright-report/
 .env*
 !.env.example
 
+# React on Rails Pro (contains auth tokens)
+react-on-rails-pro/.npmrc
+react-on-rails-pro/node_modules/
+
 # Ignore master key
 config/master.key
 

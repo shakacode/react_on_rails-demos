@@ -53,8 +53,8 @@ const configureServer = () => {
   serverWebpackConfig.output = {
     filename: 'server-bundle.js',
     globalObject: 'this',
-    // If using the React on Rails Pro node server renderer, uncomment the next line
-    // libraryTarget: 'commonjs2',
+    // Required for React on Rails Pro node server renderer
+    libraryTarget: 'commonjs2',
     path: serverBundleOutputPath,
     // No publicPath needed since server bundles are not served via web
     // https://webpack.js.org/configuration/output/#outputglobalobject
@@ -124,10 +124,10 @@ const configureServer = () => {
   // The default of cheap-module-source-map is slow and provides poor info.
   serverWebpackConfig.devtool = 'eval';
 
-  // If using the default 'web', then libraries like Emotion and loadable-components
-  // break with SSR. The fix is to use a node renderer and change the target.
-  // If using the React on Rails Pro node server renderer, uncomment the next line
-  // serverWebpackConfig.target = 'node'
+  // TanStack Router and other libraries require Node.js APIs (setTimeout, etc.)
+  // that are not available in ExecJS. This demo requires React on Rails Pro's
+  // Node server renderer, which provides a proper Node.js environment.
+  serverWebpackConfig.target = 'node';
 
   return serverWebpackConfig;
 };

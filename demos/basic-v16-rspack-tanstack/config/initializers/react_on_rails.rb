@@ -6,8 +6,18 @@
 
 ReactOnRails.configure do |config|
   ################################################################################
-  # Server Rendering (Recommended)
+  # Server Rendering (React on Rails Pro Required)
   ################################################################################
+  # ⚠️ This demo requires React on Rails Pro with the Node server renderer.
+  # TanStack Router uses Node.js APIs (setTimeout, clearTimeout, etc.) that are
+  # not available in the default ExecJS environment.
+  #
+  # To configure React on Rails Pro Node renderer:
+  #   config.server_render_method = "NodeJS"
+  #
+  # See: https://www.shakacode.com/react-on-rails-pro/
+  ################################################################################
+
   # Configure server bundle for server-side rendering with `prerender: true`
   # Set to "" if you're not using server rendering
   config.server_bundle_js_file = "server-bundle.js"

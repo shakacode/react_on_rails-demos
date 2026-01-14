@@ -21,14 +21,6 @@
 require "bundler/setup"
 require "react_on_rails/dev"
 
-# Default route configuration
-# This points to the TanStack Router demo app at the root path.
-# Change this to your preferred default route, or pass --route=<route> to override.
-DEFAULT_ROUTE = "/"
-
 # Main execution
-# Add the default route to ARGV if no --route option is provided
-argv_with_defaults = ARGV.dup
-argv_with_defaults.push("--route", DEFAULT_ROUTE) unless argv_with_defaults.any? { |arg| arg.start_with?("--route") }
-
-ReactOnRails::Dev::ServerManager.run_from_command_line(argv_with_defaults)
+# TanStack Router handles routing at /, so no --route argument is needed.
+ReactOnRails::Dev::ServerManager.run_from_command_line(ARGV)

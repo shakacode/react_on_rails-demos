@@ -26,6 +26,16 @@ gem "shakapacker", "~> 9.3.0"
 # React integration for Rails with SSR support
 gem "react_on_rails", "16.2.0.rc1"
 
+# React on Rails Pro - Node Renderer for production-grade SSR (REQUIRED)
+# TanStack Router requires Node.js APIs (setTimeout, clearTimeout, etc.)
+# that are not available in the default ExecJS environment.
+#
+# Setup instructions: See docs/react-on-rails-pro-setup.md
+# Free license: Contact team@shakacode.com or justin@shakacode.com
+source "https://rubygems.pkg.github.com/shakacode-tools" do
+  gem "react_on_rails_pro", "~> 4.0"
+end
+
 # Colored terminal output for build scripts
 gem "rainbow"
 
