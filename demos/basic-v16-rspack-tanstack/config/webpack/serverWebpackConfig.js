@@ -61,12 +61,11 @@ const configureServer = () => {
   };
 
   // Validate server bundle output path configuration
-  // For Shakapacker 9.0+, verify privateOutputPath is configured in shakapacker.yml
   if (!config.privateOutputPath) {
     console.warn(
-      '⚠️  Shakapacker 9.0+ detected but private_output_path not configured in shakapacker.yml'
+      '⚠️  private_output_path not configured in shakapacker.yml - using fallback path'
     );
-    console.warn('   Add to config/shakapacker.yml:');
+    console.warn('   For Shakapacker 9.0+, add to config/shakapacker.yml:');
     console.warn('     private_output_path: ssr-generated');
     console.warn('   Run: rails react_on_rails:doctor to validate your configuration');
   }
