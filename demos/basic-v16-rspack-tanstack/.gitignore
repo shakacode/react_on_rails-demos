@@ -37,3 +37,4 @@ config/master.key
 
 # Ignore credentials
 config/credentials/*.key
+react_on_rails_pro_license.key

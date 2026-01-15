@@ -24,12 +24,12 @@ gem "bootsnap", require: false
 gem "shakapacker", "~> 9.3.0"
 
 # React integration for Rails with SSR support
-gem "react_on_rails", "16.2.0.rc1"
+gem "react_on_rails", "16.2.0"
 
 # React on Rails Pro - Node Renderer for production-grade SSR (REQUIRED)
 # TanStack Router requires Node.js APIs (setTimeout, clearTimeout, etc.)
 # that are not available in the default ExecJS environment.
-gem "react_on_rails_pro"
+gem "react_on_rails_pro", "16.2.0"
 
 # Colored terminal output for build scripts
 gem "rainbow"
