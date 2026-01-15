@@ -115,28 +115,28 @@ When running commands in [Conductor](https://conductor.build), the shell environ
 
 Conductor runs commands in a non-interactive shell that doesn't source `.zshrc`. The mise shell hook that normally reorders PATH based on `.tool-versions` files never runs.
 
-### The Solution: `bin/mise-exec`
+### The Solution: `bin/conductor-exec`
 
-Use the `bin/mise-exec` wrapper script for commands that need the correct tool versions:
+Use the `bin/conductor-exec` wrapper script for commands that need the correct tool versions:
 
 ```bash
 # Ruby commands
-bin/mise-exec ruby --version          # Uses .tool-versions Ruby
-bin/mise-exec bundle install          # Correct Ruby for bundler
-bin/mise-exec bundle exec rubocop     # Correct Ruby for linting
-bin/mise-exec bundle exec rspec       # Correct Ruby for tests
+bin/conductor-exec ruby --version          # Uses correct Ruby version
+bin/conductor-exec bundle install          # Correct Ruby for bundler
+bin/conductor-exec bundle exec rubocop     # Correct Ruby for linting
+bin/conductor-exec bundle exec rspec       # Correct Ruby for tests
 
 # Node commands
-bin/mise-exec npm install             # Uses .tool-versions Node
-bin/mise-exec npm run build           # Correct Node for builds
+bin/conductor-exec npm install             # Uses correct Node version
+bin/conductor-exec npm run build           # Correct Node for builds
 
 # Git commands (for pre-commit hooks)
-bin/mise-exec git commit -m "msg"     # Pre-commit hooks work correctly
+bin/conductor-exec git commit -m "msg"     # Pre-commit hooks work correctly
 ```
 
 ### Impact Without the Workaround
 
-Without `bin/mise-exec`:
+Without `bin/conductor-exec`:
 1. Wrong Ruby/Node versions are used for running tests, linting, etc.
 2. Pre-commit hooks (lefthook) may fail or use wrong tool versions
 3. Bundle commands fail if gems require newer Ruby
