@@ -83,7 +83,7 @@ class BundlerSwitcher
     end
 
     puts "✅ Removed #{@target_bundler == 'rspack' ? 'webpack' : 'rspack'} dependencies"
-    File.write(package_json_path, JSON.pretty_generate(package_json))
+    File.write(package_json_path, "#{JSON.pretty_generate(package_json)}\n")
   end
 
   def install_dependencies

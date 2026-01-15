@@ -13,7 +13,7 @@ This demo uses:
 - **TanStack Router**: `^1.149`
 - **React**: `^19.2`
 
-Created: 2025-01-13
+Created: 2026-01-13
 
 > **Note**: To update versions, see [Version Management](../../docs/VERSION_MANAGEMENT.md)
 

@@ -115,6 +115,7 @@ const configureServer = () => {
       rule.use &&
       (rule.use.loader === 'url-loader' || rule.use.loader === 'file-loader')
     ) {
+      rule.use.options = rule.use.options || {};
       rule.use.options.emitFile = false;
     }
   });
