@@ -1,0 +1,15 @@
+---
+demo_name: basic-v16-rspack-tanstack
+demo_directory: demos/basic-v16-rspack-tanstack
+created_at: "2025-01-13"
+description: React on Rails demo with TanStack Router, TypeScript, Rspack, and SSR
+rails_version: "8.0.3"
+shakapacker_version: "9.3.4"
+react_on_rails_version: "16.2.0.rc1"
+bundler: rspack
+transpiler: swc
+features:
+  - typescript
+  - tanstack-router
+  - ssr
+  - rspack
