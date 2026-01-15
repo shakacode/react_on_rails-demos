@@ -11,7 +11,7 @@ AllCops:
     - 'node_modules/**/*'
     - 'demos/**/*'  # Each demo has its own Gemfile and rubocop config
     - 'packages/shakacode_demo_common/node_modules/**/*'
-    - 'bin/mise-exec'  # Shell script, not Ruby
+    - 'bin/conductor-exec'  # Shell script, not Ruby
 
 # Allow longer blocks in specs, Rakefiles, and bin scripts
 Metrics/BlockLength:

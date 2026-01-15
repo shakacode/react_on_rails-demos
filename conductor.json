@@ -1,7 +1,9 @@
 {
   "scripts": {
     "setup": "./conductor-setup.sh",
-    "run": "bundle exec rake spec"
+    "run": "bin/conductor-exec bundle exec rake spec",
+    "test": "bin/conductor-exec bundle exec rake spec",
+    "lint": "bin/conductor-exec bundle exec rubocop"
   },
   "runScriptMode": "nonconcurrent"
 }
