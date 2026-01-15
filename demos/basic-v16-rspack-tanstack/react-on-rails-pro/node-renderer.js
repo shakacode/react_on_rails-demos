@@ -16,7 +16,7 @@
 const path = require('path');
 const {
   reactOnRailsProNodeRenderer,
-} = require('@shakacode-tools/react-on-rails-pro-node-renderer');
+} = require('react-on-rails-pro-node-renderer');
 
 const config = {
   // Path to the server bundle output directory

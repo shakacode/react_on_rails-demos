@@ -21,7 +21,7 @@
     "prop-types": "15.8.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "react-on-rails": "16.2.0-rc.1",
+    "react-on-rails-pro": "16.2.0",
     "rspack-manifest-plugin": "5.2.0",
     "sass-loader": "^16.0.6",
     "shakapacker": "9.3.4",

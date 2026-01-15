@@ -44,5 +44,5 @@ ReactOnRailsPro.configure do |config|
   config.renderer_request_retry_limit = Rails.env.production? ? 3 : 1
 
   # Never fall back to ExecJS - it doesn't support the APIs TanStack Router needs
-  config.renderer_use_fallback_execjs = false
+  config.renderer_use_fallback_exec_js = false
 end
