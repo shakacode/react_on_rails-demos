@@ -28,9 +28,14 @@ Created: 2025-01-13
 ## Setup
 
 ```bash
-# Install dependencies
+# Install Ruby dependencies
 bundle install
+
+# Install JavaScript dependencies
 npm install
+
+# Install Node Renderer for SSR
+cd react-on-rails-pro && npm install && cd ..
 
 # Setup database
 bin/rails db:create
