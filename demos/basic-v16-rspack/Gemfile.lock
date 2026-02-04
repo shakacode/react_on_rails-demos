@@ -82,8 +82,8 @@ GEM
       securerandom (>= 0.3)
       tzinfo (~> 2.0, >= 2.0.5)
       uri (>= 0.13.1)
-    addressable (2.8.7)
-      public_suffix (>= 2.0.2, < 7.0)
+    addressable (2.8.8)
+      public_suffix (>= 2.0.2, < 8.0)
     ast (2.4.3)
     base64 (0.3.0)
     benchmark (0.4.1)
@@ -184,7 +184,7 @@ GEM
     psych (5.2.6)
       date
       stringio
-    public_suffix (6.0.2)
+    public_suffix (7.0.2)
     puma (7.0.4)
       nio4r (~> 2.0)
     racc (1.8.1)
@@ -234,7 +234,7 @@ GEM
       erb
       psych (>= 4.0.0)
       tsort
-    react_on_rails (16.1.1)
+    react_on_rails (16.3.0.rc.2)
       addressable
       connection_pool
       execjs (~> 2.5)
@@ -329,7 +329,7 @@ DEPENDENCIES
   propshaft
   puma (>= 5.0)
   rails (~> 8.0.3)
-  react_on_rails (~> 16.1)
+  react_on_rails (= 16.3.0.rc.2)
   rubocop-rails-omakase
   shakacode_demo_common!
   shakapacker (~> 9.3.0)

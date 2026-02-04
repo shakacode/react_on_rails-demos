@@ -43,7 +43,7 @@ end
 
 gem "shakapacker", "~> 9.3.0"
 
-gem "react_on_rails", "~> 16.1"
+gem "react_on_rails", "16.3.0.rc.2"
 
 # Shared demo configuration and utilities
 gem "shakacode_demo_common", path: "../../packages/shakacode_demo_common"
