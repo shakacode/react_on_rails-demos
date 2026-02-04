@@ -69,56 +69,112 @@ jobs:
         run: npm run format:check
         continue-on-error: true # Allow to continue if format script doesn't exist
 
-  # Matrix build for demos when they are added
-  test-demos:
-    if: github.event_name == 'pull_request'
+  # Detect which demos have changed
+  detect-changed-demos:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        demo: [] # Will be populated as demos are added
-      fail-fast: false
+    outputs:
+      demos: ${{ steps.detect.outputs.demos }}
+      has_changes: ${{ steps.detect.outputs.has_changes }}
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Fetch full history for proper diff
-      - name: Fetch PR base ref
-        run: |
-          git fetch origin "${{ github.base_ref }}"
+          fetch-depth: 0
       - name: Detect changed demos
-        id: changed-demos
+        id: detect
         run: |
-          if [ -d "demos" ] && [ -n "$(ls -A demos 2>/dev/null)" ]; then
-            CHANGED=$(git diff --name-only "origin/${{ github.base_ref }}"...HEAD | grep '^demos/' | cut -d/ -f2 | sort -u | head -5)
-            if [ -n "${CHANGED}" ]; then
-              echo "demos=${CHANGED}" >> "${GITHUB_OUTPUT}"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_REF="origin/${{ github.base_ref }}"
+          else
+            BASE_REF="HEAD~1"
+          fi
+          git fetch origin "${{ github.base_ref }}" 2>/dev/null || true
+
+          CHANGED_DEMOS="[]"
+          if [ -d "demos" ]; then
+            DEMOS=$(git diff --name-only "${BASE_REF}"...HEAD 2>/dev/null | grep '^demos/' | cut -d/ -f2 | sort -u | tr '\n' ' ' || echo "")
+            if [ -n "${DEMOS}" ]; then
+              JSON_ARRAY=$(echo "${DEMOS}" | xargs -n1 | jq -R . | jq -s -c .)
+              CHANGED_DEMOS="${JSON_ARRAY}"
             fi
           fi
+
+          echo "demos=${CHANGED_DEMOS}" >> "${GITHUB_OUTPUT}"
+          if [ "${CHANGED_DEMOS}" != "[]" ]; then
+            echo "has_changes=true" >> "${GITHUB_OUTPUT}"
+            echo "Changed demos: ${CHANGED_DEMOS}"
+          else
+            echo "has_changes=false" >> "${GITHUB_OUTPUT}"
+            echo "No demos changed"
+          fi
+
+  # Test changed demos with dynamic matrix
+  test-demos:
+    needs: detect-changed-demos
+    if: needs.detect-changed-demos.outputs.has_changes == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        demo: ${{ fromJson(needs.detect-changed-demos.outputs.demos) }}
+      fail-fast: false
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/test
+      RAILS_ENV: test
+    steps:
+      - uses: actions/checkout@v4
       - name: Set up Ruby
-        if: steps.changed-demos.outputs.demos
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.3'
+          bundler-cache: true
+          working-directory: demos/${{ matrix.demo }}
       - name: Set up Node
-        if: steps.changed-demos.outputs.demos
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Run demo tests
-        if: steps.changed-demos.outputs.demos
+          cache: 'npm'
+          cache-dependency-path: demos/${{ matrix.demo }}/package-lock.json
+      - name: Install npm dependencies
+        working-directory: demos/${{ matrix.demo }}
+        run: npm ci
+      - name: Setup database
+        working-directory: demos/${{ matrix.demo }}
         run: |
-          for demo in ${{ steps.changed-demos.outputs.demos }}; do
-            if [ -d "demos/${demo}" ]; then
-              echo "Testing ${demo}..."
-              cd "demos/${demo}"
-              if [ -f "Gemfile" ]; then
-                bundle install
-              fi
-              if [ -f "package.json" ]; then
-                npm ci
-              fi
-              if [ -f "bin/rails" ] && [ -d "spec" ]; then
-                bundle exec rspec
-              fi
-              cd ../..
-            fi
-          done
+          bundle exec rails db:create db:schema:load || bundle exec rails db:migrate
+      - name: Build assets
+        working-directory: demos/${{ matrix.demo }}
+        run: |
+          bundle exec rails shakapacker:compile
+      - name: Run RuboCop
+        working-directory: demos/${{ matrix.demo }}
+        run: bundle exec rubocop
+      - name: Run RSpec
+        working-directory: demos/${{ matrix.demo }}
+        run: |
+          if [ -d "spec" ]; then
+            bundle exec rspec
+          else
+            echo "No spec directory found, skipping RSpec"
+          fi
+      - name: Run Playwright tests
+        working-directory: demos/${{ matrix.demo }}
+        run: |
+          if [ -f "playwright.config.ts" ] || [ -f "playwright.config.js" ]; then
+            npx playwright install --with-deps chromium
+            npx playwright test
+          else
+            echo "No Playwright config found, skipping"
+          fi
