@@ -1,0 +1,16 @@
+
+# Lefthook
+.lefthook/
+lefthook-local.yml
+
+# Testing
+coverage/
+.nyc_output/
+
+# Playwright
+/playwright-report/
+/test-results/
+
+# IDE
+.vscode/
+.idea/

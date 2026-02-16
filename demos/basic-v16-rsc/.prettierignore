@@ -1,0 +1,19 @@
+# Prettier ignore file for React on Rails demos
+node_modules/
+vendor/
+public/packs/
+public/packs-test/
+public/assets/
+tmp/
+log/
+.git/
+coverage/
+build/
+dist/
+*.min.js
+*.min.css
+db/schema.rb
+Gemfile.lock
+package-lock.json
+yarn.lock
+pnpm-lock.yaml

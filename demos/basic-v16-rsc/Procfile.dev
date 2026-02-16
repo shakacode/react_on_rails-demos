@@ -1,0 +1,11 @@
+# Procfile for development
+# You can run these commands in separate shells
+rails: bundle exec rails s -p 3000
+dev-server: bin/shakapacker-dev-server
+server-bundle: SERVER_BUNDLE_ONLY=yes bin/shakapacker --watch
+
+# React on Rails Pro - Node Renderer for SSR
+node-renderer: RENDERER_LOG_LEVEL=debug RENDERER_PORT=3800 node client/node-renderer.js
+
+# React on Rails Pro - RSC bundle watcher
+rsc-bundle: RSC_BUNDLE_ONLY=yes bin/shakapacker --watch
