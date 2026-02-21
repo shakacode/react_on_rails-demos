@@ -235,7 +235,7 @@ GEM
       erb
       psych (>= 4.0.0)
       tsort
-    react_on_rails (16.1.1)
+    react_on_rails (16.3.0.rc.2)
       addressable
       connection_pool
       execjs (~> 2.5)
@@ -330,7 +330,7 @@ DEPENDENCIES
   propshaft
   puma (>= 5.0)
   rails (~> 8.0.3)
-  react_on_rails (~> 16.1)
+  react_on_rails (= 16.3.0.rc.2)
   rubocop-rails-omakase
   shakacode_demo_common!
   shakapacker (~> 9.3.0)
