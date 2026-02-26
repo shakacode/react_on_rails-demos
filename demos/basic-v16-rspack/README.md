@@ -5,11 +5,11 @@ A React on Rails demo application showcasing **Rspack integration** with unified
 ## Gem Versions
 
 This demo uses:
-- **React on Rails**: `~> 16.1`
+- **React on Rails**: `16.4.0.rc.5` gem / `16.4.0-rc.5` npm package
 - **Shakapacker**: `~> 9.0.0` (with rspack support)
 - **React**: `^19.2.0`
 
-Created: 2025-10-05
+Updated: 2026-02-26
 
 > **Note**: To update versions, see [Version Management](../../docs/VERSION_MANAGEMENT.md)
 
