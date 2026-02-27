@@ -1,3 +1,9 @@
+#
+# NOTE:
+# This workflow is a template for running this demo as a standalone repo.
+# GitHub Actions in this monorepo are only discovered from the root
+# `.github/workflows/` directory.
+#
 name: CI
 
 on:
@@ -10,7 +16,7 @@ jobs:
   lint-ruby:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
@@ -22,11 +28,11 @@ jobs:
   lint-javascript:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'npm'
       - name: Install dependencies
         run: npm ci
@@ -51,16 +57,16 @@ jobs:
           - 5432:5432
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.2'
           bundler-cache: true
       - name: Set up Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'npm'
       - name: Install dependencies
         run: |
@@ -73,22 +79,13 @@ jobs:
         run: |
           bundle exec rails db:create
           bundle exec rails db:schema:load
+      - name: Build JavaScript bundles
+        env:
+          RAILS_ENV: test
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test
+        run: RAILS_ENV=test bin/shakapacker
       - name: Run tests
         env:
           RAILS_ENV: test
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test
         run: bundle exec rails test
-
-  test-javascript:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up Node
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-          cache: 'npm'
-      - name: Install dependencies
-        run: npm ci
-      - name: Run Jest tests
-        run: npm test

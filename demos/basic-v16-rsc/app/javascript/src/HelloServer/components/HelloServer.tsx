@@ -11,7 +11,6 @@
 // For more information, see:
 // https://www.shakacode.com/react-on-rails-pro/docs/react-server-components/
 
-import React from 'react';
 import LikeButton from './LikeButton';
 
 interface HelloServerProps {
@@ -24,7 +23,8 @@ interface GreetingData {
   facts: string[];
 }
 
-// Simulate an async data fetch (replace with a real API call or DB query)
+// Simulate an async data fetch (replace with a real API call or DB query).
+// This delay is intentionally artificial for demo purposes.
 async function fetchGreeting(name: string): Promise<GreetingData> {
   // In a real app, you could do:
   //   const data = await db.query('SELECT greeting FROM greetings WHERE name = ?', [name]);

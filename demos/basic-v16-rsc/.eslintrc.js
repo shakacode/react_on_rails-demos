@@ -1,1 +1,1 @@
-../../packages/shakacode_demo_common/config/.eslintrc.js
+../../packages/shakacode_demo_common/configs/.eslintrc.js

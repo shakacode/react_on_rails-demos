@@ -1,24 +1,49 @@
-# README
+# basic-v16-rsc
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+React on Rails Pro demo for React Server Components (RSC) streaming.
 
-Things you may want to cover:
+## Requirements
 
-* Ruby version
+- Ruby 3.2+
+- Node 20+ (this app uses `npm@11`)
+- PostgreSQL
 
-* System dependencies
+## Setup
 
-* Configuration
+```bash
+# Install dependencies
+bundle install
+npm ci
 
-* Database creation
+# Database setup
+bin/rails db:create
+bin/rails db:migrate
+```
 
-* Database initialization
+## Run
 
-* How to run the test suite
+```bash
+# First run only: generate packs before starting dev processes
+ruby bin/shakapacker-precompile-hook
 
-* Services (job queues, cache servers, search engines, etc.)
+# Start Rails + renderer + bundler processes
+bin/dev
+```
 
-* Deployment instructions
+Open: `http://localhost:3000/hello_server`
 
-* ...
+## Test
+
+```bash
+# Rails tests
+bin/rails test
+
+# Lint
+npm run lint
+bundle exec rubocop
+```
+
+## Notes
+
+- This demo includes a Node renderer secured by `RENDERER_PASSWORD`.
+- In production-like environments, set `RENDERER_PASSWORD` explicitly.

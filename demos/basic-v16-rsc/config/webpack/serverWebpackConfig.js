@@ -1,13 +1,12 @@
-// The source code including full typescript support is available at: 
+// The source code including full typescript support is available at:
 // https://github.com/shakacode/react_on_rails_demo_ssr_hmr/blob/master/config/webpack/serverWebpackConfig.js
 
-const { merge, config } = require('shakapacker');
+const { RSCWebpackPlugin } = require('react-on-rails-rsc/WebpackPlugin');
+const { config } = require('shakapacker');
+
 const commonWebpackConfig = require('./commonWebpackConfig');
 
-const bundler = config.assets_bundler === 'rspack'
-  ? require('@rspack/core')
-  : require('webpack');
-const { RSCWebpackPlugin } = require('react-on-rails-rsc/WebpackPlugin');
+const bundler = config.assets_bundler === 'rspack' ? require('@rspack/core') : require('webpack');
 
 function extractLoader(rule, loaderName) {
   if (!Array.isArray(rule.use)) return null;
@@ -19,10 +18,7 @@ function extractLoader(rule, loaderName) {
 
 // rscBundle parameter: when true, skips RSCWebpackPlugin (RSC bundle doesn't need it)
 const configureServer = (rscBundle = false) => {
-  // We need to use "merge" because the clientConfigObject, EVEN after running
-  // toWebpackConfig() is a mutable GLOBAL. Thus any changes, like modifying the
-  // entry value will result in changing the client config!
-  // Using webpack-merge into an empty object avoids this issue.
+  // `commonWebpackConfig` builds a fresh config object for each call.
   const serverWebpackConfig = commonWebpackConfig();
 
   // We just want the single server bundle entry
@@ -32,22 +28,11 @@ const configureServer = (rscBundle = false) => {
 
   if (!serverEntry['server-bundle']) {
     throw new Error(
-      "Create a pack with the file name 'server-bundle.js' containing all the server rendering files",
+      "Create a pack with the file name 'server-bundle.js' containing all the server rendering files"
     );
   }
 
   serverWebpackConfig.entry = serverEntry;
-
-  // Remove the mini-css-extract-plugin from the style loaders because
-  // the client build will handle exporting CSS.
-  // replace file-loader with null-loader
-  serverWebpackConfig.module.rules.forEach((loader) => {
-    if (loader.use && loader.use.filter) {
-      loader.use = loader.use.filter(
-        (item) => !(typeof item === 'string' && item.match(/mini-css-extract-plugin/)),
-      );
-    }
-  });
 
   // No splitting of chunks for a server bundle
   serverWebpackConfig.optimization = {
@@ -64,8 +49,8 @@ const configureServer = (rscBundle = false) => {
   // Using Shakapacker 9.0+ privateOutputPath for automatic sync with shakapacker.yml
   // This eliminates manual path configuration and keeps configs in sync.
   // Falls back to hardcoded path if private_output_path is not configured.
-  const serverBundleOutputPath = config.privateOutputPath ||
-    require('path').resolve(__dirname, '../../ssr-generated');
+  const serverBundleOutputPath =
+    config.privateOutputPath || require('path').resolve(__dirname, '../../ssr-generated');
 
   serverWebpackConfig.output = {
     filename: 'server-bundle.js',
@@ -80,12 +65,13 @@ const configureServer = (rscBundle = false) => {
   // Validate server bundle output path configuration
   // For Shakapacker 9.0+, verify privateOutputPath is configured in shakapacker.yml
   if (!config.privateOutputPath) {
-    console.warn('⚠️  Shakapacker 9.0+ detected but private_output_path not configured in shakapacker.yml');
+    console.warn(
+      '⚠️  Shakapacker 9.0+ detected but private_output_path not configured in shakapacker.yml'
+    );
     console.warn('   Add to config/shakapacker.yml:');
     console.warn('     private_output_path: ssr-generated');
     console.warn('   Run: rails react_on_rails:doctor to validate your configuration');
   }
-
 
   // Don't hash the server bundle b/c would conflict with the client manifest
   // And no need for the MiniCssExtractPlugin
@@ -93,7 +79,7 @@ const configureServer = (rscBundle = false) => {
     (plugin) =>
       plugin.constructor.name !== 'WebpackAssetsManifest' &&
       plugin.constructor.name !== 'MiniCssExtractPlugin' &&
-      plugin.constructor.name !== 'ForkTsCheckerWebpackPlugin',
+      plugin.constructor.name !== 'ForkTsCheckerWebpackPlugin'
   );
 
   // Configure loader rules for SSR
@@ -108,9 +94,10 @@ const configureServer = (rscBundle = false) => {
         let testValue;
         if (typeof item === 'string') {
           testValue = item;
-        } else if (typeof item.loader === 'string') {
+        } else if (item && typeof item.loader === 'string') {
           testValue = item.loader;
         }
+        if (!testValue) return true;
         return !(testValue.match(/mini-css-extract-plugin/) || testValue === 'style-loader');
       });
       const cssLoader = rule.use.find((item) => {
@@ -118,11 +105,11 @@ const configureServer = (rscBundle = false) => {
 
         if (typeof item === 'string') {
           testValue = item;
-        } else if (typeof item.loader === 'string') {
+        } else if (item && typeof item.loader === 'string') {
           testValue = item.loader;
         }
 
-        return testValue.includes('css-loader');
+        return testValue && testValue.includes('css-loader');
       });
       if (cssLoader && cssLoader.options) {
         cssLoader.options.modules = { exportOnlyLocals: true };
@@ -135,7 +122,10 @@ const configureServer = (rscBundle = false) => {
       }
 
       // Skip writing image files during SSR by setting emitFile to false
-    } else if (rule.use && (rule.use.loader === 'url-loader' || rule.use.loader === 'file-loader')) {
+    } else if (
+      rule.use &&
+      (rule.use.loader === 'url-loader' || rule.use.loader === 'file-loader')
+    ) {
       rule.use.options.emitFile = false;
     }
   });

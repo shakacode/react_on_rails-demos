@@ -40,13 +40,16 @@ ReactOnRails.configure do |config|
   # - Simpler configuration (no additional setup needed)
   # - Handled automatically by Shakapacker
   #
-  # ALTERNATIVE APPROACH: Uncomment below AND configure ReactOnRails::TestHelper
+  # ALTERNATIVE APPROACH: Keep the setting below enabled and configure ReactOnRails::TestHelper
   # - Provides explicit control over test asset compilation timing
   # - Requires adding ReactOnRails::TestHelper to spec/rails_helper.rb
   # - See: https://github.com/shakacode/react_on_rails/blob/master/docs/building-features/testing-configuration.md
   #
   config.build_test_command = "RAILS_ENV=test bin/shakapacker"
 
+  ################################################################################
+  # Component Loading
+  ################################################################################
   config.auto_load_bundle = true
   config.components_subdirectory = "ror_components"
   ################################################################################

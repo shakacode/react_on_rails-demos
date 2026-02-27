@@ -1,10 +1,17 @@
 # This file is called when a cypress spec fails and allows for extra logging to be captured
-filename = command_options.fetch('runnable_full_title', 'no title').gsub(/[^[:print:]]/, '')
+filename = command_options.fetch('runnable_full_title', 'no title')
+  .to_s
+  .gsub(/[^0-9A-Za-z._-]/, '_')
 
-# grab last lines until "APPCLEANED" (Make sure in clean.rb to log the text "APPCLEANED")
-system "tail -n 10000 -r log/#{Rails.env}.log | sed \"/APPCLEANED/ q\" | sed 'x;1!H;$!d;x' > 'log/#{filename}.log'"
-# Alternative command if the above does not work
-# system "tail -n 10000 log/#{Rails.env}.log | tac | sed \"/APPCLEANED/ q\" | sed 'x;1!H;$!d;x' > 'log/#{filename}.log'"
+# Capture the most recent log block after the last APPCLEANED marker.
+log_file = Rails.root.join('log', "#{Rails.env}.log")
+log_output_file = Rails.root.join('log', "#{filename}.log")
+if File.exist?(log_file)
+  lines = File.readlines(log_file, chomp: true).last(10_000)
+  marker_index = lines.rindex { |line| line.include?('APPCLEANED') }
+  lines = lines[(marker_index + 1)..] if marker_index
+  File.write(log_output_file, "#{lines.join("\n")}\n")
+end
 
 # create a json debug file for server debugging
 json_result = {}
@@ -20,7 +27,4 @@ if defined?(ActiveRecord::Base)
     end
 end
 
-filename = command_options.fetch('runnable_full_title', 'no title').gsub(/[^[:print:]]/, '')
-File.open("#{Rails.root}/log/#{filename}.json", "w+") do |file|
-  file << JSON.pretty_generate(json_result)
-end
+File.write(Rails.root.join('log', "#{filename}.json"), JSON.pretty_generate(json_result))
