@@ -114,7 +114,7 @@ GEM
       irb (~> 1.10)
       reline (>= 0.3.8)
     drb (2.2.3)
-    erb (6.0.1)
+    erb (6.0.2)
     erubi (1.13.1)
     execjs (2.10.0)
     fiber-annotation (0.2.0)
@@ -156,7 +156,8 @@ GEM
     marcel (1.1.0)
     metrics (0.15.0)
     mini_mime (1.1.5)
-    minitest (6.0.1)
+    minitest (6.0.2)
+      drb (~> 2.0)
       prism (~> 1.5)
     msgpack (1.8.0)
     net-imap (0.6.3)
@@ -169,21 +170,21 @@ GEM
     net-smtp (0.5.1)
       net-protocol
     nio4r (2.7.5)
-    nokogiri (1.19.0-aarch64-linux-gnu)
+    nokogiri (1.19.1-aarch64-linux-gnu)
       racc (~> 1.4)
-    nokogiri (1.19.0-aarch64-linux-musl)
+    nokogiri (1.19.1-aarch64-linux-musl)
       racc (~> 1.4)
-    nokogiri (1.19.0-arm-linux-gnu)
+    nokogiri (1.19.1-arm-linux-gnu)
       racc (~> 1.4)
-    nokogiri (1.19.0-arm-linux-musl)
+    nokogiri (1.19.1-arm-linux-musl)
       racc (~> 1.4)
-    nokogiri (1.19.0-arm64-darwin)
+    nokogiri (1.19.1-arm64-darwin)
       racc (~> 1.4)
-    nokogiri (1.19.0-x86_64-darwin)
+    nokogiri (1.19.1-x86_64-darwin)
       racc (~> 1.4)
-    nokogiri (1.19.0-x86_64-linux-gnu)
+    nokogiri (1.19.1-x86_64-linux-gnu)
       racc (~> 1.4)
-    nokogiri (1.19.0-x86_64-linux-musl)
+    nokogiri (1.19.1-x86_64-linux-musl)
       racc (~> 1.4)
     package_json (0.2.0)
     parallel (1.27.0)
@@ -240,8 +241,8 @@ GEM
       activesupport (>= 5.0.0)
       minitest
       nokogiri (>= 1.6)
-    rails-html-sanitizer (1.6.2)
-      loofah (~> 2.21)
+    rails-html-sanitizer (1.7.0)
+      loofah (~> 2.25)
       nokogiri (>= 1.15.7, != 1.16.7, != 1.16.6, != 1.16.5, != 1.16.4, != 1.16.3, != 1.16.2, != 1.16.1, != 1.16.0.rc1, != 1.16.0)
     railties (8.0.4)
       actionpack (= 8.0.4)
@@ -258,14 +259,14 @@ GEM
       erb
       psych (>= 4.0.0)
       tsort
-    react_on_rails (16.4.0.rc.2)
+    react_on_rails (16.4.0.rc.5)
       addressable
       connection_pool
       execjs (~> 2.5)
       rails (>= 5.2)
       rainbow (~> 3.0)
       shakapacker (>= 6.0)
-    react_on_rails_pro (16.4.0.rc.2)
+    react_on_rails_pro (16.4.0.rc.5)
       addressable
       async (>= 2.6)
       connection_pool
@@ -274,7 +275,7 @@ GEM
       httpx (~> 1.5)
       jwt (~> 2.7)
       rainbow
-      react_on_rails (= 16.4.0.rc.2)
+      react_on_rails (= 16.4.0.rc.5)
     regexp_parser (2.11.3)
     reline (0.6.3)
       io-console (~> 0.5)
@@ -308,7 +309,7 @@ GEM
       rubocop-rails (>= 2.30)
     ruby-progressbar (1.13.0)
     securerandom (0.4.1)
-    semantic_range (3.1.0)
+    semantic_range (3.1.1)
     shakapacker (9.6.0.beta.0)
       activesupport (>= 5.2)
       package_json
@@ -341,7 +342,7 @@ GEM
       base64
       websocket-extensions (>= 0.1.0)
     websocket-extensions (0.1.5)
-    zeitwerk (2.7.4)
+    zeitwerk (2.7.5)
 
 PLATFORMS
   aarch64-linux
@@ -364,8 +365,8 @@ DEPENDENCIES
   propshaft
   puma (>= 5.0)
   rails (~> 8.0.3)
-  react_on_rails (= 16.4.0.rc.2)
-  react_on_rails_pro (= 16.4.0.rc.2)
+  react_on_rails (= 16.4.0.rc.5)
+  react_on_rails_pro (= 16.4.0.rc.5)
   rubocop-rails-omakase
   shakacode_demo_common!
   shakapacker (= 9.6.0.beta.0)
