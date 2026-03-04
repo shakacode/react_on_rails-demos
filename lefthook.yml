@@ -22,7 +22,33 @@ pre-commit:
 
     rubocop:
       glob: '*.rb'
-      run: bundle exec rubocop --force-exclusion {staged_files}
+      # Use bin/mise-exec to ensure correct Ruby version from .tool-versions
+      # Run rubocop from demo directories for demo files (each has its own config)
+      run: |
+        root_files=""
+        # Run RuboCop on root files
+        for file in {staged_files}; do
+          if [[ ! "$file" == demos/* ]]; then
+            root_files+="$file "
+          fi
+        done
+        if [ -n "$root_files" ]; then
+          echo "Running RuboCop on root files..."
+          bin/mise-exec bundle exec rubocop --autocorrect --force-exclusion $root_files
+        fi
+
+        # Run RuboCop on demo files from within each demo directory
+        demo_files=$(echo "{staged_files}" | tr ' ' '\n' | grep '^demos/' || true)
+        if [ -n "$demo_files" ]; then
+          for file in $demo_files; do
+            demo_dir=$(echo "$file" | cut -d'/' -f1-2)
+            rel_file=$(echo "$file" | sed "s|^$demo_dir/||")
+            if [ -f "$demo_dir/Gemfile" ]; then
+              echo "Running RuboCop in $demo_dir for $rel_file"
+              (cd "$demo_dir" && ../../bin/mise-exec bundle exec rubocop --autocorrect --force-exclusion "$rel_file" && git add "$rel_file")
+            fi
+          done
+        fi
       stage_fixed: true
 
     eslint:

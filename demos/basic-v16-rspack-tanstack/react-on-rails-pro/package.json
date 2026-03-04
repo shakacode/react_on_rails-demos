@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "description": "React on Rails Pro Node Renderer - SSR with full Node.js environment",
+  "dependencies": {
+    "react-on-rails-pro-node-renderer": "16.2.0"
+  },
+  "scripts": {
+    "node-renderer": "echo 'Starting React on Rails Pro Node Renderer...' && node ./node-renderer.js"
+  }
+}

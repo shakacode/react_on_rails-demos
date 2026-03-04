@@ -1,0 +1,40 @@
+# Ignore bundler cache
+.bundle
+
+# Ignore node modules
+node_modules/
+
+# Ignore Rails artifacts
+log/*
+tmp/*
+!log/.keep
+!tmp/.keep
+
+# Ignore generated assets
+/public/packs
+/public/packs-test
+/ssr-generated
+
+# Ignore TanStack Router generated files
+app/javascript/src/routeTree.gen.ts
+app/javascript/generated/
+app/javascript/packs/generated/
+
+# Ignore Playwright test results
+test-results/
+playwright-report/
+
+# Ignore environment files
+.env*
+!.env.example
+
+# React on Rails Pro (contains auth tokens)
+react-on-rails-pro/.npmrc
+react-on-rails-pro/node_modules/
+
+# Ignore master key
+config/master.key
+
+# Ignore credentials
+config/credentials/*.key
+react_on_rails_pro_license.key
