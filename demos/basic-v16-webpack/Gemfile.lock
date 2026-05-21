@@ -238,7 +238,7 @@ GEM
       erb
       psych (>= 4.0.0)
       tsort
-    react_on_rails (16.4.0.rc.5)
+    react_on_rails (16.7.0.rc.0)
       addressable
       connection_pool
       execjs (~> 2.5)
@@ -279,7 +279,7 @@ GEM
     ruby-progressbar (1.13.0)
     securerandom (0.4.1)
     semantic_range (3.1.1)
-    shakapacker (9.3.4)
+    shakapacker (10.1.0.rc.1)
       activesupport (>= 5.2)
       package_json
       rack-proxy (>= 0.6.1)
@@ -333,10 +333,10 @@ DEPENDENCIES
   propshaft
   puma (>= 5.0)
   rails (~> 8.0.3)
-  react_on_rails (= 16.4.0.rc.5)
+  react_on_rails (= 16.7.0.rc.0)
   rubocop-rails-omakase
   shakacode_demo_common!
-  shakapacker (~> 9.3.0)
+  shakapacker (= 10.1.0.rc.1)
   thruster
   tzinfo-data
   web-console

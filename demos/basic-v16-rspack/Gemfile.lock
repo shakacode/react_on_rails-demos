@@ -82,7 +82,7 @@ GEM
       securerandom (>= 0.3)
       tzinfo (~> 2.0, >= 2.0.5)
       uri (>= 0.13.1)
-    addressable (2.8.8)
+    addressable (2.9.0)
       public_suffix (>= 2.0.2, < 8.0)
     ast (2.4.3)
     base64 (0.3.0)
@@ -106,7 +106,7 @@ GEM
     drb (2.2.3)
     erb (6.0.2)
     erubi (1.13.1)
-    execjs (2.10.0)
+    execjs (2.10.1)
     globalid (1.3.0)
       activesupport (>= 6.1)
     i18n (1.14.8)
@@ -188,12 +188,12 @@ GEM
     psych (5.3.1)
       date
       stringio
-    public_suffix (7.0.2)
+    public_suffix (7.0.5)
     puma (7.0.4)
       nio4r (~> 2.0)
     racc (1.8.1)
     rack (3.2.5)
-    rack-proxy (0.7.7)
+    rack-proxy (0.8.2)
       rack
     rack-session (2.1.1)
       base64 (>= 0.1.0)
@@ -238,7 +238,7 @@ GEM
       erb
       psych (>= 4.0.0)
       tsort
-    react_on_rails (16.4.0.rc.5)
+    react_on_rails (16.7.0.rc.0)
       addressable
       connection_pool
       execjs (~> 2.5)
@@ -279,7 +279,7 @@ GEM
     ruby-progressbar (1.13.0)
     securerandom (0.4.1)
     semantic_range (3.1.1)
-    shakapacker (9.3.4)
+    shakapacker (10.1.0.rc.1)
       activesupport (>= 5.2)
       package_json
       rack-proxy (>= 0.6.1)
@@ -333,10 +333,10 @@ DEPENDENCIES
   propshaft
   puma (>= 5.0)
   rails (~> 8.0.3)
-  react_on_rails (= 16.4.0.rc.5)
+  react_on_rails (= 16.7.0.rc.0)
   rubocop-rails-omakase
   shakacode_demo_common!
-  shakapacker (~> 9.3.0)
+  shakapacker (= 10.1.0.rc.1)
   thruster
   tzinfo-data
   web-console
