@@ -41,9 +41,9 @@ group :development do
   gem 'web-console'
 end
 
-gem 'shakapacker', '~> 9.3.0'
+gem 'shakapacker', '10.1.0.rc.1'
 
-gem 'react_on_rails', '16.4.0.rc.5'
+gem 'react_on_rails', '16.7.0.rc.0'
 
 # Shared demo configuration and utilities
 gem 'shakacode_demo_common', path: '../../packages/shakacode_demo_common'
