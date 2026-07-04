@@ -37,7 +37,8 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
     "lefthook": "^1.13.6",
-    "react-refresh": "^0.18.0"
+    "react-refresh": "^0.18.0",
+    "typescript": "^5.9.3"
   },
   "scripts": {
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",

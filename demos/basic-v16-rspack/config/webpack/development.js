@@ -11,7 +11,11 @@ const developmentEnvOnly = (clientWebpackConfig, _serverWebpackConfig) => {
     // eslint-disable-next-line global-require
     if (config.assets_bundler === 'rspack') {
       // Rspack uses @rspack/plugin-react-refresh for React Fast Refresh
-      const ReactRefreshPlugin = require('@rspack/plugin-react-refresh');
+      const reactRefreshPlugin = require('@rspack/plugin-react-refresh');
+      const ReactRefreshPlugin =
+        reactRefreshPlugin.ReactRefreshRspackPlugin ||
+        reactRefreshPlugin.default ||
+        reactRefreshPlugin;
       clientWebpackConfig.plugins.push(new ReactRefreshPlugin());
     } else {
       // Webpack uses @pmmmwh/react-refresh-webpack-plugin
@@ -19,7 +23,7 @@ const developmentEnvOnly = (clientWebpackConfig, _serverWebpackConfig) => {
       clientWebpackConfig.plugins.push(
         new ReactRefreshWebpackPlugin({
           // Use default overlay configuration for better compatibility
-        }),
+        })
       );
     }
   }
