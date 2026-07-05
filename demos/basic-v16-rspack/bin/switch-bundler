@@ -12,7 +12,7 @@ CUSTOM_DEPS_CONFIG = ".shakapacker-switch-bundler-dependencies.yml"
 
 # Default dependencies for each bundler (package names only, no versions)
 DEFAULT_RSPACK_DEPS = {
-  dev: %w[@rspack/cli @rspack/plugin-react-refresh],
+  dev: %w[@rspack/cli @rspack/dev-server @rspack/plugin-react-refresh],
   prod: %w[@rspack/core rspack-manifest-plugin]
 }.freeze
 

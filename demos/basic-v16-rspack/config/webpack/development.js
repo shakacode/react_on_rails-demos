@@ -10,16 +10,16 @@ const developmentEnvOnly = (clientWebpackConfig, _serverWebpackConfig) => {
   if (process.env.WEBPACK_SERVE) {
     // eslint-disable-next-line global-require
     if (config.assets_bundler === 'rspack') {
-      // Rspack uses @rspack/plugin-react-refresh for React Fast Refresh
-      const ReactRefreshPlugin = require('@rspack/plugin-react-refresh');
-      clientWebpackConfig.plugins.push(new ReactRefreshPlugin());
+      // Rspack 2 exposes React Refresh as a named export.
+      const { ReactRefreshRspackPlugin } = require('@rspack/plugin-react-refresh');
+      clientWebpackConfig.plugins.push(new ReactRefreshRspackPlugin());
     } else {
       // Webpack uses @pmmmwh/react-refresh-webpack-plugin
       const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
       clientWebpackConfig.plugins.push(
         new ReactRefreshWebpackPlugin({
           // Use default overlay configuration for better compatibility
-        }),
+        })
       );
     }
   }

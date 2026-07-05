@@ -3,16 +3,17 @@
   "name": "app",
   "private": true,
   "version": "0.1.0",
-  "browserslist": [
-    "defaults"
-  ],
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
+  "browserslist": ["defaults"],
   "dependencies": {
     "@babel/preset-react": "^7.27.1",
     "@swc/core": "^1.13.5",
     "babel-plugin-macros": "^3.1.0",
     "babel-plugin-transform-react-remove-prop-types": "^0.4.24",
     "compression-webpack-plugin": "^11.1.0",
-    "css-loader": "^7.1.2",
+    "css-loader": "^7.1.4",
     "css-minimizer-webpack-plugin": "^7.0.2",
     "mini-css-extract-plugin": "^2.9.4",
     "prop-types": "^15.8.1",
@@ -20,7 +21,7 @@
     "react-dom": "^19.2.0",
     "react-on-rails": "16.4.0-rc.5",
     "sass-loader": "^16.0.5",
-    "shakapacker": "9.3.4",
+    "shakapacker": "10.2.0",
     "style-loader": "^4.0.0",
     "swc-loader": "^0.2.6",
     "terser-webpack-plugin": "^5.3.14",
@@ -47,6 +48,7 @@
     "lefthook": "^1.13.6",
     "playwright": "^1.56.1",
     "react-refresh": "^0.18.0",
+    "typescript": "^5.9.3",
     "webpack-dev-server": "^5.2.2"
   },
   "scripts": {
