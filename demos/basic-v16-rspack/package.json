@@ -4,11 +4,9 @@
   "private": true,
   "version": "0.1.0",
   "engines": {
-    "node": ">=22.12.0"
+    "node": "^20.19.0 || >=22.12.0"
   },
-  "browserslist": [
-    "defaults"
-  ],
+  "browserslist": ["defaults"],
   "dependencies": {
     "@playwright/test": "^1.55.1",
     "@rspack/core": "^2.0.4",
@@ -20,7 +18,7 @@
     "react-dom": "^19.2.0",
     "react-on-rails": "16.4.0-rc.5",
     "rspack-manifest-plugin": "^5.2.2",
-    "sass-loader": "^17.0.0",
+    "sass-loader": "^16.0.8",
     "shakapacker": "10.2.0",
     "style-loader": "^4.0.0",
     "swc-loader": "^0.2.6"
