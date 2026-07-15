@@ -7,7 +7,7 @@ is absent means that capability is n/a in this repository.
 
 | Script | Purpose | This repo runs |
 | --- | --- | --- |
-| `setup` | Install Ruby dependencies | `bin/conductor-exec bundle install "$@"` |
+| `setup` | Install Ruby and Node dependencies, then git hooks | `bin/conductor-exec bundle install "$@"`; `bin/conductor-exec npm install`; `bin/conductor-exec bundle exec lefthook install` |
 | `validate` | Pre-push gate | `bin/conductor-exec bundle exec rake spec "$@"` |
 | `test` | Run tests | `bin/conductor-exec bundle exec rspec "$@"` |
 | `lint` | Lint / format | n/a |
