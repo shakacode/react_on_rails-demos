@@ -15,11 +15,19 @@ installs tools nor runs `mise trust` automatically.
 | Script | Purpose | This repo runs |
 | --- | --- | --- |
 | `setup` | Install Ruby and Node dependencies, then attempt git hooks | `bin/conductor-exec bundle install "$@"`; `bin/conductor-exec npm install`; best-effort `bin/conductor-exec bundle exec lefthook install` |
-| `validate` | Pre-push gate | `bin/conductor-exec bundle exec rake spec` |
-| `test` | Run tests | `bin/conductor-exec bundle exec rspec "$@"` |
-| `lint` | Lint / format | n/a |
+| `validate` | Run the root RSpec task | `bin/conductor-exec bundle exec rake spec` (no arguments) |
+| `test` | Run the root RSpec task | `bin/conductor-exec bundle exec rake spec` (no arguments) |
+| `lint` | Lint / format | n/a — this seam deliberately does not wrap the monorepo-wide RuboCop command |
 | `build` | Build / type-check | n/a |
 | `docs` | Docs checks | n/a |
 | `ci-detect` | CI change detector | n/a |
 
 Non-command policy lives in [`../agent-workflow.yml`](../agent-workflow.yml).
+
+## Validation scope
+
+`validate` and `test` intentionally run only the repository root RSpec task.
+They are useful local seam checks, but are not a replacement for the
+repository's Lefthook pre-push checks or monorepo-wide lint and format commands.
+Use the repository documentation for those broader checks. Both scripts reject
+arguments so their documented contract stays deterministic.
