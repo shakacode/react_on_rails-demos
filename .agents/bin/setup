@@ -4,4 +4,8 @@ set -euo pipefail
 cd "$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)"
 bin/conductor-exec bundle install "$@"
 bin/conductor-exec npm install
-exec bin/conductor-exec bundle exec lefthook install
+# Git hooks are helpful but not needed to make the checkout usable. This mirrors
+# the repository's documented "recommended" hook setup without hiding failures.
+if ! bin/conductor-exec bundle exec lefthook install; then
+  printf '%s\n' 'warning: lefthook install failed; continuing without git hooks' >&2
+fi
