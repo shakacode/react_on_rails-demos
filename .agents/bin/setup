@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Install Ruby dependencies through the repository's non-interactive tool-version wrapper.
+set -euo pipefail
+cd "$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)"
+exec bin/conductor-exec bundle install "$@"
