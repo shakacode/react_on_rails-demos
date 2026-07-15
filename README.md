@@ -66,6 +66,48 @@ npm run format:check
 
 See [Development Setup](./docs/CONTRIBUTING_SETUP.md) for details.
 
+## Cross-Repository Demo Fleet
+
+This repository also hosts the experimental runtime for planning dependency updates across the
+ShakaCode demo fleet. Release policy, the fleet inventory, RC prompts, and the final go/no-go
+decision remain authoritative in
+[`shakacode/react_on_rails`](https://github.com/shakacode/react_on_rails/tree/main/internal/contributor-info).
+The runtime reads that canonical manifest directly instead of maintaining a second fleet list.
+
+```bash
+# Validate the current canonical manifest.
+script/demo-fleet validate
+
+# Render a non-mutating plan for one published release.
+script/demo-fleet execute-plan \
+  --track release \
+  --dry-run \
+  --gem react_on_rails=17.0.0.rc.10 \
+  --gem react_on_rails_pro=17.0.0.rc.10 \
+  --npm react-on-rails=17.0.0-rc.10 \
+  --npm react-on-rails-pro=17.0.0-rc.10 \
+  --npm react-on-rails-pro-node-renderer=17.0.0-rc.10 \
+  --npm react-on-rails-rsc=19.2.1-rc.1
+```
+
+Entries marked `verify: true` in the canonical manifest are deliberately excluded from plans. At
+the time this pilot was added, all canonical entries were still pending that one-time verification,
+so execution refuses to run until the release-policy owner confirms the metadata, including the
+review-app name, and clears those flags. This makes stale or placeholder metadata visible without
+turning it into repository mutations.
+
+The release updater handles direct npm declarations in nested applications, runs installs beside
+each changed manifest, and permits missing targets only when a repo explicitly marks them as
+transitive-only. It rejects tracked, staged, or untracked output outside dependency manifests,
+lockfiles, Yarn Berry dependency artifacts, and the verification script.
+
+Use `--manifest PATH_OR_URL` or `DEMO_FLEET_MANIFEST` to test an unmerged manifest change. Remote
+mutation is opt-in: `execute-plan` requires both `--execute --workspace PATH`, and it only pushes
+branches or opens draft PRs when `--allow-remote-prs` is also present.
+
+See the [control-plane notes](./docs/demo-fleet-control-plane-design.md) for the ownership boundary,
+current limitations, and verification commands.
+
 ### Bootstrap All Demos
 
 ```bash

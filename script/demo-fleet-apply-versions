@@ -1,0 +1,41 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'optparse'
+require_relative '../lib/demo_fleet/dependency_file_updater'
+
+options = {
+  root: Dir.pwd,
+  rubygems_versions: {},
+  npm_versions: {},
+  allowed_missing_npm_targets: []
+}
+
+parser = OptionParser.new do |opts|
+  opts.banner = 'Usage: script/demo-fleet-apply-versions [options]'
+  opts.on('--root PATH', 'Repository root; defaults to current directory') { |value| options[:root] = value }
+  opts.on('--gem NAME=VERSION', 'Set an existing Gemfile gem version; repeatable') do |value|
+    name, version = value.split('=', 2)
+    raise OptionParser::InvalidArgument, 'Expected NAME=VERSION' if name.to_s.empty? || version.to_s.empty?
+
+    options[:rubygems_versions][name] = version
+  end
+  opts.on('--npm NAME=VERSION', 'Set an existing package.json version; repeatable') do |value|
+    name, version = value.split('=', 2)
+    raise OptionParser::InvalidArgument, 'Expected NAME=VERSION' if name.to_s.empty? || version.to_s.empty?
+
+    options[:npm_versions][name] = version
+  end
+  opts.on('--allow-missing-npm-target NAME', 'Allow one explicitly transitive-only npm package; repeatable') do |name|
+    options[:allowed_missing_npm_targets] << name
+  end
+end
+
+parser.parse!(ARGV)
+
+DemoFleet::DependencyFileUpdater.new(
+  root: options[:root],
+  rubygems_versions: options[:rubygems_versions],
+  npm_versions: options[:npm_versions],
+  allowed_missing_npm_targets: options[:allowed_missing_npm_targets]
+).apply

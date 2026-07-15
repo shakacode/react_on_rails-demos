@@ -1,0 +1,108 @@
+name: Demo Fleet Release Plan
+
+on:
+  workflow_dispatch:
+    inputs:
+      react_on_rails:
+        description: React on Rails gem version
+        required: true
+      react_on_rails_pro:
+        description: React on Rails Pro gem version
+        required: true
+      react_on_rails_npm:
+        description: react-on-rails npm version
+        required: true
+      react_on_rails_pro_npm:
+        description: react-on-rails-pro npm version
+        required: true
+      react_on_rails_pro_node_renderer_npm:
+        description: react-on-rails-pro-node-renderer npm version
+        required: true
+      react_on_rails_rsc_npm:
+        description: react-on-rails-rsc npm version
+        required: true
+      shakapacker:
+        description: Optional ShakaPacker gem version
+        required: false
+      shakapacker_npm:
+        description: Optional ShakaPacker npm version
+        required: false
+      shakapacker_rspack_npm:
+        description: Optional shakapacker-rspack npm version
+        required: false
+      cpflow:
+        description: Optional CPFlow gem version
+        required: false
+      tier:
+        description: Optional tier filter, such as hard_gate
+        required: false
+      repo:
+        description: Optional repo id filter, such as react-on-rails-demo-marketplace-rsc
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4'
+
+      - name: Validate manifest
+        run: script/demo-fleet validate
+
+      - name: Dry-run release update plan
+        env:
+          REACT_ON_RAILS_GEM: ${{ inputs.react_on_rails }}
+          REACT_ON_RAILS_PRO_GEM: ${{ inputs.react_on_rails_pro }}
+          REACT_ON_RAILS_NPM: ${{ inputs.react_on_rails_npm }}
+          REACT_ON_RAILS_PRO_NPM: ${{ inputs.react_on_rails_pro_npm }}
+          REACT_ON_RAILS_PRO_NODE_RENDERER_NPM: ${{ inputs.react_on_rails_pro_node_renderer_npm }}
+          REACT_ON_RAILS_RSC_NPM: ${{ inputs.react_on_rails_rsc_npm }}
+          SHAKAPACKER_GEM: ${{ inputs.shakapacker }}
+          SHAKAPACKER_NPM: ${{ inputs.shakapacker_npm }}
+          SHAKAPACKER_RSPACK_NPM: ${{ inputs.shakapacker_rspack_npm }}
+          CPFLOW_GEM: ${{ inputs.cpflow }}
+          TIER: ${{ inputs.tier }}
+          REPO: ${{ inputs.repo }}
+        run: |
+          args=(
+            --track release
+            --gem "react_on_rails=$REACT_ON_RAILS_GEM"
+            --gem "react_on_rails_pro=$REACT_ON_RAILS_PRO_GEM"
+            --npm "react-on-rails=$REACT_ON_RAILS_NPM"
+            --npm "react-on-rails-pro=$REACT_ON_RAILS_PRO_NPM"
+            --npm "react-on-rails-pro-node-renderer=$REACT_ON_RAILS_PRO_NODE_RENDERER_NPM"
+            --npm "react-on-rails-rsc=$REACT_ON_RAILS_RSC_NPM"
+          )
+
+          if [[ -n "$SHAKAPACKER_GEM" ]]; then
+            args+=(--gem "shakapacker=$SHAKAPACKER_GEM")
+          fi
+
+          if [[ -n "$SHAKAPACKER_NPM" ]]; then
+            args+=(--npm "shakapacker=$SHAKAPACKER_NPM")
+          fi
+
+          if [[ -n "$SHAKAPACKER_RSPACK_NPM" ]]; then
+            args+=(--npm "shakapacker-rspack=$SHAKAPACKER_RSPACK_NPM")
+          fi
+
+          if [[ -n "$CPFLOW_GEM" ]]; then
+            args+=(--gem "cpflow=$CPFLOW_GEM")
+          fi
+
+          if [[ -n "$TIER" ]]; then
+            args+=(--tier "$TIER")
+          fi
+
+          if [[ -n "$REPO" ]]; then
+            args+=(--repo "$REPO")
+          fi
+
+          script/demo-fleet execute-plan --dry-run "${args[@]}" >> "$GITHUB_STEP_SUMMARY"

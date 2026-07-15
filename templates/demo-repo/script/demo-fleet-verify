@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ -x bin/ci ]]; then
+  bin/ci
+elif [[ -x bin/test ]]; then
+  bin/test
+else
+  bundle exec rake
+fi

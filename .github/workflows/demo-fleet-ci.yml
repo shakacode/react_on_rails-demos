@@ -1,0 +1,27 @@
+name: Demo Fleet CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4'
+          bundler-cache: true
+
+      - name: Run lint
+        run: bundle exec rubocop lib/demo_fleet.rb lib/demo_fleet script test/demo_fleet_test.rb Rakefile
+
+      - name: Run tests
+        run: ruby -Ilib test/demo_fleet_test.rb
+
+      - name: Validate manifest
+        run: script/demo-fleet validate --manifest test/fixtures/demo-fleet.yml

@@ -1,0 +1,25 @@
+name: Demo Fleet Freshness Plan
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 10 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4'
+
+      - name: Validate manifest
+        run: script/demo-fleet validate
+
+      - name: Render freshness update plan
+        run: script/demo-fleet update-plan --track freshness >> "$GITHUB_STEP_SUMMARY"

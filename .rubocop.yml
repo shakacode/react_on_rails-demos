@@ -9,9 +9,9 @@ AllCops:
   TargetRubyVersion: 3.1
   Exclude:
     - 'node_modules/**/*'
-    - 'demos/**/*'  # Each demo has its own Gemfile and rubocop config
+    - 'demos/**/*' # Each demo has its own Gemfile and rubocop config
     - 'packages/shakacode_demo_common/node_modules/**/*'
-    - 'bin/conductor-exec'  # Shell script, not Ruby
+    - 'bin/conductor-exec' # Shell script, not Ruby
 
 # Allow longer blocks in specs, Rakefiles, and bin scripts
 Metrics/BlockLength:
@@ -22,29 +22,49 @@ Metrics/BlockLength:
     - '**/Rakefile'
     - 'packages/shakacode_demo_common/lib/tasks/**/*.rake'
     - 'bin/*'
+    - 'test/**/*_test.rb'
 
 # Allow longer methods in demo creation (complex setup)
 Metrics/MethodLength:
   Max: 20
+  AllowedMethods:
+    - split_ruby_arguments
   Exclude:
     - 'lib/demo_scripts/demo_creator.rb'
     - 'lib/demo_scripts/demo_scaffolder.rb'
+    - 'lib/demo_fleet/cli.rb'
+    - 'lib/demo_fleet/update_planner.rb'
+    - 'test/**/*_test.rb'
 
 # Allow longer classes for demo creators and bin scripts (lots of setup code)
 Metrics/ClassLength:
   Max: 300
   Exclude:
     - 'bin/*'
+    - 'test/**/*_test.rb'
 
 # Allow more complex methods for demo scaffolding
 Metrics/AbcSize:
   Max: 25
+  AllowedMethods:
+    - split_ruby_arguments
+  Exclude:
+    - 'lib/demo_fleet/cli.rb'
+    - 'lib/demo_fleet/executor.rb'
+    - 'lib/demo_fleet/update_planner.rb'
+    - 'test/**/*_test.rb'
 
 Metrics/CyclomaticComplexity:
   Max: 10
+  AllowedMethods:
+    - split_ruby_arguments
+  Exclude:
+    - 'test/**/*_test.rb'
 
 Metrics/PerceivedComplexity:
   Max: 12
+  AllowedMethods:
+    - split_ruby_arguments
 
 # Allow more parameters for demo scaffolder (lots of options)
 Metrics/ParameterLists:
