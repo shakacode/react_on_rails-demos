@@ -1,0 +1,12 @@
+---
+base_branch: main
+follow_up_prefix: 'Follow-up:'
+review_gate: "all current-head `gh pr checks` entries green, all review threads resolved, mergeable clean; local seam evidence is `.agents/bin/validate` (`bundle exec rake spec`) only, not a replacement for Lefthook pre-push or monorepo lint/format; AGENTS.md permits `gh pr ready` only after its documented local and review-app conditions pass"
+approval_exempt: "this config grants no permanent merge authority; defer merge authority to AGENTS.md or direct user/maintainer instruction. When separately authorized at batch closeout, auto-merge ready low-risk PRs that pass the merge gate; keep high-risk CI/workflow, build-config, dependency or runtime bumps, broad refactors, and release changes maintainer-gated"
+coordination_backend: n/a
+changelog: n/a
+benchmark_labels: n/a
+merge_ledger: n/a
+ci_parity_environment: n/a
+hosted_ci_trigger: n/a
+ci_change_detector: n/a
