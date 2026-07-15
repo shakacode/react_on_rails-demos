@@ -5,10 +5,17 @@
 Standard entry points that portable agent-workflow skills call. A script that
 is absent means that capability is n/a in this repository.
 
+## Preflight
+
+These scripts invoke `bin/conductor-exec`, whose shebang requires `zsh` to be
+available on `PATH`. Ensure `zsh` is already installed before running them.
+When `mise` is available, `conductor-exec` uses `mise exec`; this seam neither
+installs tools nor runs `mise trust` automatically.
+
 | Script | Purpose | This repo runs |
 | --- | --- | --- |
 | `setup` | Install Ruby and Node dependencies, then git hooks | `bin/conductor-exec bundle install "$@"`; `bin/conductor-exec npm install`; `bin/conductor-exec bundle exec lefthook install` |
-| `validate` | Pre-push gate | `bin/conductor-exec bundle exec rake spec "$@"` |
+| `validate` | Pre-push gate | `bin/conductor-exec bundle exec rake spec` |
 | `test` | Run tests | `bin/conductor-exec bundle exec rspec "$@"` |
 | `lint` | Lint / format | n/a |
 | `build` | Build / type-check | n/a |
