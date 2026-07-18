@@ -25,7 +25,7 @@ module DemoFleet
     end
 
     def plans
-      selected_repos.map { |repo| RepoUpdatePlan.new(repo, self) }.tap do |repo_plans|
+      @plans ||= selected_repos.map { |repo| RepoUpdatePlan.new(repo, self) }.tap do |repo_plans|
         validate_release_targets!(repo_plans)
       end
     end
@@ -76,8 +76,36 @@ module DemoFleet
       return unless track == 'release'
       return if repo_plans.empty?
 
+      validate_implied_targets_complete!(repo_plans)
       validate_repos_receive_targets!(repo_plans)
-      validate_requested_targets_match!(repo_plans)
+      validate_requested_targets_match!
+    end
+
+    def validate_implied_targets_complete!(repo_plans)
+      incomplete = repo_plans.flat_map do |plan|
+        [
+          incomplete_implied_targets(plan.repo, :rubygems, rubygems_versions),
+          incomplete_implied_targets(plan.repo, :npm, npm_versions)
+        ].flatten
+      end
+      return if incomplete.empty?
+
+      raise ArgumentError, "base targets for Pro-only repos require matching Pro versions: #{incomplete.join(', ')}"
+    end
+
+    def incomplete_implied_targets(repo, ecosystem, versions)
+      package_names = ecosystem == :rubygems ? repo.rubygems : repo.npm_packages
+      direct_package_names = if ecosystem == :npm
+                               package_names - repo.transitive_only_npm_packages
+                             else
+                               package_names
+                             end
+      IMPLIED_TARGETS.fetch(ecosystem).filter_map do |direct_package, implied_package|
+        pro_only = direct_package_names.include?(direct_package) && !direct_package_names.include?(implied_package)
+        next unless pro_only && versions.key?(implied_package) && !versions.key?(direct_package)
+
+        "#{repo.id} requires #{ecosystem}:#{direct_package} with #{ecosystem}:#{implied_package}"
+      end
     end
 
     def validate_repos_receive_targets!(repo_plans)
@@ -87,17 +115,16 @@ module DemoFleet
       raise ArgumentError, "release target versions do not match packages for: #{unmatched.join(', ')}"
     end
 
-    def validate_requested_targets_match!(repo_plans)
-      return if repo_id || tier
-
-      selected_gems = targetable_packages(repo_plans, :rubygems)
-      selected_npm = targetable_packages(repo_plans, :npm)
-      unmatched_gems = rubygems_versions.keys - selected_gems
-      unmatched_npm = npm_versions.keys - selected_npm
+    def validate_requested_targets_match!
+      fleet_plans = manifest.enabled_repos.map { |repo| RepoUpdatePlan.new(repo, self) }
+      fleet_gems = targetable_packages(fleet_plans, :rubygems)
+      fleet_npm = targetable_packages(fleet_plans, :npm)
+      unmatched_gems = rubygems_versions.keys - fleet_gems
+      unmatched_npm = npm_versions.keys - fleet_npm
       unmatched_targets = unmatched_gems.map { |name| "gem:#{name}" } + unmatched_npm.map { |name| "npm:#{name}" }
       return if unmatched_targets.empty?
 
-      raise ArgumentError, "release targets match no selected repo: #{unmatched_targets.join(', ')}"
+      raise ArgumentError, "release targets match no verified fleet repo: #{unmatched_targets.join(', ')}"
     end
 
     def targetable_packages(repo_plans, ecosystem)
@@ -183,7 +210,7 @@ module DemoFleet
     def targeted_versions(package_names, versions, ecosystem:)
       targetable_names = package_names.dup
       UpdatePlanner::IMPLIED_TARGETS.fetch(ecosystem).each do |direct_package, implied_package|
-        targetable_names << implied_package if package_names.include?(direct_package)
+        targetable_names << implied_package if package_names.include?(direct_package) && versions.key?(direct_package)
       end
 
       targetable_names.uniq.filter_map do |package_name|

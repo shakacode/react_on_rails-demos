@@ -1,11 +1,30 @@
-# React on Rails Demos
+# React on Rails Demo Fleet
 
-A monorepo containing demo applications showcasing various features and best practices for [React on Rails](https://github.com/shakacode/react_on_rails).
+Backstage engineering for the [React on Rails examples](https://reactonrails.com/examples): shared
+tooling, compact reference fixtures, and the control plane that keeps independently deployed demo
+applications current and verifiable.
+
+The examples website is the canonical public catalog, with screenshots, live deployments, source
+links, starters, and production references. Flagship applications remain in their own repositories
+so each retains independent CI, deployment, review-app, history, and ownership boundaries. This
+repository does not duplicate those applications or maintain a second human-facing catalog.
+
+## Responsibilities
+
+| Surface                                                                   | Responsibility                                                         |
+| ------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| [`reactonrails.com/examples`](https://reactonrails.com/examples)          | Public discovery and evaluation                                        |
+| Individual demo repositories                                              | Application source, CI, deployment, and review apps                    |
+| This repository                                                           | Shared tooling, fixture demos, fleet planning, and update verification |
+| [`shakacode/react_on_rails`](https://github.com/shakacode/react_on_rails) | Product source, release policy, and canonical fleet inventory          |
 
 ## Repository Structure
 
 ```
 react_on_rails-demos/
+├─ lib/demo_fleet/                    # Cross-repository planning and execution runtime
+├─ script/demo-fleet                  # Fleet command-line entry point
+├─ templates/demo-repo/               # Shared verification and dependency templates
 ├─ packages/
 │  └─ shakacode_demo_common/          # Shared configuration and utilities
 │     ├─ Gemfile           # Shared Ruby dependencies
@@ -13,18 +32,15 @@ react_on_rails-demos/
 │     ├─ config/            # Shared linting configs
 │     └─ lib/               # Ruby utilities and templates
 └─ demos/
-   ├─ react_on_rails-demo-v16-ssr-auto-registration-bundle-splitting/
-   ├─ react_on_rails-demo-v16-react-server-components/
-   └─ ...                   # Additional demo applications
+   ├─ basic-v16-rspack/                # Compact local reference fixture
+   └─ basic-v16-webpack/               # Compact local reference fixture
 ```
 
 ## Demo Applications
 
-Each demo follows the naming convention: `react_on_rails-demo-v[version]-[topics]`
-
-### Available Demos
-
-_(Demos will be listed here as they are added)_
+The small applications under `demos/` exercise shared repository tooling. For maintained flagship,
+starter, production, and legacy examples, use the
+[public examples catalog](https://reactonrails.com/examples).
 
 ## Getting Started
 

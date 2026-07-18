@@ -19,10 +19,12 @@ module DemoFleet
         trusted_targeted_packages: data.fetch('trusted_targeted_packages', {}),
         break_glass_days: break_glass.fetch('max_age_days', 7)
       )
+    rescue Psych::Exception => e
+      raise ArgumentError, "Unable to parse supply-chain policy from #{path}: #{e.message}"
     end
 
     def self.from_manifest(manifest)
-      age_gate = manifest.defaults.fetch('age_gate')
+      age_gate = required_value(manifest.defaults, 'age_gate', path: 'defaults')
       raise ArgumentError, 'defaults.age_gate must be a mapping' unless age_gate.is_a?(Hash)
 
       own_packages = age_gate.fetch('own_packages', {})
@@ -31,12 +33,12 @@ module DemoFleet
       new(
         minimum_age_days: {
           'release' => {
-            'npm' => age_gate.fetch('npm_min_days'),
-            'rubygems' => age_gate.fetch('gem_min_days')
+            'npm' => required_value(age_gate, 'npm_min_days', path: 'defaults.age_gate'),
+            'rubygems' => required_value(age_gate, 'gem_min_days', path: 'defaults.age_gate')
           },
           'freshness' => {
-            'npm' => age_gate.fetch('npm_min_days'),
-            'rubygems' => age_gate.fetch('gem_min_days')
+            'npm' => required_value(age_gate, 'npm_min_days', path: 'defaults.age_gate'),
+            'rubygems' => required_value(age_gate, 'gem_min_days', path: 'defaults.age_gate')
           }
         },
         trusted_targeted_packages: {
@@ -45,6 +47,13 @@ module DemoFleet
         }
       )
     end
+
+    def self.required_value(mapping, key, path:)
+      return mapping[key] if mapping.key?(key)
+
+      raise ArgumentError, "#{path}.#{key} is required"
+    end
+    private_class_method :required_value
 
     def initialize(minimum_age_days:, trusted_targeted_packages:, break_glass_days: 7)
       @minimum_age_days = stringify_hash(minimum_age_days)

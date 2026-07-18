@@ -71,11 +71,13 @@ module DemoFleet
             echo "local and remote update branches have diverged: $1" >&2
             exit 1
           fi
-        # A local-only pilot branch tracks origin/HEAD until it is published. Preserve it so the
-        # inspected first-pass commit is the exact commit pushed by a later --allow-remote-prs run.
         elif [[ "$(git config --get branch.$1.remote)" == origin ]] &&
              [[ "$(git config --get branch.$1.merge)" == "refs/heads/$1" ]]; then
-          exec git checkout -B "$1" origin/HEAD
+          if git merge-base --is-ancestor "$1" origin/HEAD; then
+            exec git checkout -B "$1" origin/HEAD
+          fi
+          echo "remote update branch was deleted but local branch contains commits not in origin/HEAD: $1" >&2
+          exit 1
         fi
       elif git show-ref --verify --quiet "refs/remotes/origin/$1"; then
         exec git checkout --track -b "$1" "origin/$1"

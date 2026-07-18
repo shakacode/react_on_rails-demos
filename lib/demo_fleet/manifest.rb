@@ -137,7 +137,10 @@ module DemoFleet
     end
 
     def id
-      data.fetch('id') { github.split('/', 2).last }
+      return data['id'] if data.key?('id')
+
+      github_value = github
+      github_value.is_a?(String) ? github_value.split('/', 2).last : github_value
     end
 
     def github
@@ -280,6 +283,7 @@ module DemoFleet
     end
 
     def validate_id!
+      raise ArgumentError, 'repo id must be a string' unless id.is_a?(String)
       raise ArgumentError, 'repo id is required' if id.strip.empty?
       return if id.match?(/\A[\w.-]+\z/) && !%w[. ..].include?(id)
 
@@ -287,6 +291,7 @@ module DemoFleet
     end
 
     def validate_github!
+      raise ArgumentError, "repo #{id} github must be a string" unless github.is_a?(String)
       return if github.match?(%r{\A[\w.-]+/[\w.-]+\z})
 
       raise ArgumentError, "repo #{id} github must be owner/name"

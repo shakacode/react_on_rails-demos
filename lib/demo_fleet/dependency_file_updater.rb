@@ -2,6 +2,7 @@
 
 require 'json'
 require 'find'
+require 'ripper'
 
 module DemoFleet
   class DependencyFileUpdater
@@ -113,7 +114,7 @@ module DemoFleet
         end
 
         statement_lines = extract_gem_statement(lines, index)
-        replacement = rewritten_gem_statement(statement_lines.join(' '), name, version, indent: lines[index][/^\s*/])
+        replacement = rewritten_gem_statement(statement_lines.join, name, version, indent: lines[index][/^\s*/])
         lines[index, statement_lines.length] = [replacement]
         replacements += 1
         index += 1
@@ -124,7 +125,7 @@ module DemoFleet
 
     def extract_gem_statement(lines, index)
       statement_lines = [lines[index]]
-      while statement_lines.last.rstrip.end_with?(',') &&
+      while Ripper.sexp(statement_lines.join).nil? &&
             lines[index + statement_lines.length]&.match?(/^\s+(?!gem\b)\S/)
         statement_lines << lines[index + statement_lines.length]
       end
@@ -132,7 +133,10 @@ module DemoFleet
     end
 
     def rewritten_gem_statement(statement, name, version, indent: '')
-      body = statement.sub(/^\s*gem\s+["']#{Regexp.escape(name)}["']\s*,?/, '')
+      tokens = Ripper.lex(statement)
+      tokens.reject! { |_position, event, _token| event == :on_comment }
+      uncommented_statement = tokens.map { |_position, _event, token| token }.join
+      body = uncommented_statement.sub(/^\s*gem\s+["']#{Regexp.escape(name)}["']\s*,?/, '')
       options = split_ruby_arguments(body).select { |argument| preserved_gem_option?(argument) }
       suffix = options.empty? ? '' : ", #{options.join(', ')}"
       "#{indent}gem '#{name}', '#{version}'#{suffix}\n"

@@ -41,6 +41,12 @@ Mutating runs require an authenticated GitHub CLI. Fresh checkouts use its confi
 so the same path works for public and private fleet repositories and later pushes retain that
 authenticated remote.
 
+The canonical manifest is also a trusted execution boundary. During `execute-plan --execute`, its
+verified repository commands run through a shell in the operator's environment. Anyone who can land
+a manifest change can therefore affect commands run during a fleet update. Keep manifest changes
+reviewed and mutation manually initiated until the control plane adds integrity pinning or a separate
+approval boundary.
+
 The executor starts from a clean checkout, stages dependency manifests and lockfiles at any depth,
 plus Yarn Berry PnP/cache artifacts, and rejects tracked, staged, or untracked changes outside that
 allowlist. Verification-generated drift therefore fails the lane instead of being silently included

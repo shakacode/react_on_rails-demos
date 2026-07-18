@@ -287,6 +287,25 @@ class DemoFleetTest < Minitest::Test
     assert_includes error.message, 'safe path segment'
   end
 
+  def test_manifest_rejects_non_string_repo_ids_with_schema_errors
+    [123, nil].each do |repo_id|
+      data = {
+        'schema_version' => 1,
+        'repos' => [
+          {
+            'id' => repo_id,
+            'github' => 'shakacode/demo',
+            'packages' => [{ 'ecosystem' => 'gem', 'name' => 'react_on_rails' }]
+          }
+        ]
+      }
+
+      error = assert_raises(ArgumentError) { DemoFleet::Manifest.new(data) }
+
+      assert_equal 'repo id must be a string', error.message
+    end
+  end
+
   def test_manifest_rejects_unsupported_package_manager
     path = write_yaml(<<~YAML)
       schema_version: 1
@@ -471,6 +490,53 @@ class DemoFleetTest < Minitest::Test
     gemfile = File.read(File.join(dir, 'Gemfile'))
     assert_includes gemfile, "  gem 'react_on_rails', '17.0.0.rc.10'"
     assert_includes gemfile, "  gem 'shakapacker', '10.3.0'"
+  end
+
+  def test_dependency_file_updater_preserves_options_after_a_nested_multiline_source
+    dir = Dir.mktmpdir
+    File.write(File.join(dir, 'Gemfile'), <<~RUBY)
+      source 'https://rubygems.org'
+
+      gem 'react_on_rails',
+        git: {
+          remote: 'https://github.com/shakacode/react_on_rails.git',
+          branch: 'main'
+        },
+        require: false
+    RUBY
+
+    DemoFleet::DependencyFileUpdater.new(
+      root: dir,
+      rubygems_versions: { 'react_on_rails' => '17.0.0.rc.10' },
+      npm_versions: {}
+    ).apply
+
+    gemfile = File.read(File.join(dir, 'Gemfile'))
+    assert_includes gemfile, "gem 'react_on_rails', '17.0.0.rc.10', require: false"
+    refute_includes gemfile, 'github.com/shakacode/react_on_rails'
+    refute_nil Ripper.sexp(gemfile)
+  end
+
+  def test_dependency_file_updater_handles_inline_comments_in_multiline_sources
+    dir = Dir.mktmpdir
+    File.write(File.join(dir, 'Gemfile'), <<~RUBY)
+      source 'https://rubygems.org'
+
+      gem 'react_on_rails', git: 'https://github.com/shakacode/react_on_rails.git', # pinned
+        branch: 'main',
+        require: false
+    RUBY
+
+    DemoFleet::DependencyFileUpdater.new(
+      root: dir,
+      rubygems_versions: { 'react_on_rails' => '17.0.0.rc.10' },
+      npm_versions: {}
+    ).apply
+
+    gemfile = File.read(File.join(dir, 'Gemfile'))
+    assert_includes gemfile, "gem 'react_on_rails', '17.0.0.rc.10', require: false"
+    refute_includes gemfile, 'branch:'
+    refute_nil Ripper.sexp(gemfile)
   end
 
   def test_dependency_file_updater_updates_nested_package_manifests_and_allows_transitive_targets
@@ -680,6 +746,13 @@ class DemoFleetTest < Minitest::Test
           packages:
             - ecosystem: gem
               name: react_on_rails
+        - id: pro-rsc-demo
+          github: shakacode/pro-rsc-demo
+          packages:
+            - ecosystem: gem
+              name: react_on_rails_pro
+            - ecosystem: npm
+              name: react-on-rails-rsc
     YAML
 
     planner = DemoFleet::UpdatePlanner.new(
@@ -695,6 +768,32 @@ class DemoFleetTest < Minitest::Test
 
     planned_repo_ids = planner.plans.map { |plan| plan.repo.id }
     assert_equal ['non-pro-demo'], planned_repo_ids
+  end
+
+  def test_repo_filtered_update_plan_rejects_targets_unknown_to_the_verified_fleet
+    manifest = DemoFleet::Manifest.from_file(write_yaml(<<~YAML))
+      schema_version: 1
+      repos:
+        - id: demo
+          github: shakacode/demo
+          packages:
+            - ecosystem: gem
+              name: react_on_rails
+    YAML
+
+    planner = DemoFleet::UpdatePlanner.new(
+      manifest: manifest,
+      rubygems_versions: {
+        'react_on_rails' => '17.0.0.rc.10',
+        'react_on_rails_typo' => '17.0.0.rc.10'
+      },
+      npm_versions: {},
+      track: 'release',
+      repo_id: 'demo'
+    )
+
+    error = assert_raises(ArgumentError) { planner.plans }
+    assert_includes error.message, 'gem:react_on_rails_typo'
   end
 
   def test_update_plan_targets_base_packages_implied_by_direct_pro_packages
@@ -728,6 +827,69 @@ class DemoFleetTest < Minitest::Test
     assert_includes command, '--gem react_on_rails_pro\\=17.0.0.rc.10'
     assert_includes command, '--npm react-on-rails\\=17.0.0-rc.10'
     assert_includes command, '--npm react-on-rails-pro\\=17.0.0-rc.10'
+  end
+
+  def test_update_plan_rejects_base_only_versions_for_pro_only_repos
+    manifest = DemoFleet::Manifest.from_file(write_yaml(<<~YAML))
+      schema_version: 1
+      repos:
+        - id: pro-only-demo
+          github: shakacode/pro-only-demo
+          packages:
+            - ecosystem: gem
+              name: react_on_rails_pro
+            - ecosystem: gem
+              name: shakapacker
+            - ecosystem: npm
+              name: react-on-rails-pro
+    YAML
+
+    planner = DemoFleet::UpdatePlanner.new(
+      manifest: manifest,
+      rubygems_versions: {
+        'react_on_rails' => '17.0.0.rc.10',
+        'shakapacker' => '10.0.0'
+      },
+      npm_versions: { 'react-on-rails' => '17.0.0-rc.10' },
+      track: 'release'
+    )
+
+    error = assert_raises(ArgumentError) { planner.plans }
+
+    assert_includes error.message, 'rubygems:react_on_rails_pro'
+    assert_includes error.message, 'npm:react-on-rails-pro'
+  end
+
+  def test_update_plan_treats_transitive_only_base_packages_as_pro_only
+    manifest = DemoFleet::Manifest.from_file(write_yaml(<<~YAML))
+      schema_version: 1
+      repos:
+        - id: pro-rsc-demo
+          github: shakacode/pro-rsc-demo
+          packages:
+            - ecosystem: npm
+              name: react-on-rails
+            - ecosystem: npm
+              name: react-on-rails-pro
+            - ecosystem: npm
+              name: react-on-rails-rsc
+          transitive_only_npm_packages:
+            - react-on-rails
+    YAML
+
+    planner = DemoFleet::UpdatePlanner.new(
+      manifest: manifest,
+      rubygems_versions: {},
+      npm_versions: {
+        'react-on-rails' => '17.0.0-rc.10',
+        'react-on-rails-rsc' => '19.2.1-rc.1'
+      },
+      track: 'release'
+    )
+
+    error = assert_raises(ArgumentError) { planner.plans }
+
+    assert_includes error.message, 'npm:react-on-rails-pro'
   end
 
   def test_update_plan_rejects_requested_targets_that_match_no_selected_repo
@@ -898,6 +1060,30 @@ class DemoFleetTest < Minitest::Test
     error = assert_raises(ArgumentError) { DemoFleet::SupplyChainPolicy.from_manifest(manifest) }
 
     assert_equal 'defaults.age_gate must be a mapping', error.message
+  end
+
+  def test_manifest_policy_reports_missing_age_gate_fields
+    manifest = DemoFleet::Manifest.from_file(write_yaml(<<~YAML))
+      schema_version: 1
+      defaults:
+        age_gate:
+          gem_min_days: 7
+      repos: []
+    YAML
+
+    error = assert_raises(ArgumentError) { DemoFleet::SupplyChainPolicy.from_manifest(manifest) }
+
+    assert_equal 'defaults.age_gate.npm_min_days is required', error.message
+  end
+
+  def test_supply_chain_policy_reports_malformed_yaml
+    dir = Dir.mktmpdir
+    path = File.join(dir, 'policy.yml')
+    File.write(path, "minimum_age_days: [\n")
+
+    error = assert_raises(ArgumentError) { DemoFleet::SupplyChainPolicy.from_file(path) }
+
+    assert_includes error.message, "Unable to parse supply-chain policy from #{path}"
   end
 
   def test_break_glass_override_expires_after_policy_window
@@ -1189,9 +1375,10 @@ class DemoFleetTest < Minitest::Test
     end
   end
 
-  def test_executor_resets_a_stale_local_branch_after_its_remote_was_deleted
+  def test_executor_preserves_unique_local_commits_after_its_remote_branch_was_deleted
     Dir.mktmpdir do |workspace|
       _remote, seed, checkout, branch = create_pushed_update_branch(workspace)
+      local_revision = git_revision(checkout, branch)
 
       system('git', '-C', seed, 'checkout', '--quiet', 'main')
       File.write(File.join(seed, 'README.md'), "new main\n")
@@ -1203,8 +1390,9 @@ class DemoFleetTest < Minitest::Test
       command = checkout_branch_command_for(checkout, branch)
       _stdout, stderr, status = Open3.capture3(*command.argv, chdir: checkout)
 
-      assert status.success?, stderr
-      assert_equal git_revision(checkout, 'origin/HEAD'), git_revision(checkout, 'HEAD')
+      refute status.success?
+      assert_includes stderr, 'remote update branch was deleted but local branch contains commits'
+      assert_equal local_revision, git_revision(checkout, 'HEAD')
     end
   end
 
