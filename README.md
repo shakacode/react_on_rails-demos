@@ -1,11 +1,30 @@
-# React on Rails Demos
+# React on Rails Demo Fleet
 
-A monorepo containing demo applications showcasing various features and best practices for [React on Rails](https://github.com/shakacode/react_on_rails).
+Backstage engineering for the [React on Rails examples](https://reactonrails.com/examples): shared
+tooling, compact reference fixtures, and the control plane that keeps independently deployed demo
+applications current and verifiable.
+
+The examples website is the canonical public catalog, with screenshots, live deployments, source
+links, starters, and production references. Flagship applications remain in their own repositories
+so each retains independent CI, deployment, review-app, history, and ownership boundaries. This
+repository does not duplicate those applications or maintain a second human-facing catalog.
+
+## Responsibilities
+
+| Surface                                                                   | Responsibility                                                         |
+| ------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| [`reactonrails.com/examples`](https://reactonrails.com/examples)          | Public discovery and evaluation                                        |
+| Individual demo repositories                                              | Application source, CI, deployment, and review apps                    |
+| This repository                                                           | Shared tooling, fixture demos, fleet planning, and update verification |
+| [`shakacode/react_on_rails`](https://github.com/shakacode/react_on_rails) | Product source, release policy, and canonical fleet inventory          |
 
 ## Repository Structure
 
 ```
 react_on_rails-demos/
+├─ lib/demo_fleet/                    # Cross-repository planning and execution runtime
+├─ script/demo-fleet                  # Fleet command-line entry point
+├─ templates/demo-repo/               # Shared verification and dependency templates
 ├─ packages/
 │  └─ shakacode_demo_common/          # Shared configuration and utilities
 │     ├─ Gemfile           # Shared Ruby dependencies
@@ -13,18 +32,15 @@ react_on_rails-demos/
 │     ├─ config/            # Shared linting configs
 │     └─ lib/               # Ruby utilities and templates
 └─ demos/
-   ├─ react_on_rails-demo-v16-ssr-auto-registration-bundle-splitting/
-   ├─ react_on_rails-demo-v16-react-server-components/
-   └─ ...                   # Additional demo applications
+   ├─ basic-v16-rspack/                # Compact local reference fixture
+   └─ basic-v16-webpack/               # Compact local reference fixture
 ```
 
 ## Demo Applications
 
-Each demo follows the naming convention: `react_on_rails-demo-v[version]-[topics]`
-
-### Available Demos
-
-_(Demos will be listed here as they are added)_
+The small applications under `demos/` exercise shared repository tooling. For maintained flagship,
+starter, production, and legacy examples, use the
+[public examples catalog](https://reactonrails.com/examples).
 
 ## Getting Started
 
@@ -65,6 +81,48 @@ npm run format:check
 ```
 
 See [Development Setup](./docs/CONTRIBUTING_SETUP.md) for details.
+
+## Cross-Repository Demo Fleet
+
+This repository also hosts the experimental runtime for planning dependency updates across the
+ShakaCode demo fleet. Release policy, the fleet inventory, RC prompts, and the final go/no-go
+decision remain authoritative in
+[`shakacode/react_on_rails`](https://github.com/shakacode/react_on_rails/tree/main/internal/contributor-info).
+The runtime reads that canonical manifest directly instead of maintaining a second fleet list.
+
+```bash
+# Validate the current canonical manifest.
+script/demo-fleet validate
+
+# Render a non-mutating plan for one published release.
+script/demo-fleet execute-plan \
+  --track release \
+  --dry-run \
+  --gem react_on_rails=17.0.0.rc.10 \
+  --gem react_on_rails_pro=17.0.0.rc.10 \
+  --npm react-on-rails=17.0.0-rc.10 \
+  --npm react-on-rails-pro=17.0.0-rc.10 \
+  --npm react-on-rails-pro-node-renderer=17.0.0-rc.10 \
+  --npm react-on-rails-rsc=19.2.1-rc.1
+```
+
+Entries marked `verify: true` in the canonical manifest are deliberately excluded from plans. At
+the time this pilot was added, all canonical entries were still pending that one-time verification,
+so execution refuses to run until the release-policy owner confirms the metadata, including the
+review-app name, and clears those flags. This makes stale or placeholder metadata visible without
+turning it into repository mutations.
+
+The release updater handles direct npm declarations in nested applications, runs installs beside
+each changed manifest, and permits missing targets only when a repo explicitly marks them as
+transitive-only. It rejects tracked, staged, or untracked output outside dependency manifests,
+lockfiles, Yarn Berry dependency artifacts, and the verification script.
+
+Use `--manifest PATH_OR_URL` or `DEMO_FLEET_MANIFEST` to test an unmerged manifest change. Remote
+mutation is opt-in: `execute-plan` requires both `--execute --workspace PATH`, and it only pushes
+branches or opens draft PRs when `--allow-remote-prs` is also present.
+
+See the [control-plane notes](./docs/demo-fleet-control-plane-design.md) for the ownership boundary,
+current limitations, and verification commands.
 
 ### Bootstrap All Demos
 

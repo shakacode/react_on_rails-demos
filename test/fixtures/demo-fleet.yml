@@ -1,0 +1,22 @@
+schema_version: 1
+
+defaults:
+  package_manager: pnpm
+  branch_prefix: demo-fleet
+  review_app:
+    cpflow_app_name: fixture-demo
+  age_gate:
+    npm_min_days: 7
+    gem_min_days: 7
+    own_packages:
+      npm: [react-on-rails]
+      gem: [react_on_rails]
+
+repos:
+  - id: fixture-demo
+    github: shakacode/fixture-demo
+    packages:
+      - ecosystem: gem
+        name: react_on_rails
+      - ecosystem: npm
+        name: react-on-rails

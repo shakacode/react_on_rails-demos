@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+bundle exec rake
+pnpm lint:rsc
+bundle exec rake react_on_rails:generate_packs
+RAILS_ENV=production NODE_ENV=production SECRET_KEY_BASE=dummy_secret_key_base_for_demo_fleet pnpm build:production
+pnpm verify:rsc
+git diff --exit-code -- app/javascript/packs

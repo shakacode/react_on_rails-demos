@@ -1,0 +1,12 @@
+minimumReleaseAge: 10080
+minimumReleaseAgeStrict: true
+minimumReleaseAgeIgnoreMissingTime: false
+minimumReleaseAgeExclude:
+  - react-on-rails
+  - react-on-rails-pro
+  - react-on-rails-pro-node-renderer
+  - react-on-rails-rsc
+  - shakapacker
+  - shakapacker-rspack
+
+allowBuilds: {}
