@@ -1,0 +1,61 @@
+{
+  "packageManager": "npm@11.6.2",
+  "name": "app",
+  "private": true,
+  "version": "0.1.0",
+  "browserslist": [
+    "defaults"
+  ],
+  "dependencies": {
+    "compression-webpack-plugin": "^11.1.0",
+    "css-loader": "7.1.4",
+    "css-minimizer-webpack-plugin": "7.0.4",
+    "mini-css-extract-plugin": "2.10.0",
+    "react": "19.0.4",
+    "react-dom": "19.0.4",
+    "react-on-rails-pro": "16.4.0-rc.5",
+    "react-on-rails-pro-node-renderer": "16.4.0-rc.5",
+    "react-on-rails-rsc": "19.0.4",
+    "sass-loader": "^16.0.7",
+    "shakapacker": "9.6.0-beta.0",
+    "style-loader": "4.0.0",
+    "terser-webpack-plugin": "^5.3.16",
+    "webpack": "^5.105.2",
+    "webpack-assets-manifest": "^6.5.0",
+    "webpack-cli": "^6.0.1",
+    "webpack-merge": "^6.0.1",
+    "webpack-subresource-integrity": "^5.1.0"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^20.4.1",
+    "@commitlint/config-conventional": "^20.4.1",
+    "@playwright/test": "^1.58.2",
+    "@pmmmwh/react-refresh-webpack-plugin": "0.6.2",
+    "@shakacode/react-on-rails-demo-common": "file:../../packages/shakacode_demo_common",
+    "@typescript-eslint/eslint-plugin": "^8.46.2",
+    "@typescript-eslint/parser": "^8.46.2",
+    "@swc/core": "1.15.11",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "lefthook": "^2.1.1",
+    "playwright": "^1.58.2",
+    "prettier": "^3.6.2",
+    "react-refresh": "0.18.0",
+    "swc-loader": "0.2.7",
+    "typescript": "5.9.3",
+    "webpack-dev-server": "^5.2.3"
+  },
+  "scripts": {
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
+    "format": "prettier --write '**/*.{js,jsx,ts,tsx,json,css,scss,md}'",
+    "format:check": "prettier --check '**/*.{js,jsx,ts,tsx,json,css,scss,md}'",
+    "prepare": "lefthook install"
+  }
+}

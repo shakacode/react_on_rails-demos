@@ -1,0 +1,42 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Self-guard: skip if bin/dev already ran precompile tasks.
+# This prevents duplicate execution in HMR mode (two webpack processes)
+# regardless of Shakapacker version.
+exit 0 if ENV["SHAKAPACKER_SKIP_PRECOMPILE_HOOK"] == "true"
+
+# Shakapacker precompile hook for React on Rails
+#
+# This script runs before webpack compilation to generate pack files
+# for auto-bundled components. It's called automatically by Shakapacker
+# when configured in config/shakapacker.yml:
+#   precompile_hook: 'bin/shakapacker-precompile-hook'
+#
+# Emoji Scheme:
+#   🔄 = Running/in-progress
+#   ✅ = Success
+#   ❌ = Error
+
+# Skip validation during precompile hook execution
+# The hook runs early in the build process, potentially before full Rails initialization,
+# and doesn't need package version validation since it's part of the build itself
+ENV["REACT_ON_RAILS_SKIP_VALIDATION"] = "true"
+
+require_relative "../config/environment"
+begin
+  require "rainbow"
+rescue LoadError
+  nil
+end
+
+begin
+  start_msg = "🔄 Running React on Rails precompile hook..."
+  puts defined?(Rainbow) ? Rainbow(start_msg).cyan : start_msg
+  ReactOnRails::PacksGenerator.instance.generate_packs_if_stale
+rescue StandardError => e
+  error_msg = "❌ Error in precompile hook: #{e.message}"
+  warn defined?(Rainbow) ? Rainbow(error_msg).red : error_msg
+  warn e.backtrace.first(5).join("\n")
+  exit 1
+end
